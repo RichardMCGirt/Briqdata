@@ -82,10 +82,15 @@ document.addEventListener('DOMContentLoaded', async function () {
         const officeSums = {};
 
         records.forEach(record => {
-            const branch = record.fields['Branch'];
+            let branch = record.fields['Branch'];
             const cost = parseFloat(record.fields['Actual $ Credit Amount']) || 0;
             const monthYear = formatDateToMonthYear(record.fields['Date Created']);
             const year = formatDateToYear(record.fields['Date Created']);
+
+            // Replace "Greenville,SC" with "Greenville"
+            if (branch === "Greenville,SC") {
+                branch = "Greenville";
+            }
 
             if (branch && branch !== "Test Branch") {
                 if (!officeSums[branch]) {
@@ -101,8 +106,11 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
 
+        // Sort the branches alphabetically
+        const sortedBranches = Object.keys(officeSums).sort();
+
         // Add summed data to CSV with dollar sign formatting
-        Object.keys(officeSums).forEach(branch => {
+        sortedBranches.forEach(branch => {
             Object.keys(officeSums[branch]).forEach(year => {
                 Object.keys(officeSums[branch][year].months).forEach(monthYear => {
                     const row = [
@@ -127,20 +135,18 @@ document.addEventListener('DOMContentLoaded', async function () {
         document.body.removeChild(link);
 
         // Create bar chart with the summed data
-        createBarChart(officeSums);
+        createBarChart(officeSums, sortedBranches);
     }
 
-    function createBarChart(officeSums) {
+    function createBarChart(officeSums, sortedBranches) {
         console.log("Creating bar chart...");
 
         const ctx = document.getElementById('returnChart').getContext('2d');
-        const branches = [];
         const totalsByYear = {};
         const monthsByYear = {};
 
         // Prepare data for the chart
-        Object.keys(officeSums).forEach(branch => {
-            branches.push(branch);
+        sortedBranches.forEach(branch => {
             Object.keys(officeSums[branch]).forEach(year => {
                 if (!totalsByYear[year]) {
                     totalsByYear[year] = [];
@@ -162,7 +168,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const myChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: branches,
+                labels: sortedBranches,
                 datasets: datasets
             },
             options: {
@@ -186,7 +192,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                             title: function(tooltipItem) {
                                 const branchIndex = tooltipItem[0].dataIndex;
                                 const year = tooltipItem[0].dataset.label;
-                                const branch = branches[branchIndex];
+                                const branch = sortedBranches[branchIndex];
                                 return `${branch} - ${year}`;
                             },
                             label: function(tooltipItem) {
@@ -205,7 +211,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     if (activeElements.length > 0) {
                         const branchIndex = activeElements[0].index;
                         const year = activeElements[0].dataset.label;
-                        const branch = branches[branchIndex];
+                        const branch = sortedBranches[branchIndex];
                         showMonthlyBreakdown(branch, year, officeSums);
                     }
                 }
