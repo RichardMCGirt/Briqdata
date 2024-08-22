@@ -62,28 +62,28 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     function exportToCSV(records) {
         console.log("Starting CSV export...");
-    
+
         let csvContent = "data:text/csv;charset=utf-8,";
-    
+
         // Add title
         csvContent += "Value of Fill Ins by Branch per Month\n\n";
-    
+
         // Add headers
         csvContent += "VanirOffice,Total Cost of Fill In,Month/Year\n";
-    
+
         // Calculate the sum of 'Total Cost of Fill In' by VanirOffice per month, excluding "Test Branch" and undefined branches
         const officeSums = {};
-    
+
         records.forEach(record => {
             let branch = record.fields['VanirOffice'];
             const cost = parseFloat(record.fields['Total Cost of Fill In']) || 0;
             const monthYear = formatDateToMonthYear(record.fields['Date Created']);
-    
+
             // Replace "Greenville,SC" with "Greenville"
             if (branch === "Greenville,SC") {
                 branch = "Greenville";
             }
-    
+
             // Filter out undefined or null branches and "Test Branch"
             if (branch && branch !== "Test Branch") {
                 if (!officeSums[branch]) {
@@ -95,11 +95,17 @@ document.addEventListener('DOMContentLoaded', async function () {
                 officeSums[branch][monthYear] += cost;
             }
         });
-    
-        // Sort the branches alphabetically and remove the last two branches
-        const sortedBranches = Object.keys(officeSums).sort();
-        const branchesToInclude = sortedBranches.slice(0, -2); // Exclude the last two branches
-    
+
+        // Calculate the total sum for each branch
+        const branchTotals = Object.keys(officeSums).map(branch => {
+            const totalSum = Object.values(officeSums[branch]).reduce((a, b) => a + b, 0);
+            return { branch, totalSum };
+        });
+
+        // Sort branches by total sum in ascending order and exclude the two branches with the least value
+        branchTotals.sort((a, b) => a.totalSum - b.totalSum);
+        const branchesToInclude = branchTotals.slice(2).map(item => item.branch);
+
         // Add summed data to CSV with dollar sign formatting
         branchesToInclude.forEach(branch => {
             Object.keys(officeSums[branch]).forEach(monthYear => {
@@ -111,36 +117,36 @@ document.addEventListener('DOMContentLoaded', async function () {
                 csvContent += row + "\n";
             });
         });
-    
+
         // Encode and trigger download
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
         link.setAttribute("download", "Vanir_Offices_Data_Sum_Per_Month.csv");
         document.body.appendChild(link);
-    
+
         console.log("CSV ready for download.");
         link.click();
         document.body.removeChild(link);
-    
+
         // Create bar chart with the summed data
         createBarChart(officeSums, branchesToInclude);
     }
-    
+
     function createBarChart(officeSums, branchesToInclude) {
         console.log("Creating bar chart...");
-    
+
         const ctx = document.getElementById('fillInChart').getContext('2d');
         const branches = [];
         const totals = [];
-    
+
         branchesToInclude.forEach(branch => {
             const totalSum = Object.values(officeSums[branch]).reduce((a, b) => a + b, 0);
-    
+
             branches.push(branch);
             totals.push(totalSum);
         });
-    
+
         new Chart(ctx, {
             type: 'bar',
             data: {
@@ -179,7 +185,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 }
             }
         });
-    
+
         console.log("Bar chart created successfully.");
     }
 

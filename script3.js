@@ -86,8 +86,11 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
     
+        // Sort branches alphabetically
+        const sortedBranches = Object.keys(bidCounts).sort();
+    
         // Add counted data to CSV
-        Object.keys(bidCounts).forEach(branch => {
+        sortedBranches.forEach(branch => {
             const row = [
                 branch || 'N/A',
                 bidCounts[branch]
@@ -109,26 +112,25 @@ document.addEventListener('DOMContentLoaded', async function () {
         // Update the record count in the UI with the number of bids per branch
         const recordCountDiv = document.getElementById('record-count3');
         let bidSummary = `Number of Bids per Branch (${currentYear}):\n`;
-        Object.keys(bidCounts).forEach(branch => {
+        sortedBranches.forEach(branch => {
             bidSummary += `${branch || 'N/A'}: ${bidCounts[branch]}\n`;
         });
         recordCountDiv.textContent = bidSummary.trim(); // Display in the div
-
-        // Create bar chart with the bid counts
-        createBarChart(bidCounts);
+    
+        // Create bar chart with the sorted bid counts
+        createBarChart(bidCounts, sortedBranches);
     }
-
-    function createBarChart(bidCounts) {
+    
+    function createBarChart(bidCounts, sortedBranches) {
         console.log("Creating bar chart...");
-
+    
         const ctx = document.getElementById('bidsChart').getContext('2d');
-        const branches = Object.keys(bidCounts);
-        const bidNumbers = Object.values(bidCounts);
-
+        const bidNumbers = sortedBranches.map(branch => bidCounts[branch]);
+    
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: branches,
+                labels: sortedBranches,
                 datasets: [{
                     label: 'Number of Bids',
                     data: bidNumbers,
@@ -158,9 +160,10 @@ document.addEventListener('DOMContentLoaded', async function () {
                 }
             }
         });
-
+    
         console.log("Bar chart created successfully.");
     }
+    
 
     // Automatically start fetching data when the page loads
     const allRecords = await fetchAllData();
