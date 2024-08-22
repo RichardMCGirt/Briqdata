@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
     const airtableBaseId = 'appeNSp44fJ8QYeY5';
-    const airtableTableName = 'tblRp5bukUiw9tX9j';
+    const airtableTableName = 'tbl6eZYBPK79a8qqo';
     const exportButton = document.getElementById('export-button');
 
     // Initially disable the export button and update its text and style
@@ -22,13 +22,15 @@ document.addEventListener('DOMContentLoaded', async function () {
                 headers: { Authorization: `Bearer ${airtableApiKey}` }
             });
 
-            if (!response.ok) throw new Error(`Error: ${response.statusText}`);
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
 
             const data = await response.json();
             console.log(`Number of records fetched: ${data.records.length}`);
             return data;
         } catch (error) {
-            console.error('Error fetching data from Airtable:', error);
+            console.error('Error fetching data from Airtable:', error.message);
             return { records: [] };
         }
     }
@@ -46,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             offset = data.offset; // Airtable provides an offset if there are more records to fetch
 
             // Update the record count in the UI
-            document.getElementById('record-count').textContent = `Records fetched: ${allRecords.length}`;
+            document.getElementById('record-count2').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
 
         console.log(`All data fetched successfully. Total records: ${allRecords.length}`);
@@ -66,17 +68,17 @@ document.addEventListener('DOMContentLoaded', async function () {
         let csvContent = "data:text/csv;charset=utf-8,";
 
         // Add title
-        csvContent += "Value of Fill Ins by Branch per Month\n\n";
+        csvContent += "Value of Return by Branch per Month\n\n";
 
         // Add headers
-        csvContent += "VanirOffice,Total Cost of Fill In,Month/Year\n";
+        csvContent += "VanirOffice,Total Cost of Return,Month/Year\n";
 
         // Calculate the sum of 'Total Cost of Fill In' by VanirOffice per month, excluding "Test Branch"
         const officeSums = {};
 
         records.forEach(record => {
-            const branch = record.fields['VanirOffice'];
-            const cost = parseFloat(record.fields['Total Cost of Fill In']) || 0;
+            const branch = record.fields['Branch'];
+            const cost = parseFloat(record.fields['Actual $ Credit Amount']) || 0;
             const monthYear = formatDateToMonthYear(record.fields['Date Created']);
 
             if (branch !== "Test Branch") {
@@ -106,7 +108,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "Vanir_Offices_Data_Sum_Per_Month.csv");
+        link.setAttribute("download", "Vanir_Offices_Ruturns_Sum_Per_Month.csv");
         document.body.appendChild(link);
 
         console.log("CSV ready for download.");
