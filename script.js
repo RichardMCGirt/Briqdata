@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         csvContent += "Value of Fill Ins by Branch per Month\n\n";
 
         // Add headers
-        csvContent += "VanirOffice,Total Cost of Fill In,Year-Month\n";
+        csvContent += "Branch,Sum of Fill In,Year-Month\n";
 
         // Calculate the sum of 'Total Cost of Fill In' by VanirOffice per month, excluding "Test Branch"
         const officeSums = {};
@@ -117,13 +117,16 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Automatically start fetching data when the page loads
     const allRecords = await fetchAllData();
 
-    // Enable the export button after data is fetched
+    // Automatically export the CSV after data is fetched
+    exportToCSV(allRecords);
+
+    // Enable the export button after data is fetched (optional, as it's already exported)
     exportButton.disabled = false;
     exportButton.textContent = "Export to CSV";
     exportButton.style.backgroundColor = ""; // Reset to default style
     exportButton.style.cursor = "pointer"; // Reset cursor to pointer
 
-    // Attach event listener to the export button
+    // Attach event listener to the export button (if needed for manual re-export)
     exportButton.addEventListener('click', function () {
         console.log("Export button clicked.");
         exportToCSV(allRecords);
