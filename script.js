@@ -75,9 +75,14 @@ document.addEventListener('DOMContentLoaded', async function () {
         const officeSums = {};
     
         records.forEach(record => {
-            const branch = record.fields['VanirOffice'];
+            let branch = record.fields['VanirOffice'];
             const cost = parseFloat(record.fields['Total Cost of Fill In']) || 0;
             const monthYear = formatDateToMonthYear(record.fields['Date Created']);
+    
+            // Replace "Greenville,SC" with "Greenville"
+            if (branch === "Greenville,SC") {
+                branch = "Greenville";
+            }
     
             // Filter out undefined or null branches and "Test Branch"
             if (branch && branch !== "Test Branch") {
