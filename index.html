@@ -4,34 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Export Airtable Data</title>
-  
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Export Airtable Data to CSV</h1>
-    <button id="export-button">Export to CSV</button>
-    <p id="status"></p>
-    <p>Value of Fill Ins by Branch per Month</p>
-    <div id="record-count">Records fetched: 0</div>
-    <hr>
-<p>Value of Returns by Branch per Month</p>
-    <div id="record-count2">Records fetched: 0</div>
-    <hr>
-    <p># of Bids Submitted by Branch Current Year</p>
-    <div id="record-count3">Records fetched: 0</div>
-    <hr>
+    <div class="container">
+        <h1>Export Airtable Data to CSV</h1>
+        <button id="export-button">Export to CSV</button>
+        <p id="status"></p>
 
-  <script src="script.js"></script>
+        <div class="chart-section">
+            <p>Value of Fill Ins by Branch per Month</p>
+            <div id="record-count">Records fetched: 0</div>
+            <canvas id="fillInChart"></canvas>
+        </div>
+        <hr>
+        <div class="chart-section">
+            <p>Value of Returns by Branch per Month</p>
+            <div id="record-count2">Records fetched: 0</div>
+            <canvas id="returnChart"></canvas>
+        </div>
+        <hr>
+        <div class="chart-section">
+            <p>Number of Bids Submitted by Branch Current Year</p>
+            <div id="record-count3">Records fetched: 0</div>
+            <canvas id="bidsChart"></canvas>
+        </div>
+    </div>
 
+    <script src="script.js"></script>
     <script src="script2.js"></script> 
     <script src="script3.js"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<canvas id="bidsChart" width="200" height="200"></canvas>
-
 </body>
-
-
-
-
-
 </html>
