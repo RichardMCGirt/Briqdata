@@ -113,8 +113,54 @@ document.addEventListener('DOMContentLoaded', async function () {
             bidSummary += `${branch || 'N/A'}: ${bidCounts[branch]}\n`;
         });
         recordCountDiv.textContent = bidSummary.trim(); // Display in the div
+
+        // Create bar chart with the bid counts
+        createBarChart(bidCounts);
     }
-    
+
+    function createBarChart(bidCounts) {
+        console.log("Creating bar chart...");
+
+        const ctx = document.getElementById('bidsChart').getContext('2d');
+        const branches = Object.keys(bidCounts);
+        const bidNumbers = Object.values(bidCounts);
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: branches,
+                datasets: [{
+                    label: 'Number of Bids',
+                    data: bidNumbers,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)', // Adjusted for a 3D effect
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2, // Thicker border for 3D effect
+                    barThickness: 50 // Custom thickness for bars
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false // Hide the legend if not needed
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }
+                }
+            }
+        });
+
+        console.log("Bar chart created successfully.");
+    }
 
     // Automatically start fetching data when the page loads
     const allRecords = await fetchAllData();
