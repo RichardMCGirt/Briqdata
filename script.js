@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const airtableTableName = 'tblRp5bukUiw9tX9j';
 
     async function fetchData(offset = null) {
-        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?filterByFormula=Status='Pending'`;
+        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
         if (offset) url += `&offset=${offset}`;
         console.log(`Fetching data from URL: ${url}`);
 
@@ -43,12 +43,22 @@ document.addEventListener('DOMContentLoaded', function () {
         return allRecords;
     }
 
+    function formatDateToYear(dateString) {
+        const date = new Date(dateString);
+        return date.getFullYear(); // Extracts and returns only the year
+    }
+
     function exportToCSV(records) {
         console.log("Starting CSV export...");
 
-        const branches = {};
+        let csvContent = "data:text/csv;charset=utf-8,";
+
+        // Add headers
+        csvContent += "VanirOffice,Total Cost of Fill In,Date Created\n";
 
         // Group records by VanirOffice
+        const branches = {};
+
         records.forEach(record => {
             const branch = record.fields['VanirOffice'] || 'Unknown';
             if (!branches[branch]) {
@@ -57,32 +67,32 @@ document.addEventListener('DOMContentLoaded', function () {
             branches[branch].push(record);
         });
 
+        // Add data to CSV, separated by offices
         Object.keys(branches).forEach(branch => {
-            let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "VanirOffice,Total Cost of Fill In,Date Created\n";
+            csvContent += `\nOffice: ${branch}\n`;
 
             branches[branch].forEach(record => {
                 const fields = record.fields;
+                const formattedDate = fields['Date Created'] ? formatDateToYear(fields['Date Created']) : 'N/A';
                 const row = [
                     fields['VanirOffice'] || 'N/A',
                     fields['Total Cost of Fill In'] || 'N/A',
-                    fields['Date Created'] || 'N/A'
+                    formattedDate
                 ].join(",");
                 csvContent += row + "\n";
             });
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `${branch}.csv`);
-            document.body.appendChild(link);
-
-            console.log(`CSV for branch '${branch}' ready for download.`);
-            link.click();
-            document.body.removeChild(link);
         });
 
-        console.log("CSV export complete.");
+        // Encode and trigger download
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "Vanir_Offices_Data.csv");
+        document.body.appendChild(link);
+
+        console.log("CSV ready for download.");
+        link.click();
+        document.body.removeChild(link);
     }
 
     document.getElementById('export-button').addEventListener('click', async function () {

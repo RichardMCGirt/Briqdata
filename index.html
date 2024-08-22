@@ -4,151 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Export Airtable Data</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-        }
-        #export-button {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        #export-button:hover {
-            background-color: #45a049;
-        }
-    </style>
+  
 </head>
 <body>
     <h1>Export Airtable Data to CSV</h1>
-    <button id="export-button" disabled>Export Data to CSV</button>
+    <button id="export-button">Export to CSV</button>
     <p id="status"></p>
     <div id="record-count">Records fetched: 0</div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', async function () {
-            const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
-            const airtableBaseId = 'appeNSp44fJ8QYeY5';
-            const airtableTableName = 'tblRp5bukUiw9tX9j';
-            const statusElement = document.getElementById('status');
-            const recordCountElement = document.getElementById('record-count');
-            const exportButton = document.getElementById('export-button');
+    <script src="script.js"></script>
 
-            async function fetchData(offset = null) {
-                let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
-                if (offset) url += `&offset=${offset}`;
-                
-                try {
-                    const response = await fetch(url, {
-                        headers: { Authorization: `Bearer ${airtableApiKey}` }
-                    });
-
-                    if (!response.ok) throw new Error(`Error: ${response.statusText}`);
-
-                    return await response.json();
-                } catch (error) {
-                    console.error('Error fetching data from Airtable:', error);
-                    statusElement.textContent = 'Error fetching data. Please try again later.';
-                    return { records: [] };
-                }
-            }
-
-            function delay(ms) {
-                return new Promise(resolve => setTimeout(resolve, ms));
-            }
-
-            async function fetchAllData() {
-                let allRecords = [];
-                let offset = null;
-
-                do {
-                    const data = await fetchData(offset);
-                    allRecords = allRecords.concat(data.records);
-
-                    // Update the number of records fetched in the div
-                    recordCountElement.textContent = `Records fetched: ${allRecords.length}`;
-                    
-                    // Log the number of records fetched in this iteration
-                    console.log(`Fetched ${data.records.length} records in this batch. Total so far: ${allRecords.length}`);
-                    
-                    offset = data.offset; 
-                    statusElement.textContent = `Fetched ${allRecords.length} records...`;
-
-                    if (offset) {
-                        await delay(200);  // Wait 200ms before the next request
-                    }
-                } while (offset);
-
-                console.log(`All data fetched successfully. Total records: ${allRecords.length}`);
-                statusElement.textContent = "All records fetched successfully.";
-                exportButton.disabled = false; // Enable the export button
-                return allRecords;
-            }
-
-            function exportToCSV(records) {
-                const branches = {};
-
-                records.forEach(record => {
-                    const branch = record.fields['VanirOffice'] || 'Unknown';
-
-                    // Exclude "Test Branch" records
-                    if (branch === 'Test Branch') {
-                        return;
-                    }
-
-                    if (!branches[branch]) {
-                        branches[branch] = [];
-                    }
-                    branches[branch].push(record);
-                });
-
-                Object.keys(branches).forEach(branch => {
-                    let csvContent = "data:text/csv;charset=utf-8,";
-                    csvContent += "VanirOffice,Total Cost of Fill In,Date Created\n";
-
-                    branches[branch].forEach(record => {
-                        const fields = record.fields;
-                        const row = [
-                            fields['VanirOffice'] || 'N/A',
-                            fields['Total Cost of Fill In'] || 'N/A',
-                            fields['Date Created'] || 'N/A'
-                        ].join(",");
-                        csvContent += row + "\n";
-                    });
-
-                    const encodedUri = encodeURI(csvContent);
-                    const link = document.createElement("a");
-                    link.setAttribute("href", encodedUri);
-                    link.setAttribute("download", `${branch}.csv`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                });
-
-                statusElement.textContent = "CSV export complete!";
-            }
-
-            // Fetch all data on page load
-            const allRecords = await fetchAllData();
-
-            // Export to CSV when the button is clicked
-            if (exportButton) {
-                exportButton.addEventListener('click', function () {
-                    if (allRecords.length > 0) {
-                        exportToCSV(allRecords);
-                    } else {
-                        statusElement.textContent = "No data available for export.";
-                    }
-                });
-            } else {
-                console.error("Export button not found!");
-            }
-        });
-    </script>
 </body>
 
 
