@@ -55,6 +55,11 @@ document.addEventListener('DOMContentLoaded', async function () {
         return allRecords;
     }
 
+    function formatDateToYear(dateString) {
+        const date = new Date(dateString);
+        return date.getFullYear(); // Returns the year as YYYY
+    }
+
     function formatDateToMonthYear(dateString) {
         const date = new Date(dateString);
         const year = date.getFullYear();
@@ -73,34 +78,40 @@ document.addEventListener('DOMContentLoaded', async function () {
         // Add headers
         csvContent += "VanirOffice,Total Cost of Return,Month/Year\n";
 
-        // Calculate the sum of 'Total Cost of Fill In' by VanirOffice per month, excluding "Test Branch"
+        // Calculate the sum of 'Total Cost of Fill In' by VanirOffice per year, excluding "Test Branch"
         const officeSums = {};
 
         records.forEach(record => {
             const branch = record.fields['Branch'];
             const cost = parseFloat(record.fields['Actual $ Credit Amount']) || 0;
             const monthYear = formatDateToMonthYear(record.fields['Date Created']);
+            const year = formatDateToYear(record.fields['Date Created']);
 
-            if (branch !== "Test Branch") {
+            if (branch && branch !== "Test Branch") {
                 if (!officeSums[branch]) {
                     officeSums[branch] = {};
                 }
-                if (!officeSums[branch][monthYear]) {
-                    officeSums[branch][monthYear] = 0;
+                if (!officeSums[branch][year]) {
+                    officeSums[branch][year] = { total: 0, months: {} };
                 }
-                officeSums[branch][monthYear] += cost;
+                if (cost > 0) {
+                    officeSums[branch][year].total += cost;
+                    officeSums[branch][year].months[monthYear] = (officeSums[branch][year].months[monthYear] || 0) + cost;
+                }
             }
         });
 
         // Add summed data to CSV with dollar sign formatting
         Object.keys(officeSums).forEach(branch => {
-            Object.keys(officeSums[branch]).forEach(monthYear => {
-                const row = [
-                    branch || 'N/A',
-                    `$${officeSums[branch][monthYear].toFixed(2)}`,
-                    monthYear
-                ].join(",");
-                csvContent += row + "\n";
+            Object.keys(officeSums[branch]).forEach(year => {
+                Object.keys(officeSums[branch][year].months).forEach(monthYear => {
+                    const row = [
+                        branch || 'N/A',
+                        `$${officeSums[branch][year].months[monthYear].toFixed(2)}`,
+                        monthYear
+                    ].join(",");
+                    csvContent += row + "\n";
+                });
             });
         });
 
@@ -108,7 +119,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "Vanir_Offices_Ruturns_Sum_Per_Month.csv");
+        link.setAttribute("download", "Vanir_Offices_Returns_Sum_Per_Month.csv");
         document.body.appendChild(link);
 
         console.log("CSV ready for download.");
@@ -124,28 +135,31 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         const ctx = document.getElementById('returnChart').getContext('2d');
         const branches = [];
-        const dataSets = {};
+        const totalsByYear = {};
+        const monthsByYear = {};
 
         // Prepare data for the chart
         Object.keys(officeSums).forEach(branch => {
             branches.push(branch);
-            Object.keys(officeSums[branch]).forEach(monthYear => {
-                if (!dataSets[monthYear]) {
-                    dataSets[monthYear] = [];
+            Object.keys(officeSums[branch]).forEach(year => {
+                if (!totalsByYear[year]) {
+                    totalsByYear[year] = [];
+                    monthsByYear[year] = [];
                 }
-                dataSets[monthYear].push(officeSums[branch][monthYear].toFixed(2));
+                totalsByYear[year].push(officeSums[branch][year].total);
+                monthsByYear[year].push(officeSums[branch][year].months);
             });
         });
 
-        const datasets = Object.keys(dataSets).map(monthYear => ({
-            label: monthYear,
-            data: dataSets[monthYear],
+        const datasets = Object.keys(totalsByYear).map(year => ({
+            label: year,
+            data: totalsByYear[year],
             backgroundColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.6)`,
             borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
             borderWidth: 1
         }));
 
-        new Chart(ctx, {
+        const myChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: branches,
@@ -169,16 +183,47 @@ document.addEventListener('DOMContentLoaded', async function () {
                     },
                     tooltip: {
                         callbacks: {
+                            title: function(tooltipItem) {
+                                const branchIndex = tooltipItem[0].dataIndex;
+                                const year = tooltipItem[0].dataset.label;
+                                const branch = branches[branchIndex];
+                                return `${branch} - ${year}`;
+                            },
                             label: function(tooltipItem) {
-                                return `$${tooltipItem.raw}`;
+                                const branchIndex = tooltipItem.dataIndex;
+                                const year = tooltipItem.dataset.label;
+                                const monthData = monthsByYear[year][branchIndex];
+                                const details = Object.keys(monthData)
+                                    .map(month => `${month}: $${monthData[month].toFixed(2)}`)
+                                    .join('\n');
+                                return details;
                             }
                         }
+                    }
+                },
+                onClick: function(e, activeElements) {
+                    if (activeElements.length > 0) {
+                        const branchIndex = activeElements[0].index;
+                        const year = activeElements[0].dataset.label;
+                        const branch = branches[branchIndex];
+                        showMonthlyBreakdown(branch, year, officeSums);
                     }
                 }
             }
         });
 
         console.log("Bar chart created successfully.");
+    }
+
+    function showMonthlyBreakdown(branch, year, officeSums) {
+        console.log(`Showing monthly breakdown for ${branch} in ${year}`);
+
+        const months = officeSums[branch][year].months;
+        const monthLabels = Object.keys(months);
+        const monthData = monthLabels.map(month => months[month]);
+
+        // Display breakdown as needed (e.g., a new chart, a table, etc.)
+        // This part of the UI update would depend on how you want to show the monthly breakdown
     }
 
     // Automatically start fetching data when the page loads
