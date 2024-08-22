@@ -4,6 +4,13 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
     const airtableBaseId = 'appeNSp44fJ8QYeY5';
     const airtableTableName = 'tblRp5bukUiw9tX9j';
+    const exportButton = document.getElementById('export-button');
+
+    // Initially disable the export button and update its text and style
+    exportButton.disabled = true;
+    exportButton.textContent = "Fetching data...";
+    exportButton.style.backgroundColor = "#ccc"; // Change to a light grey
+    exportButton.style.cursor = "not-allowed"; // Change cursor to indicate non-clickable
 
     async function fetchData(offset = null) {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100`;
@@ -46,9 +53,11 @@ document.addEventListener('DOMContentLoaded', async function () {
         return allRecords;
     }
 
-    function formatDateToYear(dateString) {
+    function formatDateToYearMonth(dateString) {
         const date = new Date(dateString);
-        return date.getFullYear(); // Extracts and returns only the year
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Month as MM
+        return `${year}-${month}`; // Returns in YYYY-MM format
     }
 
     function exportToCSV(records) {
@@ -56,31 +65,38 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         let csvContent = "data:text/csv;charset=utf-8,";
 
-        // Add headers
-        csvContent += "VanirOffice,Total Cost of Fill In,Date Created\n";
+        // Add title
+        csvContent += "Value of Fill Ins by Branch per Month\n\n";
 
-        // Group records by VanirOffice
-        const branches = {};
+        // Add headers
+        csvContent += "VanirOffice,Total Cost of Fill In,Year-Month\n";
+
+        // Calculate the sum of 'Total Cost of Fill In' by VanirOffice per month, excluding "Test Branch"
+        const officeSums = {};
 
         records.forEach(record => {
-            const branch = record.fields['VanirOffice'] || 'Unknown';
-            if (!branches[branch]) {
-                branches[branch] = [];
+            const branch = record.fields['VanirOffice'];
+            const cost = parseFloat(record.fields['Total Cost of Fill In']) || 0;
+            const yearMonth = formatDateToYearMonth(record.fields['Date Created']);
+
+            if (branch !== "Test Branch") {
+                if (!officeSums[branch]) {
+                    officeSums[branch] = {};
+                }
+                if (!officeSums[branch][yearMonth]) {
+                    officeSums[branch][yearMonth] = 0;
+                }
+                officeSums[branch][yearMonth] += cost;
             }
-            branches[branch].push(record);
         });
 
-        // Add data to CSV, separated by offices
-        Object.keys(branches).forEach(branch => {
-            csvContent += `\nOffice: ${branch}\n`;
-
-            branches[branch].forEach(record => {
-                const fields = record.fields;
-                const formattedDate = fields['Date Created'] ? formatDateToYear(fields['Date Created']) : 'N/A';
+        // Add summed data to CSV
+        Object.keys(officeSums).forEach(branch => {
+            Object.keys(officeSums[branch]).forEach(yearMonth => {
                 const row = [
-                    fields['VanirOffice'] || 'N/A',
-                    fields['Total Cost of Fill In'] || 'N/A',
-                    formattedDate
+                    branch || 'N/A',
+                    officeSums[branch][yearMonth].toFixed(2),
+                    yearMonth
                 ].join(",");
                 csvContent += row + "\n";
             });
@@ -90,7 +106,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "Vanir_Offices_Data.csv");
+        link.setAttribute("download", "Vanir_Offices_Data_Sum_Per_Month.csv");
         document.body.appendChild(link);
 
         console.log("CSV ready for download.");
@@ -101,6 +117,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Automatically start fetching data when the page loads
     const allRecords = await fetchAllData();
 
-    // Uncomment the following line if you want to automatically export to CSV after fetching
-    exportToCSV(allRecords);
+    // Enable the export button after data is fetched
+    exportButton.disabled = false;
+    exportButton.textContent = "Export to CSV";
+    exportButton.style.backgroundColor = ""; // Reset to default style
+    exportButton.style.cursor = "pointer"; // Reset cursor to pointer
+
+    // Attach event listener to the export button
+    exportButton.addEventListener('click', function () {
+        console.log("Export button clicked.");
+        exportToCSV(allRecords);
+    });
 });
