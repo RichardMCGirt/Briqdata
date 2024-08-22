@@ -91,8 +91,12 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
     
+        // Sort the branches alphabetically and remove the last two branches
+        const sortedBranches = Object.keys(officeSums).sort();
+        const branchesToInclude = sortedBranches.slice(0, -2); // Exclude the last two branches
+    
         // Add summed data to CSV with dollar sign formatting
-        Object.keys(officeSums).forEach(branch => {
+        branchesToInclude.forEach(branch => {
             Object.keys(officeSums[branch]).forEach(monthYear => {
                 const row = [
                     branch || 'N/A',
@@ -115,24 +119,21 @@ document.addEventListener('DOMContentLoaded', async function () {
         document.body.removeChild(link);
     
         // Create bar chart with the summed data
-        createBarChart(officeSums);
+        createBarChart(officeSums, branchesToInclude);
     }
     
-    function createBarChart(officeSums) {
+    function createBarChart(officeSums, branchesToInclude) {
         console.log("Creating bar chart...");
     
         const ctx = document.getElementById('fillInChart').getContext('2d');
         const branches = [];
         const totals = [];
     
-        Object.keys(officeSums).forEach(branch => {
+        branchesToInclude.forEach(branch => {
             const totalSum = Object.values(officeSums[branch]).reduce((a, b) => a + b, 0);
     
-            // Ensure that branches with valid data are only included
-            if (branch && branch !== "Test Branch") {
-                branches.push(branch);
-                totals.push(totalSum);
-            }
+            branches.push(branch);
+            totals.push(totalSum);
         });
     
         new Chart(ctx, {
@@ -176,7 +177,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     
         console.log("Bar chart created successfully.");
     }
-    
 
     // Automatically start fetching data when the page loads
     const allRecords = await fetchAllData();
