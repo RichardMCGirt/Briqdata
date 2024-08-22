@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const airtableTableName = 'tblRp5bukUiw9tX9j';
 
     async function fetchData(offset = null) {
-        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
+        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100`;
         if (offset) url += `&offset=${offset}`;
         console.log(`Fetching data from URL: ${url}`);
 
@@ -36,7 +36,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await fetchData(offset);
             allRecords = allRecords.concat(data.records);
             console.log(`Fetched ${data.records.length} records. Total so far: ${allRecords.length}`);
-            offset = data.offset;
+            offset = data.offset; // Airtable provides an offset if there are more records to fetch
+
+            // Update the record count in the UI
+            document.getElementById('record-count').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
 
         console.log(`All data fetched successfully. Total records: ${allRecords.length}`);
