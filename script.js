@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     console.log("Document loaded and DOM fully constructed.");
 
     const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
@@ -98,9 +98,9 @@ document.addEventListener('DOMContentLoaded', function () {
         document.body.removeChild(link);
     }
 
-    document.getElementById('export-button').addEventListener('click', async function () {
-        console.log("Export button clicked.");
-        const allRecords = await fetchAllData();
-        exportToCSV(allRecords);
-    });
+    // Automatically start fetching data when the page loads
+    const allRecords = await fetchAllData();
+
+    // Uncomment the following line if you want to automatically export to CSV after fetching
+    exportToCSV(allRecords);
 });
