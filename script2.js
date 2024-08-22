@@ -114,6 +114,71 @@ document.addEventListener('DOMContentLoaded', async function () {
         console.log("CSV ready for download.");
         link.click();
         document.body.removeChild(link);
+
+        // Create bar chart with the summed data
+        createBarChart(officeSums);
+    }
+
+    function createBarChart(officeSums) {
+        console.log("Creating bar chart...");
+
+        const ctx = document.getElementById('returnChart').getContext('2d');
+        const branches = [];
+        const dataSets = {};
+
+        // Prepare data for the chart
+        Object.keys(officeSums).forEach(branch => {
+            branches.push(branch);
+            Object.keys(officeSums[branch]).forEach(monthYear => {
+                if (!dataSets[monthYear]) {
+                    dataSets[monthYear] = [];
+                }
+                dataSets[monthYear].push(officeSums[branch][monthYear].toFixed(2));
+            });
+        });
+
+        const datasets = Object.keys(dataSets).map(monthYear => ({
+            label: monthYear,
+            data: dataSets[monthYear],
+            backgroundColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.6)`,
+            borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
+            borderWidth: 1
+        }));
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: branches,
+                datasets: datasets
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return `$${value}`;
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return `$${tooltipItem.raw}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        console.log("Bar chart created successfully.");
     }
 
     // Automatically start fetching data when the page loads
