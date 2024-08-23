@@ -133,7 +133,7 @@ async function initialize() {
     
     displayBarGraph(winRates);
     updateWinRateDiv(winRates);
-    exportToCSV(winRates);  // Automatically download CSV after fetching
+   // exportToCSV(winRates);  // Automatically download CSV after fetching
     
     console.log('Initialization complete');
 }
