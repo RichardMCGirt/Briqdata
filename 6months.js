@@ -1,10 +1,11 @@
 document.addEventListener('DOMContentLoaded', async function () {
     console.log("Document loaded and DOM fully constructed.");
 
-    const airtableApiKey = 'patCnUsdz4bORwYNV.5c27cab8c99e7caf5b0dc05ce177182df1a9d60f4afc4a5d4b57802f44c65328';
-    const airtableBaseId = 'appi4QZE0SrWI6tt2';
-    const airtableTableName = 'tblQo2148s04gVPq1';
+    const airtableApiKey = 'patGjoWY1PkTG12oS.e9cf71910320ac1e3496ff803700f0e4319bf0ccf0fcaf4d85cd98df790b5aad';
+    const airtableBaseId = 'appX1Saz7wMYh4hhm';
+    const airtableTableName = 'tblfCPX293KlcKsdp';
     const exportButton = document.getElementById('export-button');
+    const currentYear = new Date().getFullYear();
 
     // Initially disable the export button and update its text and style
     exportButton.disabled = true;
@@ -13,21 +14,27 @@ document.addEventListener('DOMContentLoaded', async function () {
     exportButton.style.cursor = "not-allowed"; // Change cursor to indicate non-clickable
 
     async function fetchData(offset = null) {
-        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100`;
+        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula={Project Type Briq}='Commercial'&sort[0][field]=Project Type Briq&sort[0][direction]=asc`;
         if (offset) url += `&offset=${offset}`;
         console.log(`Fetching data from URL: ${url}`);
-
+    
         try {
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${airtableApiKey}` }
             });
-
+    
             if (!response.ok) {
+                const errorDetails = await response.json(); // Get detailed error message
+                console.error('Error fetching data from Airtable:', errorDetails);
                 throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
-
+    
             const data = await response.json();
             console.log(`Number of records fetched: ${data.records.length}`);
+            data.records.forEach(record => {
+                console.log('Fetched Record:', record);
+                console.log('Fields:', record.fields);
+            });
             return data;
         } catch (error) {
             console.error('Error fetching data from Airtable:', error.message);
@@ -48,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             offset = data.offset; // Airtable provides an offset if there are more records to fetch
 
             // Update the record count in the UI
-            document.getElementById('record-count3').textContent = `Records fetched: ${allRecords.length}`;
+            document.getElementById('record-count4').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
 
         console.log(`All data fetched successfully. Total records: ${allRecords.length}`);
@@ -57,87 +64,92 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     function exportToCSV(records) {
         console.log("Starting CSV export...");
-    
-        const currentYear = new Date().getFullYear();
+
         let csvContent = "data:text/csv;charset=utf-8,";
-    
+
         // Add title with the current year
-        csvContent += `Number of Bids by Branch (${currentYear})\n\n`;
-    
+        csvContent += `Projected Revenue by Branch \n\n`;
+
         // Add headers
-        csvContent += "VanirOffice,Number of Bids\n";
-    
-        const bidCounts = {};
-    
-        // Filter records by current year based on the 'Date Received' field
-        records = records.filter(record => {
-            const recordDate = new Date(record.fields['Date Received']);
-            return recordDate.getFullYear() === currentYear;
-        });
-    
+        csvContent += "VanirOffice,Projected Revenue\n";
+
+        const revenueByBranch = {};
+
+        // Calculate projected revenue by branch
         records.forEach(record => {
             const branch = record.fields['Branch'];
-    
+            const bidValue = parseFloat(record.fields['Bid Value Briq']) || 0;
+
+            console.log(`Branch: ${branch}`);
+            console.log(`Bid Value: ${bidValue}`);
+
             if (branch !== "Test Branch") {
-                if (!bidCounts[branch]) {
-                    bidCounts[branch] = 0;
+                if (!revenueByBranch[branch]) {
+                    revenueByBranch[branch] = 0;
                 }
-                bidCounts[branch] += 1; // Increment bid count for the branch
+                revenueByBranch[branch] += bidValue; // Sum up bid values for the branch
             }
         });
-    
+
         // Sort branches alphabetically
-        const sortedBranches = Object.keys(bidCounts).sort();
-    
-        // Add counted data to CSV
+        const sortedBranches = Object.keys(revenueByBranch).sort();
+
+        // Add revenue data to CSV
         sortedBranches.forEach(branch => {
             const row = [
                 branch || 'N/A',
-                bidCounts[branch]
+                revenueByBranch[branch].toFixed(2) // Format the revenue to two decimal places
             ].join(",");
             csvContent += row + "\n";
+
+            console.log(`CSV Row for Branch ${branch}: ${row}`);
         });
-    
+
         // Encode and trigger download
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Vanir_Offices_Bids_Count_${currentYear}.csv`);
+        link.setAttribute("download", `Vanir_Offices_Projected_Revenue_Next six months.csv`);
         document.body.appendChild(link);
-    
+
         console.log("CSV ready for download.");
         link.click();
         document.body.removeChild(link);
-    
-        // Update the record count in the UI with the number of bids per branch
-        const recordCountDiv = document.getElementById('record-count3');
-        let bidSummary = `Number of Bids per Branch (${currentYear}):\n`;
+
+        // Update the record count in the UI with the projected revenue per branch
+        const recordCountDiv = document.getElementById('record-count4');
+        let revenueSummary = `Projected Revenue by Branch Next six months:\n`;
         sortedBranches.forEach(branch => {
-            bidSummary += `${branch || 'N/A'}: ${bidCounts[branch]}\n`;
+            revenueSummary += `${branch || 'N/A'}: $${revenueByBranch[branch].toFixed(2)}\n`;
         });
-        recordCountDiv.textContent = bidSummary.trim(); // Display in the div
-    
-        // Create bar chart with the sorted bid counts
-        createBarChart(bidCounts);
+        recordCountDiv.textContent = revenueSummary.trim(); // Display in the div
+
+        console.log("Revenue Summary:", revenueSummary.trim());
+
+        // Create bar chart with the sorted revenue data
+        createBarChart(revenueByBranch);
     }
-    
-    function createBarChart(bidCounts) {
+
+    function createBarChart(revenueByBranch) {
         console.log("Creating bar chart...");
-    
-        // Convert bidCounts object into sorted arrays
-        const sortedData = Object.entries(bidCounts).sort((a, b) => a[1] - b[1]);
+
+        // Convert revenueByBranch object into sorted arrays
+        const sortedData = Object.entries(revenueByBranch).sort((a, b) => a[1] - b[1]);
         const sortedBranches = sortedData.map(entry => entry[0]);
-        const bidNumbers = sortedData.map(entry => entry[1]);
-    
-        const ctx = document.getElementById('bidsChart').getContext('2d');
-    
+        const revenueNumbers = sortedData.map(entry => entry[1]);
+
+        console.log('Sorted Branches:', sortedBranches);
+        console.log('Revenue Numbers:', revenueNumbers);
+
+        const ctx = document.getElementById('6monthsChart').getContext('2d');
+
         new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: sortedBranches,
                 datasets: [{
-                    label: 'Number of Bids',
-                    data: bidNumbers,
+                    label: 'Projected Revenue',
+                    data: revenueNumbers,
                     backgroundColor: 'rgba(75, 192, 192, 0.6)', // Adjusted for a 3D effect
                     borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 2, // Thicker border for 3D effect
@@ -164,10 +176,10 @@ document.addEventListener('DOMContentLoaded', async function () {
                 }
             }
         });
-    
+
         console.log("Bar chart created successfully.");
     }
-    
+
     // Automatically start fetching data when the page loads
     const allRecords = await fetchAllData();
 
