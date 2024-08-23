@@ -1,7 +1,7 @@
 const airtableApiKey = 'patGjoWY1PkTG12oS.e9cf71910320ac1e3496ff803700f0e4319bf0ccf0fcaf4d85cd98df790b5aad';
 const airtableBaseId = 'appX1Saz7wMYh4hhm';
 const airtableTableName = 'tblfCPX293KlcKsdp';
-const winRateDiv = document.getElementById('win%byBranch');
+const winRateDiv = document.getElementById('winratebyBranch');
 const currentYear = new Date().getFullYear();
 
 async function fetchAirtableData() {
@@ -95,43 +95,12 @@ function exportToCSV(winRates) {
     console.log('CSV file generated and downloaded');
 }
 
-function displayBarGraph(winRates) {
-    const ctx = document.getElementById('winRateChart').getContext('2d');
-    const labels = Object.keys(winRates);
-    const data = Object.values(winRates).map(rate => rate.toFixed(2));
-
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Win Rate Percentage',
-                data: data,
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100
-                }
-            }
-        }
-    });
-
-    console.log('Bar graph displayed');
-}
-
 async function initialize() {
     console.log('Initializing application...');
     
     const records = await fetchAirtableData();
     const winRates = calculateWinRate(records);
     
-    displayBarGraph(winRates);
     updateWinRateDiv(winRates);
    // exportToCSV(winRates);  // Automatically download CSV after fetching
     

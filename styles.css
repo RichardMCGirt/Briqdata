@@ -1,68 +1,89 @@
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
-    margin: 0;
-    padding: 0;
+.container {
+    width: 90%;
+    margin: 30px auto;
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
 }
 
-.container {
-    width: 80%;
-    margin: 20px auto;
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.chart-section {
+    text-align: center;
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.full-width {
+    grid-column: span 3;
+}
+
+p {
+    font-size: 20px;
+    color: #495057;
+    margin-bottom: 15px;
+    font-weight: 500;
 }
 
 h1 {
     text-align: center;
     color: #007BFF;
+    font-size: 28px;
+    margin-bottom: 30px;
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 60px; /* Adjust height if necessary */
 }
 
-button {
-    display: block;
-    margin: 20px auto;
-    padding: 10px 20px;
-    font-size: 16px;
-    background-color: #007BFF;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
 
-button:hover {
-    background-color: #0056b3;
-}
-
-.chart-section {
-    text-align: center;
-    margin: 20px 0;
-}
-
-canvas {
-    width: 80% !important;
-    height: auto !important;
-    max-height: 200px;
-}
-
-p {
-    font-size: 18px;
-    color: #555;
-    margin-bottom: 10px;
-}
-
-#record-count, #record-count2, #record-count3 {
+#record-count, 
+#record-count2, 
+#record-count3, 
+#record-count4, 
+#record-count5, 
+#record-count6, 
+#record-countR6, 
+#record-countR12, 
+#record-countR18,
+#winratebyBranch {
     margin-bottom: 20px;
-    font-size: 16px;
-    color: #007BFF;
+    font-size: 18px;
+    color: #28a745;
+    font-weight: 500;
 }
 
 hr {
     border: 0;
     height: 1px;
-    background: #ddd;
-    margin: 40px 0;
+    background: #e9ecef;
+    margin: 15px 0;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+}
+
+button {
+    display: block;
+    margin: 30px auto;
+    padding: 12px 24px;
+    font-size: 18px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+    transform: translateY(-3px);
 }

@@ -133,110 +133,13 @@ document.addEventListener('DOMContentLoaded', async function () {
         console.log("CSV ready for download.");
         link.click();
         document.body.removeChild(link);
-
-        // Create bar chart with the summed data
-        createBarChart(officeSums, sortedBranches);
-    }
-
-    function createBarChart(officeSums, sortedBranches) {
-        console.log("Creating bar chart...");
-
-        const ctx = document.getElementById('returnChart').getContext('2d');
-        const totalsByYear = {};
-        const monthsByYear = {};
-
-        // Prepare data for the chart
-        sortedBranches.forEach(branch => {
-            Object.keys(officeSums[branch]).forEach(year => {
-                if (!totalsByYear[year]) {
-                    totalsByYear[year] = [];
-                    monthsByYear[year] = [];
-                }
-                totalsByYear[year].push(officeSums[branch][year].total);
-                monthsByYear[year].push(officeSums[branch][year].months);
-            });
-        });
-
-        const datasets = Object.keys(totalsByYear).map(year => ({
-            label: year,
-            data: totalsByYear[year],
-            backgroundColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.6)`,
-            borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
-            borderWidth: 1
-        }));
-
-        const myChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: sortedBranches,
-                datasets: datasets
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return `$${value}`;
-                            }
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            title: function(tooltipItem) {
-                                const branchIndex = tooltipItem[0].dataIndex;
-                                const year = tooltipItem[0].dataset.label;
-                                const branch = sortedBranches[branchIndex];
-                                return `${branch} - ${year}`;
-                            },
-                            label: function(tooltipItem) {
-                                const branchIndex = tooltipItem.dataIndex;
-                                const year = tooltipItem.dataset.label;
-                                const monthData = monthsByYear[year][branchIndex];
-                                const details = Object.keys(monthData)
-                                    .map(month => `${month}: $${monthData[month].toFixed(2)}`)
-                                    .join('\n');
-                                return details;
-                            }
-                        }
-                    }
-                },
-                onClick: function(e, activeElements) {
-                    if (activeElements.length > 0) {
-                        const branchIndex = activeElements[0].index;
-                        const year = activeElements[0].dataset.label;
-                        const branch = sortedBranches[branchIndex];
-                        showMonthlyBreakdown(branch, year, officeSums);
-                    }
-                }
-            }
-        });
-
-        console.log("Bar chart created successfully.");
-    }
-
-    function showMonthlyBreakdown(branch, year, officeSums) {
-        console.log(`Showing monthly breakdown for ${branch} in ${year}`);
-
-        const months = officeSums[branch][year].months;
-        const monthLabels = Object.keys(months);
-        const monthData = monthLabels.map(month => months[month]);
-
-        // Display breakdown as needed (e.g., a new chart, a table, etc.)
-        // This part of the UI update would depend on how you want to show the monthly breakdown
     }
 
     // Automatically start fetching data when the page loads
     const allRecords = await fetchAllData();
 
     // Automatically export the CSV after data is fetched
- //   exportToCSV(allRecords);
+    // exportToCSV(allRecords);
 
     // Enable the export button after data is fetched (optional, as it's already exported)
     exportButton.disabled = false;

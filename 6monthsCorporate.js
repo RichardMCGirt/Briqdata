@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Vanir_Offices_Projected_Revenue_Next six months.csv`);
+        link.setAttribute("download", `Vanir_Offices_Projected_Revenue_Next_six_months.csv`);
         document.body.appendChild(link);
 
         console.log("CSV ready for download.");
@@ -134,59 +134,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         recordCountDiv.textContent = revenueSummary.trim(); // Display in the div
 
         console.log("Revenue Summary:", revenueSummary.trim());
-
-        // Create bar chart with the sorted revenue data
-        createBarChart(revenueByBranch);
-    }
-
-    function createBarChart(revenueByBranch) {
-        console.log("Creating bar chart...");
-
-        // Convert revenueByBranch object into sorted arrays
-        const sortedData = Object.entries(revenueByBranch).sort((a, b) => a[1] - b[1]);
-        const sortedBranches = sortedData.map(entry => entry[0]);
-        const revenueNumbers = sortedData.map(entry => entry[1]);
-
-        console.log('Sorted Branches:', sortedBranches);
-        console.log('Revenue Numbers:', revenueNumbers);
-
-        const ctx = document.getElementById('6monthsChart').getContext('2d');
-
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: sortedBranches,
-                datasets: [{
-                    label: 'Projected Revenue',
-                    data: revenueNumbers,
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)', // Adjusted for a 3D effect
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 2, // Thicker border for 3D effect
-                    barThickness: 50 // Custom thickness for bars
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false // Hide the legend if not needed
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    }
-                }
-            }
-        });
-
-        console.log("Bar chart created successfully.");
     }
 
     // Automatically start fetching data when the page loads
