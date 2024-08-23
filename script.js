@@ -128,65 +128,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         console.log("CSV ready for download.");
         link.click();
         document.body.removeChild(link);
-
-        // Create bar chart with the summed data
-        createBarChart(officeSums, branchesToInclude);
-    }
-
-    function createBarChart(officeSums, branchesToInclude) {
-        console.log("Creating bar chart...");
-
-        const ctx = document.getElementById('fillInChart').getContext('2d');
-        const branches = [];
-        const totals = [];
-
-        branchesToInclude.forEach(branch => {
-            const totalSum = Object.values(officeSums[branch]).reduce((a, b) => a + b, 0);
-
-            branches.push(branch);
-            totals.push(totalSum);
-        });
-
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: branches,
-                datasets: [{
-                    label: 'Total Cost of Fill In',
-                    data: totals,
-                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return `$${value}`;
-                            }
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(tooltipItem) {
-                                return `$${tooltipItem.raw}`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        console.log("Bar chart created successfully.");
     }
 
     // Automatically start fetching data when the page loads
