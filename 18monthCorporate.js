@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableBaseId = 'appX1Saz7wMYh4hhm';
     const airtableTableName = 'tblfCPX293KlcKsdp';
     const exportButton = document.getElementById('export-button');
-    const currentYear = new Date().getFullYear();
 
     // Initially disable the export button and update its text and style
     exportButton.disabled = true;
@@ -47,18 +46,26 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         let allRecords = [];
         let offset = null;
+        const today = new Date();
+        const eighteenMonthsLater = new Date(today.getFullYear(), today.getMonth() + 18, today.getDate());
 
         do {
             const data = await fetchData(offset);
-            allRecords = allRecords.concat(data.records);
-            console.log(`Fetched ${data.records.length} records. Total so far: ${allRecords.length}`);
+            // Filter records that have Anticipated End Date within the next 18 months
+            const filteredRecords = data.records.filter(record => {
+                const anticipatedEndDate = new Date(record.fields['Anticipated End Date Briq']);
+                return anticipatedEndDate >= today && anticipatedEndDate <= eighteenMonthsLater;
+            });
+
+            allRecords = allRecords.concat(filteredRecords);
+            console.log(`Filtered and fetched ${filteredRecords.length} records. Total so far: ${allRecords.length}`);
             offset = data.offset; // Airtable provides an offset if there are more records to fetch
 
             // Update the record count in the UI
             document.getElementById('record-count4').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
 
-        console.log(`All data fetched successfully. Total records: ${allRecords.length}`);
+        console.log(`All data fetched successfully. Total records after filtering: ${allRecords.length}`);
         return allRecords;
     }
 
@@ -68,7 +75,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         let csvContent = "data:text/csv;charset=utf-8,";
 
         // Add title with the current year
-        csvContent += `Projected Revenue by Branch \n\n`;
+        csvContent += `Projected Revenue by Branch (Next 18 Months) \n\n`;
 
         // Add headers
         csvContent += "VanirOffice,Projected Revenue\n";
@@ -109,7 +116,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Vanir_Offices_Projected_Revenue_Next six months.csv`);
+        link.setAttribute("download", `Vanir_Offices_Projected_Revenue_Next_18_Months.csv`);
         document.body.appendChild(link);
 
         console.log("CSV ready for download.");
@@ -117,8 +124,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         document.body.removeChild(link);
 
         // Update the record count in the UI with the projected revenue per branch
-        const recordCountDiv = document.getElementById('record-count4');
-        let revenueSummary = `Projected Revenue by Branch Next six months:\n`;
+        const recordCountDiv = document.getElementById('record-count6');
+        let revenueSummary = `Projected Revenue by Branch Next 18 Months:\n`;
         sortedBranches.forEach(branch => {
             revenueSummary += `${branch || 'N/A'}: $${revenueByBranch[branch].toFixed(2)}\n`;
         });
@@ -141,7 +148,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         console.log('Sorted Branches:', sortedBranches);
         console.log('Revenue Numbers:', revenueNumbers);
 
-        const ctx = document.getElementById('6monthsChart').getContext('2d');
+        const ctx = document.getElementById('18monthsChart').getContext('2d');
 
         new Chart(ctx, {
             type: 'bar',
