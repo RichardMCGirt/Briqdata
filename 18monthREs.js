@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     const exportButton = document.getElementById('export-button');
 
     // Initially disable the export button and update its text and style
-    exportButton.disabled = true;
     exportButton.textContent = "Fetching data...";
     exportButton.style.backgroundColor = "#ccc"; // Change to a light grey
     exportButton.style.cursor = "not-allowed"; // Change cursor to indicate non-clickable
@@ -134,10 +133,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const allRecords = await fetchAllData();
 
     // Enable the export button after data is fetched
-    exportButton.disabled = false;
-    exportButton.textContent = "Export to CSV";
-    exportButton.style.backgroundColor = ""; // Reset to default style
-    exportButton.style.cursor = "pointer"; // Reset cursor to pointer
+
 
     // Automatically export the CSV after data is fetched
     // exportToCSV(allRecords);

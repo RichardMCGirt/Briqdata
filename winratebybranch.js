@@ -2,11 +2,10 @@ const airtableApiKey = 'patGjoWY1PkTG12oS.e9cf71910320ac1e3496ff803700f0e4319bf0
 const airtableBaseId = 'appX1Saz7wMYh4hhm';
 const airtableTableName = 'tblfCPX293KlcKsdp';
 const winRateDiv = document.getElementById('winratebyBranch');
-const exportButton = document.getElementById('export-button'); // Assume there's an export button with this ID
+const exportButton = document.getElementById('export-button'); 
 const currentYear = new Date().getFullYear();
 
 // Disable export button initially
-exportButton.disabled = true;
 exportButton.textContent = "Fetching data...";
 exportButton.style.backgroundColor = "#ccc"; // Change to a light grey
 exportButton.style.cursor = "not-allowed"; // Change cursor to indicate non-clickable
@@ -127,10 +126,7 @@ async function initialize() {
     updateWinRateDiv(winRates);
 
     // Enable the export button after data is fetched
-    exportButton.disabled = false;
-    exportButton.textContent = "Export to CSV";
-    exportButton.style.backgroundColor = ""; // Reset to default style
-    exportButton.style.cursor = "pointer"; // Reset cursor to pointer
+
 
     // Attach event listener to the export button for manual export
     exportButton.addEventListener('click', function () {
