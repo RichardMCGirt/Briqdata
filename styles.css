@@ -45,6 +45,37 @@ h1 {
     height: 60px; /* Adjust height if necessary */
 }
 
+#winratebyBranch {
+    display: flex;
+    flex-wrap: wrap; /* Allows wrapping if there are too many divisions to fit in one row */
+    gap: 20px; /* Adds space between each branch */
+    justify-content: center; /* Centers branches horizontally */
+    align-items: flex-start; /* Aligns branches to the top */
+    margin-top: 20px; /* Adds some top margin for spacing */
+}
+
+.branch {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    width: 200px; /* Fixed width for consistency */
+    text-align: center;
+    background-color: #f9f9f9;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+#export-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#export-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
 
 #record-count, 
 #record-count2, 
