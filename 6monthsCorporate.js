@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // Update the record count in the UI with the projected revenue per branch
         const recordCountDiv = document.getElementById('record-count4');
-        let revenueSummary = `Projected Revenue by Branch Next six months:\n`;
+        let revenueSummary = `Projected Commercial Revenue by Branch Next six months:\n`;
         sortedBranches.forEach(branch => {
             revenueSummary += `${branch || 'N/A'}: $${revenueByBranch[branch].toFixed(2)}\n`;
         });

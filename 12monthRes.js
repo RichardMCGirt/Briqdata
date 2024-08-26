@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             offset = data.offset; // Airtable provides an offset if there are more records to fetch
 
             // Update the record count in the UI
-            document.getElementById('record-count4').textContent = `Records fetched: ${allRecords.length}`;
+            document.getElementById('record-countR12').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
 
         console.log(`All data fetched successfully. Total records after filtering: ${allRecords.length}`);
@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Vanir_Offices_Projected_Revenue_Next_twelve_months.csv`);
+        link.setAttribute("download", `Vanir_Offices_Projected_Residential_Revenue_Next_twelve_months.csv`);
         document.body.appendChild(link);
 
         console.log("CSV ready for download.");
@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // Update the record count in the UI with the projected revenue per branch
         const recordCountDiv = document.getElementById('record-countR12');
-        let revenueSummary = `Projected Revenue by Branch Next twelve months:\n`;
+        let revenueSummary = `Projected Residential Revenue by Branch Next twelve months:\n`;
         sortedBranches.forEach(branch => {
             revenueSummary += `${branch || 'N/A'}: $${revenueByBranch[branch].toFixed(2)}\n`;
         });

@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             offset = data.offset; // Airtable provides an offset if there are more records to fetch
 
             // Update the record count in the UI
-            document.getElementById('record-count4').textContent = `Records fetched: ${allRecords.length}`;
+            document.getElementById('record-count5').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
 
         console.log(`All data fetched successfully. Total records after filtering: ${allRecords.length}`);
@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // Update the record count in the UI with the projected revenue per branch
         const recordCountDiv = document.getElementById('record-count5');
-        let revenueSummary = `Projected Revenue by Branch Next twelve months:\n`;
+        let revenueSummary = `Projected Commercial Revenue by Branch Next twelve months:\n`;
         sortedBranches.forEach(branch => {
             revenueSummary += `${branch || 'N/A'}: $${revenueByBranch[branch].toFixed(2)}\n`;
         });

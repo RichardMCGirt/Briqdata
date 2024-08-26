@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Vanir_Offices_Projected_Revenue_Next_six_months.csv`);
+        link.setAttribute("download", `Vanir_Offices_Projected_Residential_Revenue_Next_six_months.csv`);
         document.body.appendChild(link);
 
         console.log("CSV ready for download.");
@@ -126,8 +126,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         document.body.removeChild(link);
 
         // Update the record count in the UI with the projected revenue per branch
-        const recordCountDiv = document.getElementById('record-count4');
-        let revenueSummary = `Projected Revenue by Branch Next six months:\n`;
+        const recordCountDiv = document.getElementById('record-countR6');
+        let revenueSummary = `Projected Residential Revenue by Branch Next six months:\n`;
         sortedBranches.forEach(branch => {
             revenueSummary += `${branch || 'N/A'}: $${revenueByBranch[branch].toFixed(2)}\n`;
         });

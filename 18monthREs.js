@@ -16,24 +16,20 @@ document.addEventListener('DOMContentLoaded', async function () {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=NOT({Project Type Briq}='Commercial')&sort[0][field]=Project Type Briq&sort[0][direction]=asc`;
         if (offset) url += `&offset=${offset}`;
         console.log(`Fetching data from URL: ${url}`);
-    
+
         try {
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${airtableApiKey}` }
             });
-    
+
             if (!response.ok) {
                 const errorDetails = await response.json(); // Get detailed error message
                 console.error('Error fetching data from Airtable:', errorDetails);
                 throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
-    
+
             const data = await response.json();
             console.log(`Number of records fetched: ${data.records.length}`);
-            data.records.forEach(record => {
-                console.log('Fetched Record:', record);
-                console.log('Fields:', record.fields);
-            });
             return data;
         } catch (error) {
             console.error('Error fetching data from Airtable:', error.message);
@@ -62,7 +58,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             offset = data.offset; // Airtable provides an offset if there are more records to fetch
 
             // Update the record count in the UI
-            document.getElementById('record-count4').textContent = `Records fetched: ${allRecords.length}`;
+            document.getElementById('record-countR18').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
 
         console.log(`All data fetched successfully. Total records after filtering: ${allRecords.length}`);
@@ -75,7 +71,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         let csvContent = "data:text/csv;charset=utf-8,";
 
         // Add title with the current year
-        csvContent += `Projected Revenue by Branch (Next 18 Months) \n\n`;
+        csvContent += `Projected Residential Residential Revenue by Branch (Next 18 Months) \n\n`;
 
         // Add headers
         csvContent += "VanirOffice,Projected Revenue\n";
@@ -116,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Vanir_Offices_Projected_Revenue_Next_18_Months.csv`);
+        link.setAttribute("download", `Vanir_Offices_Projected_Residential_Revenue_Next_18_Months.csv`);
         document.body.appendChild(link);
 
         console.log("CSV ready for download.");
@@ -125,7 +121,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // Update the record count in the UI with the projected revenue per branch
         const recordCountDiv = document.getElementById('record-countR18');
-        let revenueSummary = `Projected Revenue by Branch Next 18 Months:\n`;
+        let revenueSummary = `Projected Residential Revenue by Branch Next 18 Months:\n`;
         sortedBranches.forEach(branch => {
             revenueSummary += `${branch || 'N/A'}: $${revenueByBranch[branch].toFixed(2)}\n`;
         });
@@ -137,14 +133,14 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Automatically start fetching data when the page loads
     const allRecords = await fetchAllData();
 
-    // Automatically export the CSV after data is fetched
-   // exportToCSV(allRecords);
-
-    // Enable the export button after data is fetched (optional, as it's already exported)
+    // Enable the export button after data is fetched
     exportButton.disabled = false;
     exportButton.textContent = "Export to CSV";
     exportButton.style.backgroundColor = ""; // Reset to default style
     exportButton.style.cursor = "pointer"; // Reset cursor to pointer
+
+    // Automatically export the CSV after data is fetched
+    // exportToCSV(allRecords);
 
     // Attach event listener to the export button (if needed for manual re-export)
     exportButton.addEventListener('click', function () {
