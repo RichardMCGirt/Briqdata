@@ -12,23 +12,39 @@ exportButton.style.backgroundColor = "#ccc"; // Change to a light grey
 exportButton.style.cursor = "not-allowed"; // Change cursor to indicate non-clickable
 
 async function fetchAirtableData() {
-    const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?filterByFormula=YEAR({Last Time Outcome Modified}) = ${currentYear}`;
-    console.log('Fetching data from URL:', url);
-    
-    const response = await fetch(url, {
-        headers: {
-            Authorization: `Bearer ${airtableApiKey}`
-        }
-    });
+    let allRecords = [];
+    let offset;
+    let fetchedRecordsCount = 0;
 
-    if (response.ok) {
-        const data = await response.json();
-        console.log('Fetched records:', data.records);
-        return data.records;
-    } else {
-        console.error('Failed to fetch data from Airtable:', response.status, response.statusText);
-        return [];
-    }
+    do {
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?filterByFormula=YEAR({Last Time Outcome Modified}) = ${currentYear}${offset ? `&offset=${offset}` : ''}`;
+        console.log('Fetching data from URL:', url);
+
+        const response = await fetch(url, {
+            headers: {
+                Authorization: `Bearer ${airtableApiKey}`
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Fetched records batch:', data.records);
+            
+            allRecords = allRecords.concat(data.records);
+            fetchedRecordsCount += data.records.length;
+
+            // Update UI with fetched records count
+            winRateDiv.innerHTML = `<p>Fetched ${fetchedRecordsCount} records so far...</p>`;
+            
+            offset = data.offset; // Get the offset for the next batch
+        } else {
+            console.error('Failed to fetch data from Airtable:', response.status, response.statusText);
+            return [];
+        }
+    } while (offset);
+
+    console.log('Total records fetched:', fetchedRecordsCount);
+    return allRecords;
 }
 
 function calculateWinRate(records) {
