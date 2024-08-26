@@ -84,7 +84,7 @@ function updateWinRateDiv(winRates) {
         const branchDiv = document.createElement('div');
         branchDiv.classList.add('branch');
         branchDiv.innerHTML = `
-            <h3>${division}</h3>
+            <h4>${division}</h4>
             <p>Win Rate: ${percentage}%</p>
         `;
         winRateDiv.appendChild(branchDiv);
