@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const exportButton = document.getElementById('export-button');
 
     // Initially disable the export button and update its text and style
+    exportButton.disabled = true;
     exportButton.textContent = "Fetching data...";
     exportButton.style.backgroundColor = "#ccc"; // Change to a light grey
     exportButton.style.cursor = "not-allowed"; // Change cursor to indicate non-clickable
@@ -85,11 +86,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
     
-        // Sort branches alphabetically
-        const sortedBranches = Object.keys(bidCounts).sort();
-    
         // Add counted data to CSV
-        sortedBranches.forEach(branch => {
+        Object.keys(bidCounts).forEach(branch => {
             const row = [
                 branch || 'N/A',
                 bidCounts[branch]
@@ -111,20 +109,70 @@ document.addEventListener('DOMContentLoaded', async function () {
         // Update the record count in the UI with the number of bids per branch
         const recordCountDiv = document.getElementById('record-count3');
         let bidSummary = `Number of Bids per Branch (${currentYear}):\n`;
-        sortedBranches.forEach(branch => {
+        Object.keys(bidCounts).forEach(branch => {
             bidSummary += `${branch || 'N/A'}: ${bidCounts[branch]}\n`;
         });
         recordCountDiv.textContent = bidSummary.trim(); // Display in the div
+
+        // Create bar chart with the bid counts
+        createBarChart(bidCounts);
     }
-    
+
+    function createBarChart(bidCounts) {
+        console.log("Creating bar chart...");
+
+        const ctx = document.getElementById('bidsChart').getContext('2d');
+        const branches = Object.keys(bidCounts);
+        const bidNumbers = Object.values(bidCounts);
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: branches,
+                datasets: [{
+                    label: 'Number of Bids',
+                    data: bidNumbers,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)', // Adjusted for a 3D effect
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2, // Thicker border for 3D effect
+                    barThickness: 50 // Custom thickness for bars
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false // Hide the legend if not needed
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }
+                }
+            }
+        });
+
+        console.log("Bar chart created successfully.");
+    }
+
     // Automatically start fetching data when the page loads
     const allRecords = await fetchAllData();
 
     // Automatically export the CSV after data is fetched
-   // exportToCSV(allRecords);
+    exportToCSV(allRecords);
 
     // Enable the export button after data is fetched (optional, as it's already exported)
-
+    exportButton.disabled = false;
+    exportButton.textContent = "Export to CSV";
+    exportButton.style.backgroundColor = ""; // Reset to default style
+    exportButton.style.cursor = "pointer"; // Reset cursor to pointer
 
     // Attach event listener to the export button (if needed for manual re-export)
     exportButton.addEventListener('click', function () {

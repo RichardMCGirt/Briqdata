@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const exportButton = document.getElementById('export-button');
 
     // Initially disable the export button and update its text and style
+    exportButton.disabled = true;
     exportButton.textContent = "Fetching data...";
     exportButton.style.backgroundColor = "#ccc"; // Change to a light grey
     exportButton.style.cursor = "not-allowed"; // Change cursor to indicate non-clickable
@@ -54,11 +55,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         return allRecords;
     }
 
-    function formatDateToYear(dateString) {
-        const date = new Date(dateString);
-        return date.getFullYear(); // Returns the year as YYYY
-    }
-
     function formatDateToMonthYear(dateString) {
         const date = new Date(dateString);
         const year = date.getFullYear();
@@ -77,48 +73,34 @@ document.addEventListener('DOMContentLoaded', async function () {
         // Add headers
         csvContent += "VanirOffice,Total Cost of Return,Month/Year\n";
 
-        // Calculate the sum of 'Total Cost of Fill In' by VanirOffice per year, excluding "Test Branch"
+        // Calculate the sum of 'Total Cost of Fill In' by VanirOffice per month, excluding "Test Branch"
         const officeSums = {};
 
         records.forEach(record => {
-            let branch = record.fields['Branch'];
+            const branch = record.fields['Branch'];
             const cost = parseFloat(record.fields['Actual $ Credit Amount']) || 0;
             const monthYear = formatDateToMonthYear(record.fields['Date Created']);
-            const year = formatDateToYear(record.fields['Date Created']);
 
-            // Replace "Greenville,SC" with "Greenville"
-            if (branch === "Greenville,SC") {
-                branch = "Greenville";
-            }
-
-            if (branch && branch !== "Test Branch") {
+            if (branch !== "Test Branch") {
                 if (!officeSums[branch]) {
                     officeSums[branch] = {};
                 }
-                if (!officeSums[branch][year]) {
-                    officeSums[branch][year] = { total: 0, months: {} };
+                if (!officeSums[branch][monthYear]) {
+                    officeSums[branch][monthYear] = 0;
                 }
-                if (cost > 0) {
-                    officeSums[branch][year].total += cost;
-                    officeSums[branch][year].months[monthYear] = (officeSums[branch][year].months[monthYear] || 0) + cost;
-                }
+                officeSums[branch][monthYear] += cost;
             }
         });
 
-        // Sort the branches alphabetically
-        const sortedBranches = Object.keys(officeSums).sort();
-
         // Add summed data to CSV with dollar sign formatting
-        sortedBranches.forEach(branch => {
-            Object.keys(officeSums[branch]).forEach(year => {
-                Object.keys(officeSums[branch][year].months).forEach(monthYear => {
-                    const row = [
-                        branch || 'N/A',
-                        `$${officeSums[branch][year].months[monthYear].toFixed(2)}`,
-                        monthYear
-                    ].join(",");
-                    csvContent += row + "\n";
-                });
+        Object.keys(officeSums).forEach(branch => {
+            Object.keys(officeSums[branch]).forEach(monthYear => {
+                const row = [
+                    branch || 'N/A',
+                    `$${officeSums[branch][monthYear].toFixed(2)}`,
+                    monthYear
+                ].join(",");
+                csvContent += row + "\n";
             });
         });
 
@@ -126,22 +108,90 @@ document.addEventListener('DOMContentLoaded', async function () {
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "Vanir_Offices_Returns_Sum_Per_Month.csv");
+        link.setAttribute("download", "Vanir_Offices_Ruturns_Sum_Per_Month.csv");
         document.body.appendChild(link);
 
         console.log("CSV ready for download.");
         link.click();
         document.body.removeChild(link);
+
+        // Create bar chart with the summed data
+        createBarChart(officeSums);
+    }
+
+    function createBarChart(officeSums) {
+        console.log("Creating bar chart...");
+
+        const ctx = document.getElementById('returnChart').getContext('2d');
+        const branches = [];
+        const dataSets = {};
+
+        // Prepare data for the chart
+        Object.keys(officeSums).forEach(branch => {
+            branches.push(branch);
+            Object.keys(officeSums[branch]).forEach(monthYear => {
+                if (!dataSets[monthYear]) {
+                    dataSets[monthYear] = [];
+                }
+                dataSets[monthYear].push(officeSums[branch][monthYear].toFixed(2));
+            });
+        });
+
+        const datasets = Object.keys(dataSets).map(monthYear => ({
+            label: monthYear,
+            data: dataSets[monthYear],
+            backgroundColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.6)`,
+            borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
+            borderWidth: 1
+        }));
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: branches,
+                datasets: datasets
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return `$${value}`;
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return `$${tooltipItem.raw}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        console.log("Bar chart created successfully.");
     }
 
     // Automatically start fetching data when the page loads
     const allRecords = await fetchAllData();
 
     // Automatically export the CSV after data is fetched
-    // exportToCSV(allRecords);
+    exportToCSV(allRecords);
 
     // Enable the export button after data is fetched (optional, as it's already exported)
-
+    exportButton.disabled = false;
+    exportButton.textContent = "Export to CSV";
+    exportButton.style.backgroundColor = ""; // Reset to default style
+    exportButton.style.cursor = "pointer"; // Reset cursor to pointer
 
     // Attach event listener to the export button (if needed for manual re-export)
     exportButton.addEventListener('click', function () {
