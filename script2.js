@@ -57,24 +57,25 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     function createBarChart(records) {
         console.log("Creating bar chart...");
-
+    
         const branchMonthlySums = {};
-
+    
         records.forEach(record => {
             const branch = record.fields['Branch'];
             const cost = parseFloat(record.fields['Actual $ Credit Amount']) || 0;
             const anticipatedEndDate = record.fields['Anticipated End Date Briq'];
-
-            // Parse the date and validate
-            const date = new Date(anticipatedEndDate);
-            if (isNaN(date)) {
-                console.warn(`Invalid date encountered: ${anticipatedEndDate}`);
-                return; // Skip this record if date is invalid
+    
+            // Validate the date format (MM/DD/YYYY or similar) and parse it
+            const datePattern = /^\d{2}\/\d{2}\/\d{4}$/;
+            if (!anticipatedEndDate || !datePattern.test(anticipatedEndDate)) {
+                console.warn(`Invalid or missing date encountered: ${anticipatedEndDate}`);
+                return; // Skip this record if date is invalid or missing
             }
-
-            // Format date as "MM-YYYY" to group by month
-            const monthYear = `${date.getMonth() + 1}-${date.getFullYear()}`;
-
+    
+            // Parse the date as "MM/DD/YYYY" format
+            const [month, day, year] = anticipatedEndDate.split('/');
+            const monthYear = `${month}-${year}`;
+    
             // Filter out "Test Branch" and undefined branches
             if (branch && branch !== "Test Branch") {
                 if (!branchMonthlySums[branch]) {
@@ -86,13 +87,13 @@ document.addEventListener('DOMContentLoaded', async function () {
                 branchMonthlySums[branch][monthYear] += cost;
             }
         });
-
+    
         // Prepare data for the chart
         const branches = Object.keys(branchMonthlySums);
         const months = Array.from(
             new Set(Object.values(branchMonthlySums).flatMap(monthData => Object.keys(monthData)))
-        ).sort((a, b) => new Date(a) - new Date(b));
-
+        ).sort((a, b) => new Date(`01/${a}`) - new Date(`01/${b}`));
+    
         const colors = [
             'rgba(255, 99, 132, 0.6)',
             'rgba(54, 162, 235, 0.6)',
@@ -101,7 +102,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             'rgba(255, 159, 64, 0.6)',
             'rgba(255, 206, 86, 0.6)',
         ];
-
+    
         const datasets = branches.map((branch, index) => {
             const data = months.map(month => branchMonthlySums[branch][month] || 0);
             const color = colors[index % colors.length];
@@ -113,7 +114,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 borderColor: color.replace('0.6', '1'),
             };
         });
-
+    
         const ctx = document.getElementById('returnChart').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
@@ -159,9 +160,10 @@ document.addEventListener('DOMContentLoaded', async function () {
                 }
             }
         });
-
+    
         console.log("Bar chart created successfully.");
     }
+    
 
     // Automatically start fetching data when the page loads
     const allRecords = await fetchAllData();
