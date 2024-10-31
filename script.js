@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableTableName = 'tblRp5bukUiw9tX9j';
     const exportButton = document.getElementById('export-button');
 
-    // Initially disable the export button and update its text and style
+    // Initially disable the export button
     exportButton.disabled = true;
     exportButton.textContent = "Fetching data...";
     exportButton.style.backgroundColor = "#ccc";
@@ -35,7 +35,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     async function fetchAllData() {
         console.log("Starting to fetch all data...");
-
         let allRecords = [];
         let offset = null;
 
@@ -43,9 +42,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             const data = await fetchData(offset);
             allRecords = allRecords.concat(data.records);
             console.log(`Fetched ${data.records.length} records. Total so far: ${allRecords.length}`);
-            offset = data.offset; // Airtable provides an offset if there are more records to fetch
-
-            // Update the record count in the UI
+            offset = data.offset;
             document.getElementById('record-count').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
 
@@ -53,104 +50,100 @@ document.addEventListener('DOMContentLoaded', async function () {
         return allRecords;
     }
 
-    function exportToCSV(records) {
-        console.log("Starting CSV export...");
-    
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Total Cost of Fill In by Branch\n\n";
-        csvContent += "VanirOffice,Total Cost of Fill In\n";
-    
-        // Calculate the total sum of 'Total Cost of Fill In' for each VanirOffice, excluding "Test Branch" and undefined branches
-        const branchSums = {};
-
-        records.forEach(record => {
-            const branch = record.fields['VanirOffice'];
-            const cost = parseFloat(record.fields['Total Cost of Fill In']) || 0;
-
-            // Filter out undefined or null branches and "Test Branch"
-            if (branch && branch !== "Test Branch") {
-                if (!branchSums[branch]) {
-                    branchSums[branch] = 0;
-                }
-                branchSums[branch] += cost;
-            }
-        });
-
-        // Add total cost data to CSV with dollar sign formatting
-        Object.keys(branchSums).forEach(branch => {
-            const row = [
-                branch || 'N/A',
-                `$${branchSums[branch].toFixed(2)}`
-            ].join(",");
-            csvContent += row + "\n";
-        });
-
-        // Encode and trigger download
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "Vanir_Offices_Total_Cost_Per_Branch.csv");
-        document.body.appendChild(link);
-    
-        console.log("CSV ready for download.");
-        link.click();
-        document.body.removeChild(link);
-    
-        // Create bar chart with the total cost data
-        createBarChart(branchSums);
-    }
-    
     function createBarChart(records) {
         console.log("Creating bar chart...");
-    
-        const officeSums = {};
-    
-        // Sum up the 'Total Cost of Fill In' for each VanirOffice
+
+        const branchMonthlySums = {};
+        const monthNames = ["January", "February", "March", "April", "May", "June", 
+                            "July", "August", "September", "October", "November", "December"];
+        
         records.forEach(record => {
             const branch = record.fields['VanirOffice'];
             const cost = parseFloat(record.fields['Total Cost of Fill In']) || 0;
-    
-            // Filter out undefined or null branches and specified branches to hide
-            if (branch && !["Charlotte, Raleigh", "Charleston, Greensboro"].includes(branch) && branch !== "Test Branch") {
-                if (!officeSums[branch]) {
-                    officeSums[branch] = 0;
+            const dateCreated = record.fields['Date Created'];
+
+               // Filter out unwanted branches
+        if (!branch || branch === "Test Branch" || branch === "(Charleston, Greensboro)" || branch === "(Charlotte, Raleigh)") {
+            return;
+        }
+
+
+            // Parse date and format as "Month-Year"
+            const date = new Date(dateCreated);
+            if (isNaN(date.getTime())) {
+                console.warn(`Invalid or missing date encountered: ${dateCreated}`);
+                return;
+            }
+
+            const monthName = monthNames[date.getMonth()];
+            const year = date.getFullYear();
+            const monthYear = `${monthName} ${year}`;
+
+            if (branch && branch !== "Test Branch") {
+                if (!branchMonthlySums[branch]) {
+                    branchMonthlySums[branch] = {};
                 }
-                officeSums[branch] += cost;
+                if (!branchMonthlySums[branch][monthYear]) {
+                    branchMonthlySums[branch][monthYear] = 0;
+                }
+                branchMonthlySums[branch][monthYear] += cost;
             }
         });
-    
-        // Convert officeSums object to an array and sort by total cost in ascending order
-        const sortedOfficeData = Object.entries(officeSums)
-            .sort(([, costA], [, costB]) => costA - costB); // Sort by cost (ascending)
-    
-        const branches = sortedOfficeData.map(([branch]) => branch); // Get sorted branch names
-        const totals = sortedOfficeData.map(([, total]) => total); // Get sorted totals
-    
-        // Logging the values to ensure data accuracy
-        console.log("Sorted Branches:", branches);
-        console.log("Sorted Totals:", totals);
-    
-        // Get the canvas context and create the bar chart
+
+        const branches = Object.keys(branchMonthlySums);
+        const months = Array.from(
+            new Set(Object.values(branchMonthlySums).flatMap(monthData => Object.keys(monthData)))
+        ).sort((a, b) => new Date(a) - new Date(b));
+
+        const colors = [
+            'rgba(244, 67, 54, 0.3)',   // Light red
+            'rgba(33, 150, 243, 0.3)',  // Light blue
+            'rgba(76, 175, 80, 0.3)',   // Light green
+            'rgba(255, 235, 59, 0.3)',  // Light yellow
+            'rgba(255, 152, 0, 0.3)',   // Light orange
+            'rgba(156, 39, 176, 0.3)',  // Light purple
+            'rgba(0, 188, 212, 0.3)',   // Light cyan
+            'rgba(121, 85, 72, 0.3)'    // Light brown
+        ];
+
+        const datasets = branches.map((branch, index) => {
+            const data = months.map(month => branchMonthlySums[branch][month] || 0);
+            const color = colors[index % colors.length];
+            return {
+                label: branch,
+                data,
+                borderWidth: 1,
+                backgroundColor: color,
+                borderColor: color.replace('0.3', '1'),
+            };
+        });
+
         const ctx = document.getElementById('fillInChart').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: branches, // VanirOffice names on the horizontal axis
-                datasets: [{
-                    label: 'Total Cost of Fill In',
-                    data: totals, // Sum of costs per VanirOffice, sorted
-                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
-                }]
+                labels: months,
+                datasets
             },
             options: {
                 scales: {
+                    x: {
+                        stacked: true,
+                        title: {
+                            display: true,
+                            text: ''
+                        }
+                    },
                     y: {
                         beginAtZero: true,
+                        stacked: true,
+                        title: {
+                            display: true,
+                            text: 'Total Cost ($)'
+                        },
                         ticks: {
                             callback: function(value) {
-                                return `$${value.toLocaleString()}`; // Format as currency
+                                return `$${value.toLocaleString()}`;
                             }
                         }
                     }
@@ -170,24 +163,20 @@ document.addEventListener('DOMContentLoaded', async function () {
                 }
             }
         });
-    
-        console.log("Bar chart created successfully, sorted by total cost.");
-    }
-    
-    
-    
-    // Automatically start fetching data when the page loads
-    const allRecords = await fetchAllData();
-    createBarChart(allRecords);  // Now only called after DOM is ready
 
-    
-    // Enable the export button and show total cost in bar chart
+        console.log("Bar chart created successfully.");
+    }
+
+    // Fetch data and create chart
+    const allRecords = await fetchAllData();
+    createBarChart(allRecords);
+
+    // Enable the export button
     exportButton.disabled = false;
     exportButton.textContent = "Export to CSV";
-    exportButton.style.backgroundColor = ""; // Reset to default style
-    exportButton.style.cursor = "pointer"; // Reset cursor to pointer
-    
-    // Attach event listener to the export button for manual re-export
+    exportButton.style.backgroundColor = ""; 
+    exportButton.style.cursor = "pointer";
+
     exportButton.addEventListener('click', function () {
         console.log("Export button clicked.");
         exportToCSV(allRecords);

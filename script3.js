@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
 
             const data = await response.json();
-            console.log(`Number of records fetched: ${data.records.length}`);
             return data;
         } catch (error) {
             console.error('Error fetching data from Airtable:', error.message);

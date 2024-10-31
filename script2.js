@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                         stacked: true,
                         title: {
                             display: true,
-                            text: 'Month-Year'
+                            text: ''
                         }
                     },
                     y: {

@@ -55,7 +55,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             });
     
             allRecords = allRecords.concat(filteredRecords);
-            console.log(`Filtered and fetched ${filteredRecords.length} records. Total so far: ${allRecords.length}`);
             offset = data.offset;
 
             document.getElementById('record-count4').textContent = `Records fetched: ${allRecords.length}`;
@@ -117,11 +116,22 @@ document.addEventListener('DOMContentLoaded', async function () {
     function createBarChart(revenueByDivision) {
         console.log("Creating bar chart...");
     
-        // Filter out Nashville from the revenue data
-        const filteredData = Object.entries(revenueByDivision)
-            .filter(([division, revenue]) => division !== "Nashville");
+        // Count occurrences of each division in revenueByDivision
+        const divisionCounts = {};
+        Object.keys(revenueByDivision).forEach(division => {
+            divisionCounts[division] = (divisionCounts[division] || 0) + 1;
+        });
     
-        // Sort the filtered data
+        // Filter out divisions with only one occurrence and exclude specific divisions
+        const filteredData = Object.entries(revenueByDivision)
+            .filter(([division, revenue]) => 
+                division !== "Nashville" && 
+                division !== "Charlotte, Raleigh" && 
+                division !== "Charleston, Greensboro" && 
+                divisionCounts[division] > 1
+            );
+    
+        // Sort the filtered data by revenue in ascending order
         const sortedData = filteredData.sort((a, b) => a[1] - b[1]);
         const sortedDivisions = sortedData.map(entry => entry[0]);
         const revenueNumbers = sortedData.map(entry => entry[1]);
@@ -167,6 +177,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
     }
+    
+
     
     const allRecords = await fetchAllData();
     exportToCSV(allRecords);
