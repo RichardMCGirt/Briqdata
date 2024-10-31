@@ -57,25 +57,28 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     function createBarChart(records) {
         console.log("Creating bar chart...");
-    
+        
         const branchMonthlySums = {};
-    
+        const monthNames = ["January", "February", "March", "April", "May", "June", 
+                            "July", "August", "September", "October", "November", "December"];
+        
         records.forEach(record => {
             const branch = record.fields['Branch'];
             const cost = parseFloat(record.fields['Actual $ Credit Amount']) || 0;
-            const anticipatedEndDate = record.fields['Anticipated End Date Briq'];
-    
-            // Validate the date format (MM/DD/YYYY or similar) and parse it
-            const datePattern = /^\d{2}\/\d{2}\/\d{4}$/;
-            if (!anticipatedEndDate || !datePattern.test(anticipatedEndDate)) {
-                console.warn(`Invalid or missing date encountered: ${anticipatedEndDate}`);
+            const dateCreated = record.fields['Date Created'];
+        
+            // Attempt to parse the date directly
+            const date = new Date(dateCreated);
+            if (isNaN(date.getTime())) {
+                console.warn(`Invalid or missing date encountered: ${dateCreated}`);
                 return; // Skip this record if date is invalid or missing
             }
-    
-            // Parse the date as "MM/DD/YYYY" format
-            const [month, day, year] = anticipatedEndDate.split('/');
-            const monthYear = `${month}-${year}`;
-    
+        
+            // Format date as "Month Year" (e.g., "January 2024") for grouping
+            const monthName = monthNames[date.getMonth()];
+            const year = date.getFullYear();
+            const monthYear = `${monthName} ${year}`;
+        
             // Filter out "Test Branch" and undefined branches
             if (branch && branch !== "Test Branch") {
                 if (!branchMonthlySums[branch]) {
@@ -87,22 +90,24 @@ document.addEventListener('DOMContentLoaded', async function () {
                 branchMonthlySums[branch][monthYear] += cost;
             }
         });
-    
+        
         // Prepare data for the chart
         const branches = Object.keys(branchMonthlySums);
         const months = Array.from(
             new Set(Object.values(branchMonthlySums).flatMap(monthData => Object.keys(monthData)))
-        ).sort((a, b) => new Date(`01/${a}`) - new Date(`01/${b}`));
-    
+        ).sort((a, b) => new Date(a) - new Date(b));
+        
         const colors = [
-            'rgba(255, 99, 132, 0.6)',
-            'rgba(54, 162, 235, 0.6)',
-            'rgba(75, 192, 192, 0.6)',
-            'rgba(153, 102, 255, 0.6)',
-            'rgba(255, 159, 64, 0.6)',
-            'rgba(255, 206, 86, 0.6)',
+            'rgba(244, 67, 54, 0.3)',   // Light red
+            'rgba(33, 150, 243, 0.3)',  // Light blue
+            'rgba(76, 175, 80, 0.3)',   // Light green
+            'rgba(255, 235, 59, 0.3)',  // Light yellow
+            'rgba(255, 152, 0, 0.3)',   // Light orange
+            'rgba(156, 39, 176, 0.3)',  // Light purple
+            'rgba(0, 188, 212, 0.3)',   // Light cyan
+            'rgba(121, 85, 72, 0.3)'    // Light brown
         ];
-    
+        
         const datasets = branches.map((branch, index) => {
             const data = months.map(month => branchMonthlySums[branch][month] || 0);
             const color = colors[index % colors.length];
@@ -111,10 +116,10 @@ document.addEventListener('DOMContentLoaded', async function () {
                 data,
                 borderWidth: 1,
                 backgroundColor: color,
-                borderColor: color.replace('0.6', '1'),
+                borderColor: color.replace('0.3', '1'),
             };
         });
-    
+        
         const ctx = document.getElementById('returnChart').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
@@ -160,9 +165,11 @@ document.addEventListener('DOMContentLoaded', async function () {
                 }
             }
         });
-    
+        
         console.log("Bar chart created successfully.");
     }
+    
+    
     
 
     // Automatically start fetching data when the page loads
