@@ -7,11 +7,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     const exportButton = document.getElementById('export-button');
     const currentYear = new Date().getFullYear();
 
-    // Initially disable the export button and update its text and style
     exportButton.disabled = true;
     exportButton.textContent = "Fetching data...";
-    exportButton.style.backgroundColor = "#ccc"; 
-    exportButton.style.cursor = "not-allowed"; 
+    exportButton.style.backgroundColor = "#ccc";
+    exportButton.style.cursor = "not-allowed";
 
     async function fetchData(offset = null) {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=NOT({Project Type Briq}='Commercial')&sort[0][field]=Project Type Briq&sort[0][direction]=asc`;
@@ -85,57 +84,40 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
 
-        const sortedDivisions = Object.keys(revenueByDivision).sort();
+        // Convert to array, sort by revenue, and remove the two lowest values
+        const sortedData = Object.entries(revenueByDivision).sort((a, b) => a[1] - b[1]);
+        const filteredData = sortedData.slice(2); // Remove the two lowest revenue divisions
 
-        sortedDivisions.forEach(division => {
-            const row = [
-                division || 'N/A',
-                revenueByDivision[division].toFixed(2)
-            ].join(",");
+        // Create CSV content from filtered data
+        filteredData.forEach(([division, revenue]) => {
+            const row = `${division || 'N/A'},${revenue.toFixed(2)}`;
             csvContent += row + "\n";
         });
 
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Vanir_Divisions_Projected_Revenue_Next_Eightteen_Months.csv`);
+        link.setAttribute("download", `Vanir_Divisions_Projected_Revenue_Next_Eighteen_Months.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
 
         const recordCountDiv = document.getElementById('record-countR18');
         let revenueSummary = `Projected Revenue by Division Next eighteen months:\n`;
-        sortedDivisions.forEach(division => {
-            revenueSummary += `${division || 'N/A'}: $${revenueByDivision[division].toFixed(2)}\n`;
+        filteredData.forEach(([division, revenue]) => {
+            revenueSummary += `${division || 'N/A'}: $${revenue.toFixed(2)}\n`;
         });
         recordCountDiv.textContent = revenueSummary.trim();
 
-        createBarChart(revenueByDivision);
+        createBarChart(Object.fromEntries(filteredData)); // Pass filtered data to the chart
     }
 
     function createBarChart(revenueByDivision) {
         console.log("Creating bar chart...");
     
-        // Count occurrences of each division in revenueByDivision
-        const divisionCounts = {};
-        Object.keys(revenueByDivision).forEach(division => {
-            divisionCounts[division] = (divisionCounts[division] || 0) + 1;
-        });
-    
-        // Filter out divisions with only one occurrence and exclude specific divisions
-        const filteredData = Object.entries(revenueByDivision)
-            .filter(([division, revenue]) => 
-                division !== "Nashville" && 
-                division !== "Charlotte, Raleigh" && 
-                division !== "Charleston, Greensboro" && 
-                divisionCounts[division] > 1
-            );
-    
-        // Sort the filtered data by revenue in ascending order
-        const sortedData = filteredData.sort((a, b) => a[1] - b[1]);
-        const sortedDivisions = sortedData.map(entry => entry[0]);
-        const revenueNumbers = sortedData.map(entry => entry[1]);
-    
+        const sortedDivisions = Object.keys(revenueByDivision).sort((a, b) => revenueByDivision[a] - revenueByDivision[b]);
+        const revenueNumbers = sortedDivisions.map(division => revenueByDivision[division]);
+
         const ctx = document.getElementById('18monthsRChart').getContext('2d');
     
         new Chart(ctx, {
@@ -147,8 +129,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                     data: revenueNumbers,
                     backgroundColor: 'rgba(75, 192, 192, 0.6)',
                     borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 2,
-                    barThickness: 50
+                    borderWidth: 4,
+                    barThickness: 70
                 }]
             },
             options: {
@@ -177,9 +159,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
     }
-    
 
-    
+    // Fetch data and trigger export and chart generation
     const allRecords = await fetchAllData();
     exportToCSV(allRecords);
 
