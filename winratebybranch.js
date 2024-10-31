@@ -1,49 +1,27 @@
 const airtableApiKey = 'patGjoWY1PkTG12oS.e9cf71910320ac1e3496ff803700f0e4319bf0ccf0fcaf4d85cd98df790b5aad';
 const airtableBaseId = 'appX1Saz7wMYh4hhm';
 const airtableTableName = 'tblfCPX293KlcKsdp';
-const winRateDiv = document.getElementById('winratebyBranch');
-const exportButton = document.getElementById('export-button'); 
+const winRateDiv = document.getElementById('win%byBranch');
 const currentYear = new Date().getFullYear();
 
-// Disable export button initially
-exportButton.textContent = "Fetching data...";
-exportButton.style.backgroundColor = "#ccc"; // Change to a light grey
-exportButton.style.cursor = "not-allowed"; // Change cursor to indicate non-clickable
-
 async function fetchAirtableData() {
-    let allRecords = [];
-    let offset;
-    let fetchedRecordsCount = 0;
-
-    do {
-        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?filterByFormula=YEAR({Last Time Outcome Modified}) = ${currentYear}${offset ? `&offset=${offset}` : ''}`;
-        console.log('Fetching data from URL:', url);
-
-        const response = await fetch(url, {
-            headers: {
-                Authorization: `Bearer ${airtableApiKey}`
-            }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            console.log('Fetched records batch:', data.records);
-            
-            allRecords = allRecords.concat(data.records);
-            fetchedRecordsCount += data.records.length;
-
-            // Update UI with fetched records count
-            winRateDiv.innerHTML = `<p>Fetched ${fetchedRecordsCount} records so far...</p>`;
-            
-            offset = data.offset; // Get the offset for the next batch
-        } else {
-            console.error('Failed to fetch data from Airtable:', response.status, response.statusText);
-            return [];
+    const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?filterByFormula=YEAR({Last Time Outcome Modified}) = ${currentYear}`;
+    console.log('Fetching data from URL:', url);
+    
+    const response = await fetch(url, {
+        headers: {
+            Authorization: `Bearer ${airtableApiKey}`
         }
-    } while (offset);
+    });
 
-    console.log('Total records fetched:', fetchedRecordsCount);
-    return allRecords;
+    if (response.ok) {
+        const data = await response.json();
+        console.log('Fetched records:', data.records);
+        return data.records;
+    } else {
+        console.error('Failed to fetch data from Airtable:', response.status, response.statusText);
+        return [];
+    }
 }
 
 function calculateWinRate(records) {
@@ -84,7 +62,7 @@ function updateWinRateDiv(winRates) {
         const branchDiv = document.createElement('div');
         branchDiv.classList.add('branch');
         branchDiv.innerHTML = `
-            <h4>${division}</h4>
+            <h3>${division}</h3>
             <p>Win Rate: ${percentage}%</p>
         `;
         winRateDiv.appendChild(branchDiv);
@@ -117,23 +95,46 @@ function exportToCSV(winRates) {
     console.log('CSV file generated and downloaded');
 }
 
+function displayBarGraph(winRates) {
+    const ctx = document.getElementById('winRateChart').getContext('2d');
+    const labels = Object.keys(winRates);
+    const data = Object.values(winRates).map(rate => rate.toFixed(2));
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Win Rate Percentage',
+                data: data,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+
+    console.log('Bar graph displayed');
+}
+
 async function initialize() {
     console.log('Initializing application...');
     
     const records = await fetchAirtableData();
     const winRates = calculateWinRate(records);
     
+    displayBarGraph(winRates);
     updateWinRateDiv(winRates);
-
-    // Enable the export button after data is fetched
-
-
-    // Attach event listener to the export button for manual export
-    exportButton.addEventListener('click', function () {
-        console.log("Export button clicked.");
-        exportToCSV(winRates);
-    });
-
+    exportToCSV(winRates);  // Automatically download CSV after fetching
+    
     console.log('Initialization complete');
 }
 
