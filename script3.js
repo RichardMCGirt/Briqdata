@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const allRecords = await fetchAllData();
 
     // Automatically export the CSV after data is fetched
-    exportToCSV(allRecords);
+  //  exportToCSV(allRecords);
 
     // Enable the export button after data is fetched (optional, as it's already exported)
     exportButton.disabled = false;

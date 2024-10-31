@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const response = await fetch(`${url}${offset ? `&offset=${offset}` : ''}`, {
                 headers: {
-                    'Authorization': `Bearer patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054` // Ensure you include your Airtable API key
+                    'Authorization': `Bearer patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054` 
                 }
             });
             const data = await response.json();
