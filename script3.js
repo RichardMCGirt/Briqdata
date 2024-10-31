@@ -9,8 +9,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Initially disable the export button and update its text and style
     exportButton.disabled = true;
     exportButton.textContent = "Fetching data...";
-    exportButton.style.backgroundColor = "#ccc"; // Change to a light grey
-    exportButton.style.cursor = "not-allowed"; // Change cursor to indicate non-clickable
+    exportButton.style.backgroundColor = "#ccc";
+    exportButton.style.cursor = "not-allowed";
 
     async function fetchData(offset = null) {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100`;
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             const data = await fetchData(offset);
             allRecords = allRecords.concat(data.records);
             console.log(`Fetched ${data.records.length} records. Total so far: ${allRecords.length}`);
-            offset = data.offset; // Airtable provides an offset if there are more records to fetch
+            offset = data.offset;
 
             // Update the record count in the UI
             document.getElementById('record-count3').textContent = `Records fetched: ${allRecords.length}`;
@@ -55,105 +55,67 @@ document.addEventListener('DOMContentLoaded', async function () {
         return allRecords;
     }
 
-    function exportToCSV(records) {
-        console.log("Starting CSV export...");
-    
-        const currentYear = new Date().getFullYear();
-        let csvContent = "data:text/csv;charset=utf-8,";
-    
-        // Add title with the current year
-        csvContent += `Number of Bids by Branch (${currentYear})\n\n`;
-    
-        // Add headers
-        csvContent += "VanirOffice,Number of Bids\n";
-    
+    function aggregateBidsByBranch(records) {
         const bidCounts = {};
-    
-        // Filter records by current year based on the 'Date Received' field
-        records = records.filter(record => {
-            const recordDate = new Date(record.fields['Date Received']);
-            return recordDate.getFullYear() === currentYear;
-        });
-    
+
+        // Count the number of bids per Branch and filter out "Nashville", "Corporate", and empty strings
         records.forEach(record => {
             const branch = record.fields['Branch'];
-    
-            if (branch !== "Test Branch") {
+
+            if (branch && branch !== "Nashville" && branch !== "Corporate" && branch !== "") {
                 if (!bidCounts[branch]) {
                     bidCounts[branch] = 0;
                 }
-                bidCounts[branch] += 1; // Increment bid count for the branch
+                bidCounts[branch] += 1;
             }
         });
-    
-        // Add counted data to CSV
-        Object.keys(bidCounts).forEach(branch => {
-            const row = [
-                branch || 'N/A',
-                bidCounts[branch]
-            ].join(",");
-            csvContent += row + "\n";
-        });
-    
-        // Encode and trigger download
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Vanir_Offices_Bids_Count_${currentYear}.csv`);
-        document.body.appendChild(link);
-    
-        console.log("CSV ready for download.");
-        link.click();
-        document.body.removeChild(link);
-    
-        // Update the record count in the UI with the number of bids per branch
-        const recordCountDiv = document.getElementById('record-count3');
-        let bidSummary = `Number of Bids per Branch (${currentYear}):\n`;
-        Object.keys(bidCounts).forEach(branch => {
-            bidSummary += `${branch || 'N/A'}: ${bidCounts[branch]}\n`;
-        });
-        recordCountDiv.textContent = bidSummary.trim(); // Display in the div
 
-        // Create bar chart with the bid counts
-        createBarChart(bidCounts);
+        return bidCounts;
     }
 
     function createBarChart(bidCounts) {
         console.log("Creating bar chart...");
 
-        const ctx = document.getElementById('bidsChart').getContext('2d');
-        const branches = Object.keys(bidCounts);
-        const bidNumbers = Object.values(bidCounts);
+        // Prepare data for chart display
+        const branches = Object.keys(bidCounts).sort((a, b) => bidCounts[a] - bidCounts[b]); // Sorted by total bids
+        const bidNumbers = branches.map(branch => bidCounts[branch]);
 
+        const ctx = document.getElementById('bidsChart').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: branches,
+                labels: branches, // Branch names on the horizontal axis
                 datasets: [{
-                    label: 'Number of Bids',
-                    data: bidNumbers,
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)', // Adjusted for a 3D effect
+                    label: 'Total Bids',
+                    data: bidNumbers, // Total bids for each branch
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
                     borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 2, // Thicker border for 3D effect
-                    barThickness: 50 // Custom thickness for bars
+                    borderWidth: 2,
+                    barThickness: 50
                 }]
             },
             options: {
                 scales: {
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString(); // Display as integer
+                            }
+                        }
                     }
                 },
                 plugins: {
                     legend: {
-                        display: false // Hide the legend if not needed
+                        display: true,
+                        position: 'top'
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return `Total Bids: ${tooltipItem.raw}`;
+                            }
+                        }
                     }
                 }
             }
@@ -162,19 +124,18 @@ document.addEventListener('DOMContentLoaded', async function () {
         console.log("Bar chart created successfully.");
     }
 
-    // Automatically start fetching data when the page loads
+    // Automatically fetch data and create chart when page loads
     const allRecords = await fetchAllData();
+    const bidCounts = aggregateBidsByBranch(allRecords);
+    createBarChart(bidCounts);
 
-    // Automatically export the CSV after data is fetched
-  //  exportToCSV(allRecords);
-
-    // Enable the export button after data is fetched (optional, as it's already exported)
+    // Enable the export button after data is fetched
     exportButton.disabled = false;
     exportButton.textContent = "Export to CSV";
     exportButton.style.backgroundColor = ""; // Reset to default style
     exportButton.style.cursor = "pointer"; // Reset cursor to pointer
 
-    // Attach event listener to the export button (if needed for manual re-export)
+    // Attach event listener to the export button for manual re-export
     exportButton.addEventListener('click', function () {
         console.log("Export button clicked.");
         exportToCSV(allRecords);

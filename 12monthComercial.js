@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     exportButton.style.cursor = "not-allowed"; 
 
     async function fetchData(offset = null) {
-        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=NOT({Project Type Briq}='Commercial')&sort[0][field]=Project Type Briq&sort[0][direction]=asc`;
+        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula={Project Type Briq}='Commercial'&sort[0][field]=Project Type Briq&sort[0][direction]=asc`;
         if (offset) url += `&offset=${offset}`;
         console.log(`Fetching data from URL: ${url}`);
     
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         let offset = null;
         const today = new Date();
         const sixMonthsLater = new Date(today);
-        sixMonthsLater.setMonth(today.getMonth() + 18);
+        sixMonthsLater.setMonth(today.getMonth() + 12);
             
         do {
             const data = await fetchData(offset);
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             console.log(`Filtered and fetched ${filteredRecords.length} records. Total so far: ${allRecords.length}`);
             offset = data.offset;
 
-            document.getElementById('record-count4').textContent = `Records fetched: ${allRecords.length}`;
+            document.getElementById('record-countC12').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
     
         console.log(`All data fetched successfully. Total records after filtering: ${allRecords.length}`);
@@ -99,13 +99,13 @@ document.addEventListener('DOMContentLoaded', async function () {
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Vanir_Divisions_Projected_Revenue_Next_Eightteen_Months.csv`);
+        link.setAttribute("download", `Vanir_Divisions_Projected_Revenue_Next_Twelve_Months.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
 
-        const recordCountDiv = document.getElementById('record-countR18');
-        let revenueSummary = `Projected Revenue by Division Next eighteen months:\n`;
+        const recordCountDiv = document.getElementById('record-countR12');
+        let revenueSummary = `Projected Revenue by Division Next Twelve months:\n`;
         sortedDivisions.forEach(division => {
             revenueSummary += `${division || 'N/A'}: $${revenueByDivision[division].toFixed(2)}\n`;
         });
@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const sortedDivisions = sortedData.map(entry => entry[0]);
         const revenueNumbers = sortedData.map(entry => entry[1]);
     
-        const ctx = document.getElementById('18monthsRChart').getContext('2d');
+        const ctx = document.getElementById('12monthsChart').getContext('2d');
     
         new Chart(ctx, {
             type: 'bar',

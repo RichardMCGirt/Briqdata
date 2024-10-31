@@ -2,18 +2,19 @@ const airtableApiKey = 'patGjoWY1PkTG12oS.e9cf71910320ac1e3496ff803700f0e4319bf0
 const airtableBaseId = 'appX1Saz7wMYh4hhm';
 const airtableTableName = 'tblfCPX293KlcKsdp';
 const winRateDiv = document.getElementById('win%byBranch');
+const recordCountDiv = document.getElementById('winratebyBranch'); // New element for real-time update
 const currentYear = new Date().getFullYear();
 
 async function fetchAirtableData(offset = null, allRecords = []) {
     let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?filterByFormula=OR({Outcome} = 'Loss', {Outcome} = 'Win')`;
-    
+
     // Add offset if it exists
     if (offset) {
         url += `&offset=${offset}`;
     }
 
     console.log('Fetching data from URL:', url);
-    
+
     const response = await fetch(url, {
         headers: {
             Authorization: `Bearer ${airtableApiKey}`
@@ -23,6 +24,9 @@ async function fetchAirtableData(offset = null, allRecords = []) {
     if (response.ok) {
         const data = await response.json();
         allRecords = allRecords.concat(data.records);
+
+        // Update the real-time record count
+        recordCountDiv.innerText = `Records fetched: ${allRecords.length}`;
 
         // Log a message every 500 records fetched
         if (allRecords.length % 500 === 0) {
@@ -43,11 +47,15 @@ async function fetchAirtableData(offset = null, allRecords = []) {
 
 function calculateWinRate(records) {
     const divisionData = {};
+    let outcomeCount = 0; // Counter for total 'Win' or 'Loss' records
 
-    // Process records in batch
     records.forEach(record => {
         const division = record.fields['Division'];
         const outcome = record.fields['Outcome'];
+
+        if (outcome === 'Win' || outcome === 'Loss') {
+            outcomeCount++;  // Increment counter for 'Win' or 'Loss'
+        }
 
         if (!divisionData[division]) {
             divisionData[division] = { winCount: 0, totalCount: 0 };
@@ -67,13 +75,22 @@ function calculateWinRate(records) {
 
     // Log only final results
     console.log('Final Win Rates by Division:', winRates);
+    console.log('Total records with Win or Loss outcome:', outcomeCount);
+    winRates['Total Records'] = outcomeCount; 
     return winRates;
 }
 
 function updateWinRateDiv(winRates) {
     winRateDiv.innerHTML = '';  // Clear previous content
 
+    // Display total records with Outcome 'Win' or 'Loss'
+    const totalDiv = document.createElement('div');
+    totalDiv.innerHTML = `<p>Total records with Win or Loss outcome: ${winRates['Total Records']}</p>`;
+    winRateDiv.appendChild(totalDiv);
+
     for (const division in winRates) {
+        if (division === 'Total Records') continue; // Skip the total count in individual division display
+
         const percentage = winRates[division].toFixed(2);
         const branchDiv = document.createElement('div');
         branchDiv.classList.add('branch');
@@ -93,7 +110,6 @@ async function initialize() {
 }
 
 initialize();
-
 
 
 // Function to export win rates as a CSV file
@@ -120,23 +136,30 @@ function exportToCSV(winRates) {
 }
 
 // Function to display the bar graph of win rates
+// Function to display the bar graph of win rates
 function displayBarGraph(winRates) {
     if (!winRates || Object.keys(winRates).length === 0) {
         console.warn('No data available to display');
         return;
     }
 
-    const ctx = document.getElementById('winRateChart').getContext('2d');
-    const labels = Object.keys(winRates);
-    const data = Object.values(winRates).map(rate => rate.toFixed(2));
+    // Filter out 'Total Records' and 'Corporate', then sort by win rate in ascending order
+    const sortedWinRates = Object.entries(winRates)
+        .filter(([division]) => division !== 'Total Records' && division !== 'Corporate') // Exclude "Total Records" and "Corporate"
+        .sort(([, rateA], [, rateB]) => rateA - rateB); // Sort by win rate in ascending order
 
+    // Separate the sorted divisions and win rates into labels and data arrays
+    const labels = sortedWinRates.map(([division]) => division);
+    const data = sortedWinRates.map(([, winRate]) => winRate.toFixed(2));
+
+    const ctx = document.getElementById('winRateChart').getContext('2d');
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: labels,
+            labels: labels, // Sorted division names
             datasets: [{
                 label: 'Win Rate Percentage',
-                data: data,
+                data: data, // Sorted win rates
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                 borderColor: 'rgba(75, 192, 192, 1)',
                 borderWidth: 1
@@ -154,6 +177,8 @@ function displayBarGraph(winRates) {
 
     console.log('Bar graph displayed');
 }
+
+
 
 // Initialization function
 async function initialize() {

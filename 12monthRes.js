@@ -10,8 +10,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Initially disable the export button and update its text and style
     exportButton.disabled = true;
     exportButton.textContent = "Fetching data...";
-    exportButton.style.backgroundColor = "#ccc"; // Change to a light grey
-    exportButton.style.cursor = "not-allowed"; // Change cursor to indicate non-clickable
+    exportButton.style.backgroundColor = "#ccc"; 
+    exportButton.style.cursor = "not-allowed"; 
 
     async function fetchData(offset = null) {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=NOT({Project Type Briq}='Commercial')&sort[0][field]=Project Type Briq&sort[0][direction]=asc`;
@@ -24,17 +24,13 @@ document.addEventListener('DOMContentLoaded', async function () {
             });
     
             if (!response.ok) {
-                const errorDetails = await response.json(); // Get detailed error message
+                const errorDetails = await response.json();
                 console.error('Error fetching data from Airtable:', errorDetails);
                 throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
     
             const data = await response.json();
             console.log(`Number of records fetched: ${data.records.length}`);
-            data.records.forEach(record => {
-                console.log('Fetched Record:', record);
-                console.log('Fields:', record.fields);
-            });
             return data;
         } catch (error) {
             console.error('Error fetching data from Airtable:', error.message);
@@ -44,167 +40,142 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     async function fetchAllData() {
         console.log("Starting to fetch all data...");
-
+    
         let allRecords = [];
         let offset = null;
         const today = new Date();
-        const oneYearLater = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
-
+        const sixMonthsLater = new Date(today.getFullYear(), today.getMonth() + 12, today.getDate());
+    
         do {
             const data = await fetchData(offset);
-            // Filter records that have Anticipated End Date within the next year
             const filteredRecords = data.records.filter(record => {
                 const anticipatedEndDate = new Date(record.fields['Anticipated End Date Briq']);
-                return anticipatedEndDate >= today && anticipatedEndDate <= oneYearLater;
+                return anticipatedEndDate >= today && anticipatedEndDate <= sixMonthsLater;
             });
-
+    
             allRecords = allRecords.concat(filteredRecords);
             console.log(`Filtered and fetched ${filteredRecords.length} records. Total so far: ${allRecords.length}`);
-            offset = data.offset; // Airtable provides an offset if there are more records to fetch
+            offset = data.offset;
 
-            // Update the record count in the UI
-            document.getElementById('record-count4').textContent = `Records fetched: ${allRecords.length}`;
+            document.getElementById('record-countC12').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
-
+    
         console.log(`All data fetched successfully. Total records after filtering: ${allRecords.length}`);
         return allRecords;
     }
-
-    
 
     function exportToCSV(records) {
         console.log("Starting CSV export...");
 
         let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += `Projected Revenue by Division \n\n`;
+        csvContent += "Division,Projected Revenue\n";
 
-        // Add title with the current year
-        csvContent += `Projected Revenue by Branch \n\n`;
+        const revenueByDivision = {};
 
-        // Add headers
-        csvContent += "VanirOffice,Projected Revenue\n";
-
-        const revenueByBranch = {};
-
-        // Calculate projected revenue by branch
         records.forEach(record => {
-            const branch = record.fields['Branch'];
+            const division = record.fields['Division'];
             const bidValue = parseFloat(record.fields['Bid Value Briq']) || 0;
 
-            console.log(`Branch: ${branch}`);
-            console.log(`Bid Value: ${bidValue}`);
-
-            if (branch !== "Test Branch") {
-                if (!revenueByBranch[branch]) {
-                    revenueByBranch[branch] = 0;
+            if (division && division !== "Test Division") {
+                if (!revenueByDivision[division]) {
+                    revenueByDivision[division] = 0;
                 }
-                revenueByBranch[branch] += bidValue; // Sum up bid values for the branch
+                revenueByDivision[division] += bidValue; 
             }
         });
 
-        // Sort branches alphabetically
-        const sortedBranches = Object.keys(revenueByBranch).sort();
+        const sortedDivisions = Object.keys(revenueByDivision).sort();
 
-        // Add revenue data to CSV
-        sortedBranches.forEach(branch => {
+        sortedDivisions.forEach(division => {
             const row = [
-                branch || 'N/A',
-                revenueByBranch[branch].toFixed(2) // Format the revenue to two decimal places
+                division || 'N/A',
+                revenueByDivision[division].toFixed(2)
             ].join(",");
             csvContent += row + "\n";
-
-            console.log(`CSV Row for Branch ${branch}: ${row}`);
         });
 
-        // Encode and trigger download
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Vanir_Offices_Projected_Revenue_Next twelve months.csv`);
+        link.setAttribute("download", `Vanir_Divisions_Projected_Revenue_Next_Six_Months.csv`);
         document.body.appendChild(link);
-
-        console.log("CSV ready for download.");
         link.click();
         document.body.removeChild(link);
 
-        // Update the record count in the UI with the projected revenue per branch
         const recordCountDiv = document.getElementById('record-countR12');
-        let revenueSummary = `Projected Revenue by Branch Next twelve months:\n`;
-        sortedBranches.forEach(branch => {
-            revenueSummary += `${branch || 'N/A'}: $${revenueByBranch[branch].toFixed(2)}\n`;
+        let revenueSummary = `Projected Revenue by Division Next six months:\n`;
+        sortedDivisions.forEach(division => {
+            revenueSummary += `${division || 'N/A'}: $${revenueByDivision[division].toFixed(2)}\n`;
         });
-        recordCountDiv.textContent = revenueSummary.trim(); // Display in the div
+        recordCountDiv.textContent = revenueSummary.trim();
 
-        console.log("Revenue Summary:", revenueSummary.trim());
-
-        // Create bar chart with the sorted revenue data
-        createBarChart(revenueByBranch);
+        createBarChart(revenueByDivision);
     }
 
-    function createBarChart(revenueByBranch) {
+    function createBarChart(revenueByDivision) {
         console.log("Creating bar chart...");
-
-        // Convert revenueByBranch object into sorted arrays
-        const sortedData = Object.entries(revenueByBranch).sort((a, b) => a[1] - b[1]);
-        const sortedBranches = sortedData.map(entry => entry[0]);
+    
+        // Filter out Nashville from the revenue data
+        const filteredData = Object.entries(revenueByDivision)
+            .filter(([division, revenue]) => division !== "Nashville");
+    
+        // Sort the filtered data
+        const sortedData = filteredData.sort((a, b) => a[1] - b[1]);
+        const sortedDivisions = sortedData.map(entry => entry[0]);
         const revenueNumbers = sortedData.map(entry => entry[1]);
-
-        console.log('Sorted Branches:', sortedBranches);
-        console.log('Revenue Numbers:', revenueNumbers);
-
+    
         const ctx = document.getElementById('12monthsRChart').getContext('2d');
-
+    
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: sortedBranches,
+                labels: sortedDivisions,
                 datasets: [{
                     label: 'Projected Revenue',
                     data: revenueNumbers,
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)', // Adjusted for a 3D effect
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
                     borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 2, // Thicker border for 3D effect
-                    barThickness: 50 // Custom thickness for bars
+                    borderWidth: 2,
+                    barThickness: 50
                 }]
             },
             options: {
                 scales: {
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return `$${value.toLocaleString()}`;
+                            }
+                        }
                     }
                 },
                 plugins: {
                     legend: {
-                        display: false // Hide the legend if not needed
+                        display: false
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return `Projected Revenue: $${tooltipItem.raw.toLocaleString()}`;
+                            }
+                        }
                     }
                 }
             }
         });
-
-        console.log("Bar chart created successfully.");
     }
-
-    // Automatically start fetching data when the page loads
+    
     const allRecords = await fetchAllData();
+    exportToCSV(allRecords);
 
-    // Automatically export the CSV after data is fetched
-   // exportToCSV(allRecords);
-
-    // Enable the export button after data is fetched (optional, as it's already exported)
     exportButton.disabled = false;
     exportButton.textContent = "Export to CSV";
-    exportButton.style.backgroundColor = ""; // Reset to default style
-    exportButton.style.cursor = "pointer"; // Reset cursor to pointer
+    exportButton.style.backgroundColor = ""; 
+    exportButton.style.cursor = "pointer"; 
 
-    // Attach event listener to the export button (if needed for manual re-export)
     exportButton.addEventListener('click', function () {
-        console.log("Export button clicked.");
         exportToCSV(allRecords);
     });
 });
