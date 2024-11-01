@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
     
     const allRecords = await fetchAllData();
-    exportToCSV(allRecords);
+   // exportToCSV(allRecords);
 
     exportButton.disabled = false;
     exportButton.textContent = "Export to CSV";

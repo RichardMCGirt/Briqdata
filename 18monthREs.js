@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Fetch data and trigger export and chart generation
     const allRecords = await fetchAllData();
-    exportToCSV(allRecords);
+  //  exportToCSV(allRecords);
 
     exportButton.disabled = false;
     exportButton.textContent = "Export to CSV";
