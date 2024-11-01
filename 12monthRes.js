@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     exportButton.style.cursor = "not-allowed"; 
 
     async function fetchData(offset = null) {
-        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=NOT({Project Type Briq}='Commercial')&sort[0][field]=Project Type Briq&sort[0][direction]=asc`;
+        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=NOT({Project Type Briq}='Residential Townhomes')&sort[0][field]=Project Type Briq&sort[0][direction]=asc`;
         if (offset) url += `&offset=${offset}`;
         console.log(`Fetching data from URL: ${url}`);
     
