@@ -7,13 +7,14 @@ document.addEventListener('DOMContentLoaded', async function () {
     const exportButton = document.getElementById('export-button');
     const currentYear = new Date().getFullYear();
 
+    // Initially disable the export button and update its text and style
     exportButton.disabled = true;
     exportButton.textContent = "Fetching data...";
-    exportButton.style.backgroundColor = "#ccc";
-    exportButton.style.cursor = "not-allowed";
+    exportButton.style.backgroundColor = "#ccc"; 
+    exportButton.style.cursor = "not-allowed"; 
 
     async function fetchData(offset = null) {
-        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=AND({Project Type Briq}='Residential Townhomes',{Outcome}='Win')&sort[0][field]=Project Type Briq&sort[0][direction]=asc`;
+        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=AND(OR({Project Type Briq}='Single Family',{Project Type Briq}='Residential Townhomes'),{Outcome}='Win')&sort[0][field]=Project Type Briq&sort[0][direction]=asc`;
         if (offset) url += `&offset=${offset}`;
         console.log(`Fetching data from URL: ${url}`);
     
@@ -43,9 +44,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         let allRecords = [];
         let offset = null;
         const today = new Date();
-        const sixMonthsLater = new Date(today);
-        sixMonthsLater.setMonth(today.getMonth() + 18);
-            
+        const sixMonthsLater = new Date(today.getFullYear(), today.getMonth() + 18, today.getDate());
+    
         do {
             const data = await fetchData(offset);
             const filteredRecords = data.records.filter(record => {
@@ -54,6 +54,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             });
     
             allRecords = allRecords.concat(filteredRecords);
+            console.log(`Filtered and fetched ${filteredRecords.length} records. Total so far: ${allRecords.length}`);
             offset = data.offset;
 
             document.getElementById('record-count4').textContent = `Records fetched: ${allRecords.length}`;
@@ -63,61 +64,18 @@ document.addEventListener('DOMContentLoaded', async function () {
         return allRecords;
     }
 
-    function exportToCSV(records) {
-        console.log("Starting CSV export...");
-
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += `Projected Revenue by Division \n\n`;
-        csvContent += "Division,Projected Revenue\n";
-
-        const revenueByDivision = {};
-
-        records.forEach(record => {
-            const division = record.fields['Division'];
-            const bidValue = parseFloat(record.fields['Bid Value Briq']) || 0;
-
-            if (division && division !== "Test Division") {
-                if (!revenueByDivision[division]) {
-                    revenueByDivision[division] = 0;
-                }
-                revenueByDivision[division] += bidValue; 
-            }
-        });
-
-        // Convert to array, sort by revenue, and remove the two lowest values
-        const sortedData = Object.entries(revenueByDivision).sort((a, b) => a[1] - b[1]);
-        const filteredData = sortedData.slice(2); // Remove the two lowest revenue divisions
-
-        // Create CSV content from filtered data
-        filteredData.forEach(([division, revenue]) => {
-            const row = `${division || 'N/A'},${revenue.toFixed(2)}`;
-            csvContent += row + "\n";
-        });
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Vanir_Divisions_Projected_Revenue_Next_Eighteen_Months.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        const recordCountDiv = document.getElementById('record-countR18');
-        let revenueSummary = `Projected Revenue by Division Next eighteen months:\n`;
-        filteredData.forEach(([division, revenue]) => {
-            revenueSummary += `${division || 'N/A'}: $${revenue.toFixed(2)}\n`;
-        });
-        recordCountDiv.textContent = revenueSummary.trim();
-
-        createBarChart(Object.fromEntries(filteredData)); // Pass filtered data to the chart
-    }
-
     function createBarChart(revenueByDivision) {
         console.log("Creating bar chart...");
     
-        const sortedDivisions = Object.keys(revenueByDivision).sort((a, b) => revenueByDivision[a] - revenueByDivision[b]);
-        const revenueNumbers = sortedDivisions.map(division => revenueByDivision[division]);
-
+        // Filter out Nashville from the revenue data
+        const filteredData = Object.entries(revenueByDivision)
+            .filter(([division, revenue]) => division !== "Nashville");
+    
+        // Sort the filtered data
+        const sortedData = filteredData.sort((a, b) => a[1] - b[1]);
+        const sortedDivisions = sortedData.map(entry => entry[0]);
+        const revenueNumbers = sortedData.map(entry => entry[1]);
+    
         const ctx = document.getElementById('18monthsRChart').getContext('2d');
     
         new Chart(ctx, {
@@ -129,8 +87,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                     data: revenueNumbers,
                     backgroundColor: 'rgba(75, 192, 192, 0.6)',
                     borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 4,
-                    barThickness: 70
+                    borderWidth: 2,
+                    barThickness: 50
                 }]
             },
             options: {
@@ -159,17 +117,29 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
     }
-
-    // Fetch data and trigger export and chart generation
+    
+    // Fetch data and generate the bar chart
     const allRecords = await fetchAllData();
-   exportToCSV(allRecords);
+    
+    // Calculate revenue by division to pass to the chart
+    const revenueByDivision = {};
+    allRecords.forEach(record => {
+        const division = record.fields['Division'];
+        const bidValue = parseFloat(record.fields['Bid Value Briq']) || 0;
 
+        if (division && division !== "Test Division") {
+            if (!revenueByDivision[division]) {
+                revenueByDivision[division] = 0;
+            }
+            revenueByDivision[division] += bidValue; 
+        }
+    });
+
+    createBarChart(revenueByDivision);
+
+    // Update export button to indicate data loading is complete
     exportButton.disabled = false;
-    exportButton.textContent = "Export to CSV";
+    exportButton.textContent = "Data Loaded";
     exportButton.style.backgroundColor = ""; 
     exportButton.style.cursor = "pointer"; 
-
-    exportButton.addEventListener('click', function () {
-        exportToCSV(allRecords);
-    });
 });

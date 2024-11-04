@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     exportButton.style.cursor = "not-allowed"; 
 
     async function fetchData(offset = null) {
-        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=AND({Project Type Briq}='Residential Townhomes',{Outcome}='Win')&sort[0][field]=Project Type Briq&sort[0][direction]=asc`;
+        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=AND(OR({Project Type Briq}='Single Family',{Project Type Briq}='Residential Townhomes'),{Outcome}='Win')&sort[0][field]=Project Type Briq&sort[0][direction]=asc`;
         if (offset) url += `&offset=${offset}`;
         console.log(`Fetching data from URL: ${url}`);
     
@@ -62,55 +62,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     
         console.log(`All data fetched successfully. Total records after filtering: ${allRecords.length}`);
         return allRecords;
-    }
-
-    function exportToCSV(records) {
-        console.log("Starting CSV export...");
-
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += `Projected Revenue by Division \n\n`;
-        csvContent += "Division,Projected Revenue\n";
-
-        const revenueByDivision = {};
-
-        records.forEach(record => {
-            const division = record.fields['Division'];
-            const bidValue = parseFloat(record.fields['Bid Value Briq']) || 0;
-
-            if (division && division !== "Test Division") {
-                if (!revenueByDivision[division]) {
-                    revenueByDivision[division] = 0;
-                }
-                revenueByDivision[division] += bidValue; 
-            }
-        });
-
-        const sortedDivisions = Object.keys(revenueByDivision).sort();
-
-        sortedDivisions.forEach(division => {
-            const row = [
-                division || 'N/A',
-                revenueByDivision[division].toFixed(2)
-            ].join(",");
-            csvContent += row + "\n";
-        });
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Vanir_Divisions_Projected_Revenue_Next_Six_Months.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        const recordCountDiv = document.getElementById('record-countR12');
-        let revenueSummary = `Projected Revenue by Division Next six months:\n`;
-        sortedDivisions.forEach(division => {
-            revenueSummary += `${division || 'N/A'}: $${revenueByDivision[division].toFixed(2)}\n`;
-        });
-        recordCountDiv.textContent = revenueSummary.trim();
-
-        createBarChart(revenueByDivision);
     }
 
     function createBarChart(revenueByDivision) {
@@ -167,15 +118,28 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
     }
     
+    // Fetch data and generate the bar chart
     const allRecords = await fetchAllData();
-    exportToCSV(allRecords);
+    
+    // Calculate revenue by division
+    const revenueByDivision = {};
+    allRecords.forEach(record => {
+        const division = record.fields['Division'];
+        const bidValue = parseFloat(record.fields['Bid Value Briq']) || 0;
 
+        if (division && division !== "Test Division") {
+            if (!revenueByDivision[division]) {
+                revenueByDivision[division] = 0;
+            }
+            revenueByDivision[division] += bidValue; 
+        }
+    });
+
+    createBarChart(revenueByDivision);
+
+    // Update export button to indicate data loading is complete
     exportButton.disabled = false;
-    exportButton.textContent = "Export to CSV";
+    exportButton.textContent = "Data Loaded";
     exportButton.style.backgroundColor = ""; 
     exportButton.style.cursor = "pointer"; 
-
-    exportButton.addEventListener('click', function () {
-        exportToCSV(allRecords);
-    });
 });

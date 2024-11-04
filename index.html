@@ -87,9 +87,18 @@
             <canvas id="winRateChart"></canvas>
 
         </div>
+        <div class="chart-section full-width">
+            <h2>Upload Sales Data CSV</h2>
+            <input type="file" id="fileInput" accept=".csv" />
+            <button id="removeChartButton" style="display: none;">Remove Chart</button>
+
+            <canvas id="salesChart" style="display: none;"></canvas>
+
+        </div>
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
   <script src="script.js"></script> 
     <script src="script2.js"></script> 
@@ -98,10 +107,12 @@
    <script src="12monthComercial.js"></script>
     <script src="18monthComercial.js"></script> 
     <script src="6monthsRes.js"></script> 
-   <script src="12monthRes.js"></script> 
+   <script src="12monthRes.js"></script>
  <script src="18monthREs.js"></script>
    <script src="winratebybranch.js"></script> 
    <script src ="disablebutton.js"></script> 
+   <script src ="Revenuebybranch.js"></script> 
+
 </body>
 
 </html>
