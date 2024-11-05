@@ -6,7 +6,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableTableName = 'tblRp5bukUiw9tX9j';
     const exportButton = document.getElementById('export-button');
 
-    // Initially disable the export button and update its text and style
+    // Initially disable the export button
+    exportButton.disabled = true;
     exportButton.textContent = "Fetching data...";
     exportButton.style.backgroundColor = "#ccc";
     exportButton.style.cursor = "not-allowed";
@@ -34,7 +35,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     async function fetchAllData() {
         console.log("Starting to fetch all data...");
-
         let allRecords = [];
         let offset = null;
 
@@ -42,9 +42,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             const data = await fetchData(offset);
             allRecords = allRecords.concat(data.records);
             console.log(`Fetched ${data.records.length} records. Total so far: ${allRecords.length}`);
-            offset = data.offset; // Airtable provides an offset if there are more records to fetch
-
-            // Update the record count in the UI
+            offset = data.offset;
             document.getElementById('record-count').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
 
@@ -52,93 +50,133 @@ document.addEventListener('DOMContentLoaded', async function () {
         return allRecords;
     }
 
-    function formatDateToMonthYear(dateString) {
-        const date = new Date(dateString);
-        const year = date.getFullYear();
-        const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Month as MM
-        return `${month}/${year}`; // Returns in MM/YYYY format
-    }
+    function createBarChart(records) {
+        console.log("Creating bar chart...");
 
-    function exportToCSV(records) {
-        console.log("Starting CSV export...");
-
-        let csvContent = "data:text/csv;charset=utf-8,";
-
-        // Add title
-        csvContent += "Value of Fill Ins by Branch per Month\n\n";
-
-        // Add headers
-        csvContent += "VanirOffice,Total Cost of Fill In,Month/Year\n";
-
-        // Calculate the sum of 'Total Cost of Fill In' by VanirOffice per month, excluding "Test Branch" and undefined branches
-        const officeSums = {};
-
+        const branchMonthlySums = {};
+        const monthNames = ["January", "February", "March", "April", "May", "June", 
+                            "July", "August", "September", "October", "November", "December"];
+        
         records.forEach(record => {
-            let branch = record.fields['VanirOffice'];
+            const branch = record.fields['VanirOffice'];
             const cost = parseFloat(record.fields['Total Cost of Fill In']) || 0;
-            const monthYear = formatDateToMonthYear(record.fields['Date Created']);
+            const dateCreated = record.fields['Date Created'];
 
-            // Replace "Greenville,SC" with "Greenville"
-            if (branch === "Greenville,SC") {
-                branch = "Greenville";
+               // Filter out unwanted branches
+        if (!branch || branch === "Test Branch" || branch === "(Charleston, Greensboro)" || branch === "(Charlotte, Raleigh)") {
+            return;
+        }
+
+
+            // Parse date and format as "Month-Year"
+            const date = new Date(dateCreated);
+            if (isNaN(date.getTime())) {
+                console.warn(`Invalid or missing date encountered: ${dateCreated}`);
+                return;
             }
 
-            // Filter out undefined or null branches and "Test Branch"
+            const monthName = monthNames[date.getMonth()];
+            const year = date.getFullYear();
+            const monthYear = `${monthName} ${year}`;
+
             if (branch && branch !== "Test Branch") {
-                if (!officeSums[branch]) {
-                    officeSums[branch] = {};
+                if (!branchMonthlySums[branch]) {
+                    branchMonthlySums[branch] = {};
                 }
-                if (!officeSums[branch][monthYear]) {
-                    officeSums[branch][monthYear] = 0;
+                if (!branchMonthlySums[branch][monthYear]) {
+                    branchMonthlySums[branch][monthYear] = 0;
                 }
-                officeSums[branch][monthYear] += cost;
+                branchMonthlySums[branch][monthYear] += cost;
             }
         });
 
-        // Calculate the total sum for each branch
-        const branchTotals = Object.keys(officeSums).map(branch => {
-            const totalSum = Object.values(officeSums[branch]).reduce((a, b) => a + b, 0);
-            return { branch, totalSum };
+        const branches = Object.keys(branchMonthlySums);
+        const months = Array.from(
+            new Set(Object.values(branchMonthlySums).flatMap(monthData => Object.keys(monthData)))
+        ).sort((a, b) => new Date(a) - new Date(b));
+
+        const colors = [
+            'rgba(244, 67, 54, 0.3)',   // Light red
+            'rgba(33, 150, 243, 0.3)',  // Light blue
+            'rgba(76, 175, 80, 0.3)',   // Light green
+            'rgba(255, 235, 59, 0.3)',  // Light yellow
+            'rgba(255, 152, 0, 0.3)',   // Light orange
+            'rgba(156, 39, 176, 0.3)',  // Light purple
+            'rgba(0, 188, 212, 0.3)',   // Light cyan
+            'rgba(121, 85, 72, 0.3)'    // Light brown
+        ];
+
+        const datasets = branches.map((branch, index) => {
+            const data = months.map(month => branchMonthlySums[branch][month] || 0);
+            const color = colors[index % colors.length];
+            return {
+                label: branch,
+                data,
+                borderWidth: 1,
+                backgroundColor: color,
+                borderColor: color.replace('0.3', '1'),
+            };
         });
 
-        // Sort branches by total sum in ascending order and exclude the two branches with the least value
-        branchTotals.sort((a, b) => a.totalSum - b.totalSum);
-        const branchesToInclude = branchTotals.slice(2).map(item => item.branch);
-
-        // Add summed data to CSV with dollar sign formatting
-        branchesToInclude.forEach(branch => {
-            Object.keys(officeSums[branch]).forEach(monthYear => {
-                const row = [
-                    branch || 'N/A',
-                    `$${officeSums[branch][monthYear].toFixed(2)}`,
-                    monthYear
-                ].join(",");
-                csvContent += row + "\n";
-            });
+        const ctx = document.getElementById('fillInChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets
+            },
+            options: {
+                scales: {
+                    x: {
+                        stacked: true,
+                        title: {
+                            display: true,
+                            text: ''
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        stacked: true,
+                        title: {
+                            display: true,
+                            text: 'Total Cost ($)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return `$${value.toLocaleString()}`;
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return `$${tooltipItem.raw.toLocaleString()}`;
+                            }
+                        }
+                    }
+                }
+            }
         });
 
-        // Encode and trigger download
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "Vanir_Offices_Data_Sum_Per_Month.csv");
-        document.body.appendChild(link);
-
-        console.log("CSV ready for download.");
-        link.click();
-        document.body.removeChild(link);
+        console.log("Bar chart created successfully.");
     }
 
-    // Automatically start fetching data when the page loads
+    // Fetch data and create chart
     const allRecords = await fetchAllData();
+    createBarChart(allRecords);
 
-    // Automatically export the CSV after data is fetched
-   // exportToCSV(allRecords);
+    // Enable the export button
+    exportButton.disabled = false;
+    exportButton.textContent = "Export to CSV";
+    exportButton.style.backgroundColor = ""; 
+    exportButton.style.cursor = "pointer";
 
-    // Enable the export button after data is fetched (optional, as it's already exported)
-   
-
-    // Attach event listener to the export button (if needed for manual re-export)
     exportButton.addEventListener('click', function () {
         console.log("Export button clicked.");
         exportToCSV(allRecords);
