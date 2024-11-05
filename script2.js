@@ -5,11 +5,13 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableBaseId = 'appeNSp44fJ8QYeY5';
     const airtableTableName = 'tbl6eZYBPK79a8qqo';
     const exportButton = document.getElementById('export-button');
+    const locationDropdown = document.getElementById('locationDropdown');
 
-    // Initially disable the export button and update its text and style
+    console.log("Initialized variables and elements.");
+
     exportButton.textContent = "Fetching data...";
-    exportButton.style.backgroundColor = "#ccc"; // Change to a light grey
-    exportButton.style.cursor = "not-allowed"; // Change cursor to indicate non-clickable
+    exportButton.style.backgroundColor = "#ccc";
+    exportButton.style.cursor = "not-allowed";
 
     async function fetchData(offset = null) {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100`;
@@ -26,7 +28,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
 
             const data = await response.json();
-            console.log(`Number of records fetched: ${data.records.length}`);
+            console.log(`Fetched ${data.records.length} records from Airtable.`);
             return data;
         } catch (error) {
             console.error('Error fetching data from Airtable:', error.message);
@@ -43,10 +45,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         do {
             const data = await fetchData(offset);
             allRecords = allRecords.concat(data.records);
-            console.log(`Fetched ${data.records.length} records. Total so far: ${allRecords.length}`);
-            offset = data.offset; // Airtable provides an offset if there are more records to fetch
-
-            // Update the record count in the UI
+            offset = data.offset;
+            console.log(`Total records fetched so far: ${allRecords.length}`);
             document.getElementById('record-count2').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
 
@@ -54,96 +54,177 @@ document.addEventListener('DOMContentLoaded', async function () {
         return allRecords;
     }
 
-    function formatDateToYear(dateString) {
-        const date = new Date(dateString);
-        return date.getFullYear(); // Returns the year as YYYY
-    }
-
-    function formatDateToMonthYear(dateString) {
-        const date = new Date(dateString);
-        const year = date.getFullYear();
-        const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Month as MM
-        return `${month}/${year}`; // Returns in MM/YYYY format
-    }
-
-    function exportToCSV(records) {
-        console.log("Starting CSV export...");
-
-        let csvContent = "data:text/csv;charset=utf-8,";
-
-        // Add title
-        csvContent += "Value of Return by Branch per Month\n\n";
-
-        // Add headers
-        csvContent += "VanirOffice,Total Cost of Return,Month/Year\n";
-
-        // Calculate the sum of 'Total Cost of Fill In' by VanirOffice per year, excluding "Test Branch"
-        const officeSums = {};
-
+    // Function to get unique branches and populate the dropdown
+    function populateDropdown(records) {
+        console.log("Populating dropdown with unique branches...");
+        
+        const uniqueBranches = new Set();
         records.forEach(record => {
             let branch = record.fields['Branch'];
-            const cost = parseFloat(record.fields['Actual $ Credit Amount']) || 0;
-            const monthYear = formatDateToMonthYear(record.fields['Date Created']);
-            const year = formatDateToYear(record.fields['Date Created']);
-
-            // Replace "Greenville,SC" with "Greenville"
             if (branch === "Greenville,SC") {
                 branch = "Greenville";
             }
-
             if (branch && branch !== "Test Branch") {
-                if (!officeSums[branch]) {
-                    officeSums[branch] = {};
-                }
-                if (!officeSums[branch][year]) {
-                    officeSums[branch][year] = { total: 0, months: {} };
-                }
-                if (cost > 0) {
-                    officeSums[branch][year].total += cost;
-                    officeSums[branch][year].months[monthYear] = (officeSums[branch][year].months[monthYear] || 0) + cost;
-                }
+                uniqueBranches.add(branch);
             }
         });
 
-        // Sort the branches alphabetically
-        const sortedBranches = Object.keys(officeSums).sort();
+        // Log the unique branches to verify
+        console.log("Unique branches found:", Array.from(uniqueBranches));
 
-        // Add summed data to CSV with dollar sign formatting
-        sortedBranches.forEach(branch => {
-            Object.keys(officeSums[branch]).forEach(year => {
-                Object.keys(officeSums[branch][year].months).forEach(monthYear => {
-                    const row = [
-                        branch || 'N/A',
-                        `$${officeSums[branch][year].months[monthYear].toFixed(2)}`,
-                        monthYear
-                    ].join(",");
-                    csvContent += row + "\n";
-                });
-            });
+        // Populate dropdown with unique branches
+        uniqueBranches.forEach(branch => {
+            const option = document.createElement("option");
+            option.value = branch;
+            option.textContent = branch;
+            locationDropdown.appendChild(option);
         });
-
-        // Encode and trigger download
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "Vanir_Offices_Returns_Sum_Per_Month.csv");
-        document.body.appendChild(link);
-
-        console.log("CSV ready for download.");
-        link.click();
-        document.body.removeChild(link);
     }
 
-    // Automatically start fetching data when the page loads
+    function filterRecordsByLocation(records, location) {
+        console.log(`Filtering records for location: ${location}`);
+        const filteredRecords = records.filter(record => {
+            let branch = record.fields['Branch'] === "Greenville,SC" ? "Greenville" : record.fields['Branch'];
+            return branch === location;
+        });
+        console.log(`Found ${filteredRecords.length} records for location: ${location}`);
+        return filteredRecords;
+    }
+// Function to format a date to "Month YYYY"
+function formatDateToMonthYear(dateString) {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const monthName = date.toLocaleString('default', { month: 'long' }); // Get full month name
+    return `${monthName} ${year}`; // Returns in "Month YYYY" format
+}
+
+function createBarChart(records, location) {
+    console.log(`Creating bar chart for location: ${location}`);
+
+    // Check if there's data to display
+    if (records.length === 0) {
+        console.warn("No data available to create the chart.");
+        return;
+    }
+
+    // Prepare data for the chart
+    const labels = []; // Months
+    const dataValues = []; // Corresponding values for each month
+
+    records.forEach(record => {
+        const monthYear = formatDateToMonthYear(record.fields['Date Created']); // Format date as "Month YYYY"
+        const cost = parseFloat(record.fields['Actual $ Credit Amount']) || 0;
+
+        if (!labels.includes(monthYear)) {
+            labels.push(monthYear);
+            dataValues.push(cost);
+        } else {
+            const index = labels.indexOf(monthYear);
+            dataValues[index] += cost; // Accumulate cost for the same month
+        }
+    });
+
+    // Combine labels and dataValues for sorting
+    const chartData = labels.map((label, index) => ({ label, value: dataValues[index] }));
+
+    // Sort by date in ascending order
+    chartData.sort((a, b) => new Date(a.label) - new Date(b.label));
+
+    // Separate sorted labels and values
+    const sortedLabels = chartData.map(item => item.label);
+    const sortedDataValues = chartData.map(item => item.value);
+
+    console.log(`Sorted Labels: ${sortedLabels}`);
+    console.log(`Sorted Data values: ${sortedDataValues}`);
+
+    // Get or create the chart container
+    const chartContainer = document.getElementById('chartContainer');
+    chartContainer.innerHTML = ''; // Clear previous chart if any
+
+    // Create a canvas element for Chart.js
+    const canvas = document.createElement('canvas');
+    canvas.id = 'myChart';
+    chartContainer.appendChild(canvas);
+
+    // Destroy previous chart instance if it exists
+    if (window.myChartInstance) {
+        window.myChartInstance.destroy();
+    }
+
+    // Create a new bar chart with sorted data
+    window.myChartInstance = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: sortedLabels,
+            datasets: [{
+                label: `Total Returns for ${location}`,
+                data: sortedDataValues,
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Month/Year'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Total Cost of Return ($)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `$${context.raw.toFixed(2)}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    console.log("Bar chart created successfully in ascending order.");
+}
+
+    
+
+    // Fetch all records once on page load
     const allRecords = await fetchAllData();
 
-    // Automatically export the CSV after data is fetched
-    // exportToCSV(allRecords);
+    // Populate dropdown after fetching records
+    populateDropdown(allRecords);
 
-    // Enable the export button after data is fetched (optional, as it's already exported)
+    // Enable the export button and reset its style
+    exportButton.textContent = "Export to CSV";
+    exportButton.style.backgroundColor = "#007bff";
+    exportButton.style.cursor = "pointer";
 
+    // Listen for changes in the dropdown selection
+    locationDropdown.addEventListener('change', function () {
+        const selectedLocation = locationDropdown.value;
+        console.log(`Dropdown selection changed. Selected location: ${selectedLocation}`);
 
-    // Attach event listener to the export button (if needed for manual re-export)
+        if (selectedLocation) {
+            const filteredRecords = filterRecordsByLocation(allRecords, selectedLocation);
+            createBarChart(filteredRecords, selectedLocation);
+        }
+    });
+
+    // Export button event listener
     exportButton.addEventListener('click', function () {
         console.log("Export button clicked.");
         exportToCSV(allRecords);

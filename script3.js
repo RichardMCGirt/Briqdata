@@ -4,12 +4,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableApiKey = 'patCnUsdz4bORwYNV.5c27cab8c99e7caf5b0dc05ce177182df1a9d60f4afc4a5d4b57802f44c65328';
     const airtableBaseId = 'appi4QZE0SrWI6tt2';
     const airtableTableName = 'tblQo2148s04gVPq1';
-    const exportButton = document.getElementById('export-button');
-
-    // Initially disable the export button and update its text and style
-    exportButton.textContent = "Fetching data...";
-    exportButton.style.backgroundColor = "#ccc"; // Change to a light grey
-    exportButton.style.cursor = "not-allowed"; // Change cursor to indicate non-clickable
 
     async function fetchData(offset = null) {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100`;
@@ -50,33 +44,24 @@ document.addEventListener('DOMContentLoaded', async function () {
             document.getElementById('record-count3').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
 
-        console.log(`All data fetched successfully. Total records: ${allRecords.length}`);
-        return allRecords;
+        // Filter records to only include those from the current year
+        const currentYear = new Date().getFullYear();
+        const currentYearRecords = allRecords.filter(record => {
+            const dateReceived = new Date(record.fields['Date Received']);
+            return dateReceived.getFullYear() === currentYear;
+        });
+
+        console.log(`Filtered records for the current year. Total records: ${currentYearRecords.length}`);
+        return currentYearRecords;
     }
 
-    function exportToCSV(records) {
-        console.log("Starting CSV export...");
+    async function displayChart() {
+        const records = await fetchAllData();
     
-        const currentYear = new Date().getFullYear();
-        let csvContent = "data:text/csv;charset=utf-8,";
-    
-        // Add title with the current year
-        csvContent += `Number of Bids by Branch (${currentYear})\n\n`;
-    
-        // Add headers
-        csvContent += "VanirOffice,Number of Bids\n";
-    
+        // Calculate the number of bids by branch
         const bidCounts = {};
-    
-        // Filter records by current year based on the 'Date Received' field
-        records = records.filter(record => {
-            const recordDate = new Date(record.fields['Date Received']);
-            return recordDate.getFullYear() === currentYear;
-        });
-    
         records.forEach(record => {
             const branch = record.fields['Branch'];
-    
             if (branch !== "Test Branch") {
                 if (!bidCounts[branch]) {
                     bidCounts[branch] = 0;
@@ -85,50 +70,55 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
     
-        // Sort branches alphabetically
-        const sortedBranches = Object.keys(bidCounts).sort();
+        // Prepare data for Chart.js and sort in ascending order by bid count
+        const branches = Object.keys(bidCounts);
+        const bidData = branches.map(branch => bidCounts[branch]);
     
-        // Add counted data to CSV
-        sortedBranches.forEach(branch => {
-            const row = [
-                branch || 'N/A',
-                bidCounts[branch]
-            ].join(",");
-            csvContent += row + "\n";
+        // Sort both branches and bidData in ascending order of bidData
+        const sortedData = branches
+            .map((branch, index) => ({ branch, count: bidData[index] }))
+            .sort((a, b) => a.count - b.count); // Sort by bid count in ascending order
+    
+        // Extract sorted branches and bidData
+        const sortedBranches = sortedData.map(item => item.branch);
+        const sortedBidData = sortedData.map(item => item.count);
+    
+        // Set up Chart.js
+        const ctx = document.getElementById('bidsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: sortedBranches,
+                datasets: [{
+                    label: `Number of Bids (${new Date().getFullYear()})`,
+                    data: sortedBidData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Bids'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Branch'
+                        }
+                    }
+                }
+            }
         });
-    
-        // Encode and trigger download
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Vanir_Offices_Bids_Count_${currentYear}.csv`);
-        document.body.appendChild(link);
-    
-        console.log("CSV ready for download.");
-        link.click();
-        document.body.removeChild(link);
-    
-        // Update the record count in the UI with the number of bids per branch
-        const recordCountDiv = document.getElementById('record-count3');
-        let bidSummary = `Number of Bids per Branch (${currentYear}):\n`;
-        sortedBranches.forEach(branch => {
-            bidSummary += `${branch || 'N/A'}: ${bidCounts[branch]}\n`;
-        });
-        recordCountDiv.textContent = bidSummary.trim(); // Display in the div
     }
     
-    // Automatically start fetching data when the page loads
-    const allRecords = await fetchAllData();
-
-    // Automatically export the CSV after data is fetched
-   // exportToCSV(allRecords);
-
-    // Enable the export button after data is fetched (optional, as it's already exported)
-
-
-    // Attach event listener to the export button (if needed for manual re-export)
-    exportButton.addEventListener('click', function () {
-        console.log("Export button clicked.");
-        exportToCSV(allRecords);
-    });
+    // Call displayChart to fetch data and render the chart
+    displayChart();
+    
 });
