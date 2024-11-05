@@ -7,8 +7,8 @@ const currentYear = new Date().getFullYear();
 
 // Disable export button initially
 exportButton.textContent = "Fetching data...";
-exportButton.style.backgroundColor = "#ccc"; // Change to a light grey
-exportButton.style.cursor = "not-allowed"; // Change cursor to indicate non-clickable
+exportButton.style.backgroundColor = "#ccc";
+exportButton.style.cursor = "not-allowed";
 
 async function fetchAirtableData() {
     let allRecords = [];
@@ -27,83 +27,91 @@ async function fetchAirtableData() {
 
         if (response.ok) {
             const data = await response.json();
-            console.log('Fetched records batch:', data.records);
-            
             allRecords = allRecords.concat(data.records);
             fetchedRecordsCount += data.records.length;
-
-            // Update UI with fetched records count
             winRateDiv.innerHTML = `<p>Fetched ${fetchedRecordsCount} records so far...</p>`;
-            
-            offset = data.offset; // Get the offset for the next batch
+            offset = data.offset;
         } else {
             console.error('Failed to fetch data from Airtable:', response.status, response.statusText);
             return [];
         }
     } while (offset);
 
-    console.log('Total records fetched:', fetchedRecordsCount);
     return allRecords;
 }
 
 function calculateWinRate(records) {
-    const divisionData = {};
+    const residentialData = {};
+    const commercialData = {};
 
     records.forEach(record => {
         const division = record.fields['Division'];
         const outcome = record.fields['Outcome'];
+        const type = record.fields['Type']; // Assuming 'Type' field distinguishes Residential vs Commercial
 
-        console.log(`Processing record - Division: ${division}, Outcome: ${outcome}`);
-
-        if (!divisionData[division]) {
-            divisionData[division] = { winCount: 0, totalCount: 0 };
-        }
-
-        divisionData[division].totalCount += 1;
-        if (outcome === 'Win') {
-            divisionData[division].winCount += 1;
+        if (type === 'Residential') {
+            if (!residentialData[division]) {
+                residentialData[division] = { winCount: 0, totalCount: 0 };
+            }
+            residentialData[division].totalCount += 1;
+            if (outcome === 'Win') {
+                residentialData[division].winCount += 1;
+            }
+        } else if (type === 'Commercial') {
+            if (!commercialData[division]) {
+                commercialData[division] = { winCount: 0, totalCount: 0 };
+            }
+            commercialData[division].totalCount += 1;
+            if (outcome === 'Win') {
+                commercialData[division].winCount += 1;
+            }
         }
     });
 
-    const winRates = {};
-    for (const division in divisionData) {
-        const { winCount, totalCount } = divisionData[division];
-        winRates[division] = (winCount / totalCount) * 100;
-        console.log(`Win Rate for ${division}: ${winRates[division].toFixed(2)}%`);
-    }
+    const calculatePercentage = (data) => {
+        const winRates = {};
+        for (const division in data) {
+            const { winCount, totalCount } = data[division];
+            winRates[division] = (winCount / totalCount) * 100;
+        }
+        return winRates;
+    };
 
-    return winRates;
+    return {
+        residentialWinRates: calculatePercentage(residentialData),
+        commercialWinRates: calculatePercentage(commercialData),
+    };
 }
 
 function updateWinRateDiv(winRates) {
     winRateDiv.innerHTML = '';  // Clear previous content
-    let totalRecords = 0;
 
-    for (const division in winRates) {
-        const percentage = winRates[division].toFixed(2);
-        const branchDiv = document.createElement('div');
-        branchDiv.classList.add('branch');
-        branchDiv.innerHTML = `
-            <h4>${division}</h4>
-            <p>Win Rate: ${percentage}%</p>
-        `;
-        winRateDiv.appendChild(branchDiv);
-        totalRecords++;
+    function renderSection(title, rates) {
+        const sectionDiv = document.createElement('div');
+        sectionDiv.innerHTML = `<h3>${title}</h3>`;
+        for (const division in rates) {
+            const percentage = rates[division].toFixed(2);
+            const branchDiv = document.createElement('div');
+            branchDiv.classList.add('branch');
+            branchDiv.innerHTML = `
+                <h4>${division}</h4>
+                <p>Win Rate: ${percentage}%</p>
+            `;
+            sectionDiv.appendChild(branchDiv);
+        }
+        return sectionDiv;
     }
 
-    if (totalRecords === 0) {
-        winRateDiv.innerHTML = 'No records found for the current year.';
-    } else {
-        winRateDiv.insertAdjacentHTML('beforebegin', `<p>Total Divisions: ${totalRecords}</p>`);
-    }
-
-    console.log(`Total divisions displayed: ${totalRecords}`);
+    winRateDiv.appendChild(renderSection('Residential Win Rates', winRates.residentialWinRates));
+    winRateDiv.appendChild(renderSection('Commercial Win Rates', winRates.commercialWinRates));
 }
 
 function exportToCSV(winRates) {
-    let csvContent = "data:text/csv;charset=utf-8,Division,Win Rate Percentage\n";
-    for (const division in winRates) {
-        csvContent += `${division},${winRates[division].toFixed(2)}\n`;
+    let csvContent = "data:text/csv;charset=utf-8,Division,Win Rate Percentage,Type\n";
+    for (const [type, rates] of Object.entries(winRates)) {
+        for (const division in rates) {
+            csvContent += `${division},${rates[division].toFixed(2)},${type}\n`;
+        }
     }
 
     const encodedUri = encodeURI(csvContent);
@@ -118,24 +126,19 @@ function exportToCSV(winRates) {
 }
 
 async function initialize() {
-    console.log('Initializing application...');
-    
     const records = await fetchAirtableData();
     const winRates = calculateWinRate(records);
     
     updateWinRateDiv(winRates);
 
-    // Enable the export button after data is fetched
+    exportButton.textContent = "Export Data";
+    exportButton.style.backgroundColor = "";
+    exportButton.style.cursor = "pointer";
+    exportButton.disabled = false;
 
-
-    // Attach event listener to the export button for manual export
     exportButton.addEventListener('click', function () {
-        console.log("Export button clicked.");
         exportToCSV(winRates);
     });
-
-    console.log('Initialization complete');
 }
 
-// Run on page load
 window.addEventListener('load', initialize);
