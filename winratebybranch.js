@@ -49,30 +49,25 @@ function calculateWinRate(records) {
         const outcome = record.fields['Outcome'];
         const type = record.fields['Type']; // Assuming 'Type' field distinguishes Residential vs Commercial
 
-        if (type === 'Residential') {
-            if (!residentialData[division]) {
-                residentialData[division] = { winCount: 0, totalCount: 0 };
-            }
-            residentialData[division].totalCount += 1;
-            if (outcome === 'Win') {
-                residentialData[division].winCount += 1;
-            }
-        } else if (type === 'Commercial') {
-            if (!commercialData[division]) {
-                commercialData[division] = { winCount: 0, totalCount: 0 };
-            }
-            commercialData[division].totalCount += 1;
-            if (outcome === 'Win') {
-                commercialData[division].winCount += 1;
-            }
+        const dataCategory = type === 'Residential' ? residentialData : commercialData;
+
+        if (!dataCategory[division]) {
+            dataCategory[division] = { winCount: 0, lossCount: 0 };
+        }
+
+        if (outcome === 'Win') {
+            dataCategory[division].winCount += 1;
+        } else if (outcome === 'Loss') {
+            dataCategory[division].lossCount += 1;
         }
     });
 
     const calculatePercentage = (data) => {
         const winRates = {};
         for (const division in data) {
-            const { winCount, totalCount } = data[division];
-            winRates[division] = (winCount / totalCount) * 100;
+            const { winCount, lossCount } = data[division];
+            const total = winCount + lossCount;
+            winRates[division] = total > 0 ? (winCount / total) * 100 : 0;
         }
         return winRates;
     };
