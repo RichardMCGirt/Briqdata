@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             console.log(`Filtered and fetched ${filteredRecords.length} records. Total so far: ${allRecords.length}`);
             offset = data.offset;
 
-            document.getElementById('record-count4').textContent = `Records fetched: ${allRecords.length}`;
+            document.getElementById('record-countR18').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
     
         console.log(`All data fetched successfully. Total records after filtering: ${allRecords.length}`);
