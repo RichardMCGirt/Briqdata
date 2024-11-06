@@ -5,7 +5,16 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!winRateDiv) {
         const mainDiv = document.createElement('div');
         mainDiv.id = 'winratebyBranch';
-        mainDiv.innerHTML = '<h2>Win Rates by Location</h2>';
+        mainDiv.innerHTML = `
+            <div id="commercial-column">
+                <h2>Commercial Win Rates</h2>
+                <canvas id="commercialChart"></canvas>
+            </div>
+            <div id="non-commercial-column">
+                <h2> Residential Win Rates</h2>
+                <canvas id="residentialChart"></canvas>
+            </div>
+        `;
         document.body.appendChild(mainDiv);
         console.log("HTML structure for winratebyBranch injected.");
     }
@@ -21,153 +30,142 @@ async function initialize() {
     const airtableTableName = 'tblfCPX293KlcKsdp';
     const currentYear = new Date().getFullYear();
 
-    async function fetchAirtableData() {
-        let allRecords = [];
-        let offset;
-        let fetchedRecordsCount = 0;
+    const commercialRecords = await fetchAirtableData(
+        airtableApiKey,
+        airtableBaseId,
+        airtableTableName,
+        `AND(YEAR({Created}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} = 'Commercial')`
+    );
+    const residentialRecords = await fetchAirtableData(
+        airtableApiKey,
+        airtableBaseId,
+        airtableTableName,
+        `AND(YEAR({Created}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} != 'Commercial')`
+    );
 
-        const filterFormula = `AND(YEAR({Last Time Outcome Modified}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
+    const commercialWinRates = calculateWinRate(commercialRecords);
+    const residentialWinRates = calculateWinRate(residentialRecords);
 
-        do {
-            const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?filterByFormula=${encodeURIComponent(filterFormula)}${offset ? `&offset=${offset}` : ''}`;
-            console.log('Fetching data from URL:', url);
-
-            const response = await fetch(url, {
-                headers: {
-                    Authorization: `Bearer ${airtableApiKey}`
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                allRecords = allRecords.concat(data.records);
-                fetchedRecordsCount += data.records.length;
-                console.log(`Fetched ${data.records.length} records. Total so far: ${fetchedRecordsCount}`);
-                offset = data.offset;
-            } else {
-                console.error('Failed to fetch data from Airtable:', response.status, response.statusText);
-                return [];
-            }
-        } while (offset);
-
-        console.log("All records fetched:", allRecords);
-        return allRecords;
-    }
-
-    function calculateWinRate(records) {
-        const residentialData = {};
-        const commercialData = {};
-
-        records.forEach(record => {
-            const division = record.fields['Division'];
-            const outcome = record.fields['Outcome'];
-            const type = record.fields['Project Type'];
-            const dataCategory = type === 'Residential' ? residentialData : commercialData;
-
-            if (!dataCategory[division]) {
-                dataCategory[division] = { winCount: 0, lossCount: 0 };
-            }
-
-            if (outcome === 'Win') {
-                dataCategory[division].winCount += 1;
-            } else if (outcome === 'Loss') {
-                dataCategory[division].lossCount += 1;
-            }
-        });
-
-        const calculatePercentage = (data) => {
-            const winLossRates = {};
-            for (const division in data) {
-                const { winCount, lossCount } = data[division];
-                const total = winCount + lossCount;
-                winLossRates[division] = {
-                    win: total > 0 ? (winCount / total) * 100 : 0,
-                    loss: total > 0 ? (lossCount / total) * 100 : 0
-                };
-            }
-            return winLossRates;
-        };
-
-        return {
-            residentialWinRates: calculatePercentage(residentialData),
-            commercialWinRates: calculatePercentage(commercialData)
-        };
-    }
-
-    function updateWinRateDiv(winRates) {
-        const winRateDiv = document.getElementById('winratebyBranch');
-        winRateDiv.innerHTML = '<h2>Win Rates by Location</h2>';
-
-        const divisions = Object.keys(winRates.commercialWinRates);
-        divisions.forEach(division => {
-            const commercialChartId = `${division}-commercialChart`;
-            const residentialChartId = `${division}-residentialChart`;
-
-            // Create container for each division's charts
-            const divisionContainer = document.createElement('div');
-            divisionContainer.className = 'division-container';
-            divisionContainer.innerHTML = `
-                <h3>${division} - Commercial Win Rates</h3>
-                <canvas id="${commercialChartId}"></canvas>
-                <h3>${division} - Non-Commercial Win Rates</h3>
-                <canvas id="${residentialChartId}"></canvas>
-            `;
-            winRateDiv.appendChild(divisionContainer);
-
-            // Create pie charts for each division
-            if (winRates.commercialWinRates[division]) {
-                createPieChart({ win: winRates.commercialWinRates[division].win, loss: winRates.commercialWinRates[division].loss }, commercialChartId, `${division} - Commercial`);
-            }
-            if (winRates.residentialWinRates[division]) {
-                createPieChart({ win: winRates.residentialWinRates[division].win, loss: winRates.residentialWinRates[division].loss }, residentialChartId, `${division} - Residential`);
-            }
-        });
-    }
-
-    function createPieChart(data, chartId, title) {
-        const labels = ['Win', 'Loss'];
-        const percentages = [data.win, data.loss];
-
-        const canvas = document.getElementById(chartId);
-        if (!canvas) {
-            console.error(`Canvas element with ID '${chartId}' not found in the DOM.`);
-            return;
-        }
-
-        const ctx = canvas.getContext('2d');
-        new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: percentages,
-                    backgroundColor: ['rgba(75, 192, 192, 0.7)', 'rgba(255, 99, 132, 0.7)'],
-                    borderColor: '#fff',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: title
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (tooltipItem) {
-                                return `${tooltipItem.label}: ${tooltipItem.raw.toFixed(2)}%`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    const records = await fetchAirtableData();
-    const winRates = calculateWinRate(records);
-    updateWinRateDiv(winRates);
+    createBarChart(commercialWinRates, 'commercialChart', 'Commercial Win Rates');
+    createBarChart(residentialWinRates, 'residentialChart', 'Non-Commercial Win Rates');
 
     console.log("Application initialized successfully.");
 }
+
+
+async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
+    let allRecords = [];
+    let offset;
+    const recordCountDisplay = document.getElementById('record-count');
+    let fetchedCount = 0;
+
+
+    do {
+        const url = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodeURIComponent(filterFormula)}${offset ? `&offset=${offset}` : ''}`;
+        console.log('Fetching data from URL:', url);
+
+        const response = await fetch(url, {
+            headers: { Authorization: `Bearer ${apiKey}` }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            allRecords = allRecords.concat(data.records);
+            fetchedCount += data.records.length;
+
+            // Update the record count display in the UI
+            recordCountDisplay.textContent = fetchedCount;
+
+            offset = data.offset;
+        } else {
+            console.error('Failed to fetch data from Airtable:', response.status, response.statusText);
+            return [];
+        }
+    } while (offset);
+
+    console.log("All records fetched:", allRecords);
+    return allRecords;
+}
+
+function calculateWinRate(records) {
+    const data = {};
+
+    records.forEach(record => {
+        const division = record.fields['Division'];
+        const outcome = record.fields['Outcome'];
+
+        if (!data[division]) {
+            data[division] = { winCount: 0, totalCount: 0 };
+        }
+
+        if (outcome === 'Win') {
+            data[division].winCount += 1;
+        }
+        data[division].totalCount += 1;
+    });
+
+    const winRates = {};
+    for (const division in data) {
+        const { winCount, totalCount } = data[division];
+        winRates[division] = totalCount > 0 ? (winCount / totalCount) * 100 : 0;
+    }
+    return winRates;
+}
+
+function createBarChart(data, chartId, title) {
+    // Sort divisions by win percentage in ascending order
+    const sortedData = Object.entries(data).sort((a, b) => a[1] - b[1]);
+    
+    // Separate sorted data into labels and values
+    const labels = sortedData.map(item => item[0]);
+    const winPercentages = sortedData.map(item => item[1]);
+
+    console.log(`Creating bar chart for ${title}`);
+    const canvas = document.getElementById(chartId);
+    if (!canvas) return console.error(`Canvas element with ID '${chartId}' not found.`);
+
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Win Percentage',
+                data: winPercentages,
+                backgroundColor: labels.map(() => 'rgba(75, 192, 192, 0.7)'),
+                borderColor: '#fff',
+                borderWidth: 1,
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: title,
+                },
+                datalabels: {
+                    display: true,
+                    color: '#000',
+                    anchor: 'end',
+                    align: 'top',
+                    formatter: (value) => `${value.toFixed(1)}%`, // Format to one decimal place
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Win Percentage (%)',
+                    },
+                },
+            },
+        },
+        plugins: [ChartDataLabels]  // Activate the datalabels plugin
+    });
+    console.log(`Bar chart for ${title} created successfully.`);
+}
+
+

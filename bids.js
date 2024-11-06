@@ -6,7 +6,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableTableName = 'tblQo2148s04gVPq1';
 
     async function fetchData(offset = null) {
-        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=YEAR({Date Received})=${currentYear}`;
+        const currentYear = new Date().getFullYear();
+        // Use filterByFormula to fetch only records from the current year
+        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=YEAR({Created})=${currentYear}`;
         if (offset) url += `&offset=${offset}`;
         console.log(`Fetching data from URL: ${url}`);
 
@@ -92,8 +94,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 datasets: [{
                     label: `Number of Bids (${new Date().getFullYear()})`,
                     data: sortedBidData,
-                    backgroundColor: 'rgba(36, 52, 108, 1)',
-                    borderColor: 'rgba(36, 52, 108, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 1
                 }]
             },
