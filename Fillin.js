@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const exportButton = document.getElementById('export-button');
     const dropdown = document.getElementById('branch-dropdown');
     const totalCostDisplay = document.getElementById('total-cost-display');
-    let chartInstance = null;  // Variable to hold the chart instance
+    let chartInstance = null;
 
     // Initially disable the export button
     exportButton.disabled = true;
@@ -62,6 +62,12 @@ document.addEventListener('DOMContentLoaded', async function () {
             option.textContent = branch;
             dropdown.appendChild(option);
         });
+
+        // Default to "Raleigh" if it exists in the data
+        if (uniqueBranches.includes("Raleigh")) {
+            dropdown.value = "Raleigh";
+            console.log("Defaulting to Raleigh in the dropdown.");
+        }
 
         console.log("Dropdown populated successfully.");
     }
@@ -174,6 +180,14 @@ document.addEventListener('DOMContentLoaded', async function () {
     exportButton.textContent = "Export to CSV";
     exportButton.style.backgroundColor = ""; 
     exportButton.style.cursor = "pointer";
+
+    // Default chart and total cost display for "Raleigh"
+    const defaultBranch = "Raleigh";
+    if (allRecords.some(record => record.fields['VanirOffice'] === defaultBranch)) {
+        const totalCost = calculateTotalCostForBranch(allRecords, defaultBranch);
+        totalCostDisplay.textContent = `Total Cost for ${defaultBranch}: $${totalCost.toLocaleString()}`;
+        createBarChart(allRecords, defaultBranch);
+    }
 
     dropdown.addEventListener('change', function () {
         const selectedBranch = dropdown.value;
