@@ -95,8 +95,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             locationDropdown.value = "Raleigh";
         }
     }
-    
-    
+ 
 
     function filterRecordsByLocation(records, location) {
         console.log(`Filtering records for location: ${location}`);
