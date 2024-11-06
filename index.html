@@ -19,15 +19,11 @@
             <div class="chart-section">
                 <h3>Value of Returns by Branch per Month</h3>
                 
-                <!-- Dropdown for selecting location -->
                 <label for="locationDropdown">Select a Location:</label>
                 <select id="locationDropdown">
                     <option value="">--Choose a location--</option>
                 </select>
-                
                 <div id="record-count2">Records fetched: 0</div>
-                
-                <!-- Container for the chart -->
                 <div id="chartContainer"></div>
             
             </div>
@@ -41,9 +37,18 @@
 
             <div class="chart-section">
                 <h3>Value of Fill Ins by Branch per Month</h3>
+                
+                
+                <label for="branch-dropdown">Select Branch:</label>
+                <select id="branch-dropdown">
+                    <option value="" disabled selected>Select a branch</option>
+                </select>
+            
+                <div id="total-cost-display">Total Cost for selected branch: $0</div>
                 <div id="record-count">Records fetched: 0</div>
-                <canvas id="fillInChart"></canvas>
 
+            
+                <canvas id="fillInChart"></canvas>
             </div>
     
             <div class="chart-section">
@@ -63,7 +68,7 @@
       
             <div class="chart-section">
                 <h3>Projected Commercial Revenue Next 18 Months by Branch</h3>
-                <div id="record-count4">Records fetched: 0</div>
+                <div id="record-countC18">Records fetched: 0</div>
                 <canvas id="18monthsChart"></canvas>
 
             </div>
@@ -90,12 +95,21 @@
             </div>
         </div>
     
-        <div class="chart-section full-width">
-            <h3>Win Rate Percentage by Branch</h3>
-            <div id="winratebyBranch">Records fetched: 0</div>
-            <canvas id="winRateChart"></canvas>
-
+        <div id="winratebyBranch">
+            <div id="fetch-progress"></div>
+            <div id="commercial-column">
+                <h2>Commercial Win Rates</h2>
+                <canvas id="commercialChart"></canvas>
+            </div>
+            <div id="non-commercial-column">
+                <h2>Non-Commercial Win Rates</h2>
+                <canvas id="residentialChart"></canvas>
+            </div>
         </div>
+        
+        
+        
+        
         <div class="chart-section full-width">
             <h2>Upload Sales Data CSV</h2>
             <input type="file" id="fileInput" accept=".csv" />
@@ -105,22 +119,29 @@
 
         </div>
     </div>
+
+    <script>
+        console.log("HTML Structure Loaded. winratebyBranch:", document.getElementById('winratebyBranch'));
+        console.log("Commercial Column Loaded:", document.getElementById('commercial-column'));
+        console.log("Non-Commercial Column Loaded:", document.getElementById('non-commercial-column'));
+    </script>
+    
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
- <script src="script.js"></script> 
-    <script src="script2.js"></script> 
-   <script src="script3.js"></script> 
-    <script src="6monthComercial.js"></script> 
-   <script src="12monthComercial.js"></script>
-    <script src="18monthComercial.js"></script> 
+   <!-- <script src="Return.js"></script> 
+ <script src="bids.js"></script> 
+   <script src="Fillin.js"></script> 
+    <script src="6monthsCommercial.js"></script> 
+   <script src="12monthsCommercial.js"></script>
+    <script src="18monthCommercial.js"></script> 
     <script src="6monthsRes.js"></script> 
    <script src="12monthRes.js"></script>
- <script src="18monthREs.js"></script>
+ <script src="18monthREs.js"></script> -->
    <script src="winratebybranch.js"></script> 
-   <script src ="disablebutton.js"></script> 
-   <script src ="Revenuebybranch.js"></script> 
+  <!-- <script src ="disablebutton.js"></script> 
+   <script src ="Revenuebybranch.js"></script> -->
 
 </body>
 

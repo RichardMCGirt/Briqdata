@@ -57,29 +57,46 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Function to get unique branches and populate the dropdown
     function populateDropdown(records) {
         console.log("Populating dropdown with unique branches...");
-        
+    
         const uniqueBranches = new Set();
+        
         records.forEach(record => {
             let branch = record.fields['Branch'];
             if (branch === "Greenville,SC") {
                 branch = "Greenville";
             }
-            if (branch && branch !== "Test Branch") {
+            if (branch && branch !== "Test Branch" && !uniqueBranches.has(branch)) {
                 uniqueBranches.add(branch);
+    
+                // Create an option element for each new branch and add it to the dropdown
+                const option = document.createElement("option");
+                option.value = branch;
+                option.textContent = branch;
+                locationDropdown.appendChild(option);
+                
+                console.log(`Added branch to dropdown: ${branch}`);
             }
         });
-
-        // Log the unique branches to verify
-        console.log("Unique branches found:", Array.from(uniqueBranches));
-
-        // Populate dropdown with unique branches
-        uniqueBranches.forEach(branch => {
+    
+        // Convert Set to an array and sort it alphabetically
+        const sortedBranches = Array.from(uniqueBranches).sort();
+    
+        // Clear dropdown and re-populate in sorted order
+        locationDropdown.innerHTML = ""; // Clear dropdown to add sorted options
+        sortedBranches.forEach(branch => {
             const option = document.createElement("option");
             option.value = branch;
             option.textContent = branch;
             locationDropdown.appendChild(option);
         });
+    
+        // Set "Raleigh" as the default selection if available
+        if (sortedBranches.includes("Raleigh")) {
+            locationDropdown.value = "Raleigh";
+        }
     }
+    
+    
 
     function filterRecordsByLocation(records, location) {
         console.log(`Filtering records for location: ${location}`);
@@ -90,130 +107,116 @@ document.addEventListener('DOMContentLoaded', async function () {
         console.log(`Found ${filteredRecords.length} records for location: ${location}`);
         return filteredRecords;
     }
-// Function to format a date to "Month YYYY"
-function formatDateToMonthYear(dateString) {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const monthName = date.toLocaleString('default', { month: 'long' }); // Get full month name
-    return `${monthName} ${year}`; // Returns in "Month YYYY" format
-}
 
-function createBarChart(records, location) {
-    console.log(`Creating bar chart for location: ${location}`);
-
-    // Check if there's data to display
-    if (records.length === 0) {
-        console.warn("No data available to create the chart.");
-        return;
+    function formatDateToMonthYear(dateString) {
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const monthName = date.toLocaleString('default', { month: 'long' });
+        return `${monthName} ${year}`;
     }
 
-    // Prepare data for the chart
-    const labels = []; // Months
-    const dataValues = []; // Corresponding values for each month
+    function createBarChart(records, location) {
+        console.log(`Creating bar chart for location: ${location}`);
 
-    records.forEach(record => {
-        const monthYear = formatDateToMonthYear(record.fields['Date Created']); // Format date as "Month YYYY"
-        const cost = parseFloat(record.fields['Actual $ Credit Amount']) || 0;
-
-        if (!labels.includes(monthYear)) {
-            labels.push(monthYear);
-            dataValues.push(cost);
-        } else {
-            const index = labels.indexOf(monthYear);
-            dataValues[index] += cost; // Accumulate cost for the same month
+        if (records.length === 0) {
+            console.warn("No data available to create the chart.");
+            return;
         }
-    });
 
-    // Combine labels and dataValues for sorting
-    const chartData = labels.map((label, index) => ({ label, value: dataValues[index] }));
+        const labels = [];
+        const dataValues = [];
 
-    // Sort by date in ascending order
-    chartData.sort((a, b) => new Date(a.label) - new Date(b.label));
+        records.forEach(record => {
+            const monthYear = formatDateToMonthYear(record.fields['Date Created']);
+            const cost = parseFloat(record.fields['Actual $ Credit Amount']) || 0;
 
-    // Separate sorted labels and values
-    const sortedLabels = chartData.map(item => item.label);
-    const sortedDataValues = chartData.map(item => item.value);
+            if (!labels.includes(monthYear)) {
+                labels.push(monthYear);
+                dataValues.push(cost);
+            } else {
+                const index = labels.indexOf(monthYear);
+                dataValues[index] += cost;
+            }
+        });
 
-    console.log(`Sorted Labels: ${sortedLabels}`);
-    console.log(`Sorted Data values: ${sortedDataValues}`);
+        const chartData = labels.map((label, index) => ({ label, value: dataValues[index] }));
+        chartData.sort((a, b) => new Date(a.label) - new Date(b.label));
 
-    // Get or create the chart container
-    const chartContainer = document.getElementById('chartContainer');
-    chartContainer.innerHTML = ''; // Clear previous chart if any
+        const sortedLabels = chartData.map(item => item.label);
+        const sortedDataValues = chartData.map(item => item.value);
 
-    // Create a canvas element for Chart.js
-    const canvas = document.createElement('canvas');
-    canvas.id = 'myChart';
-    chartContainer.appendChild(canvas);
+        const chartContainer = document.getElementById('chartContainer');
+        chartContainer.innerHTML = '';
 
-    // Destroy previous chart instance if it exists
-    if (window.myChartInstance) {
-        window.myChartInstance.destroy();
-    }
+        const canvas = document.createElement('canvas');
+        canvas.id = 'myChart';
+        chartContainer.appendChild(canvas);
 
-    // Create a new bar chart with sorted data
-    window.myChartInstance = new Chart(canvas, {
-        type: 'bar',
-        data: {
-            labels: sortedLabels,
-            datasets: [{
-                label: `Total Returns for ${location}`,
-                data: sortedDataValues,
-                backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Month/Year'
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Total Cost of Return ($)'
-                    }
-                }
+        if (window.myChartInstance) {
+            window.myChartInstance.destroy();
+        }
+
+        window.myChartInstance = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: sortedLabels,
+                datasets: [{
+                    label: `Total Returns for ${location}`,
+                    data: sortedDataValues,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
             },
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top'
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Month/Year'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Total Cost of Return ($)'
+                        }
+                    }
                 },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `$${context.raw.toFixed(2)}`;
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `$${context.raw.toFixed(2)}`;
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
 
-    console.log("Bar chart created successfully in ascending order.");
-}
+        console.log("Bar chart created successfully in ascending order.");
+    }
 
-    
-
-    // Fetch all records once on page load
     const allRecords = await fetchAllData();
 
-    // Populate dropdown after fetching records
     populateDropdown(allRecords);
 
-    // Enable the export button and reset its style
+    if (locationDropdown.value === "Raleigh") {
+        const raleighRecords = filterRecordsByLocation(allRecords, "Raleigh");
+        createBarChart(raleighRecords, "Raleigh");
+    }
+
     exportButton.textContent = "Export to CSV";
     exportButton.style.backgroundColor = "#007bff";
     exportButton.style.cursor = "pointer";
 
-    // Listen for changes in the dropdown selection
     locationDropdown.addEventListener('change', function () {
         const selectedLocation = locationDropdown.value;
         console.log(`Dropdown selection changed. Selected location: ${selectedLocation}`);
@@ -224,7 +227,6 @@ function createBarChart(records, location) {
         }
     });
 
-    // Export button event listener
     exportButton.addEventListener('click', function () {
         console.log("Export button clicked.");
         exportToCSV(allRecords);

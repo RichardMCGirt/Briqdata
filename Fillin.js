@@ -5,6 +5,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableBaseId = 'appeNSp44fJ8QYeY5';
     const airtableTableName = 'tblRp5bukUiw9tX9j';
     const exportButton = document.getElementById('export-button');
+    const dropdown = document.getElementById('branch-dropdown');
+    const totalCostDisplay = document.getElementById('total-cost-display');
+    let chartInstance = null;  // Variable to hold the chart instance
 
     // Initially disable the export button
     exportButton.disabled = true;
@@ -43,32 +46,46 @@ document.addEventListener('DOMContentLoaded', async function () {
             allRecords = allRecords.concat(data.records);
             console.log(`Fetched ${data.records.length} records. Total so far: ${allRecords.length}`);
             offset = data.offset;
-            document.getElementById('record-count').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
 
         console.log(`All data fetched successfully. Total records: ${allRecords.length}`);
         return allRecords;
     }
 
-    function createBarChart(records) {
-        console.log("Creating bar chart...");
+    function populateDropdown(records) {
+        console.log("Populating dropdown with unique branches...");
+        const uniqueBranches = [...new Set(records.map(record => record.fields['VanirOffice']).filter(Boolean))];
 
+        uniqueBranches.forEach(branch => {
+            const option = document.createElement('option');
+            option.value = branch;
+            option.textContent = branch;
+            dropdown.appendChild(option);
+        });
+
+        console.log("Dropdown populated successfully.");
+    }
+
+    function calculateTotalCostForBranch(records, branch) {
+        const totalCost = records
+            .filter(record => record.fields['VanirOffice'] === branch)
+            .reduce((sum, record) => sum + (parseFloat(record.fields['Total Cost of Fill In']) || 0), 0);
+        
+        return totalCost;
+    }
+
+    function createBarChart(records, branch) {
+        console.log(`Creating bar chart for branch: ${branch}`);
+
+        const branchRecords = records.filter(record => record.fields['VanirOffice'] === branch);
         const branchMonthlySums = {};
         const monthNames = ["January", "February", "March", "April", "May", "June", 
                             "July", "August", "September", "October", "November", "December"];
         
-        records.forEach(record => {
-            const branch = record.fields['VanirOffice'];
+        branchRecords.forEach(record => {
             const cost = parseFloat(record.fields['Total Cost of Fill In']) || 0;
             const dateCreated = record.fields['Date Created'];
 
-               // Filter out unwanted branches
-        if (!branch || branch === "Test Branch" || branch === "(Charleston, Greensboro)" || branch === "(Charlotte, Raleigh)") {
-            return;
-        }
-
-
-            // Parse date and format as "Month-Year"
             const date = new Date(dateCreated);
             if (isNaN(date.getTime())) {
                 console.warn(`Invalid or missing date encountered: ${dateCreated}`);
@@ -79,51 +96,32 @@ document.addEventListener('DOMContentLoaded', async function () {
             const year = date.getFullYear();
             const monthYear = `${monthName} ${year}`;
 
-            if (branch && branch !== "Test Branch") {
-                if (!branchMonthlySums[branch]) {
-                    branchMonthlySums[branch] = {};
-                }
-                if (!branchMonthlySums[branch][monthYear]) {
-                    branchMonthlySums[branch][monthYear] = 0;
-                }
-                branchMonthlySums[branch][monthYear] += cost;
+            if (!branchMonthlySums[monthYear]) {
+                branchMonthlySums[monthYear] = 0;
             }
+            branchMonthlySums[monthYear] += cost;
         });
 
-        const branches = Object.keys(branchMonthlySums);
-        const months = Array.from(
-            new Set(Object.values(branchMonthlySums).flatMap(monthData => Object.keys(monthData)))
-        ).sort((a, b) => new Date(a) - new Date(b));
+        const months = Object.keys(branchMonthlySums).sort((a, b) => new Date(a) - new Date(b));
+        const data = months.map(month => branchMonthlySums[month] || 0);
 
-        const colors = [
-            'rgba(244, 67, 54, 0.3)',   // Light red
-            'rgba(33, 150, 243, 0.3)',  // Light blue
-            'rgba(76, 175, 80, 0.3)',   // Light green
-            'rgba(255, 235, 59, 0.3)',  // Light yellow
-            'rgba(255, 152, 0, 0.3)',   // Light orange
-            'rgba(156, 39, 176, 0.3)',  // Light purple
-            'rgba(0, 188, 212, 0.3)',   // Light cyan
-            'rgba(121, 85, 72, 0.3)'    // Light brown
-        ];
-
-        const datasets = branches.map((branch, index) => {
-            const data = months.map(month => branchMonthlySums[branch][month] || 0);
-            const color = colors[index % colors.length];
-            return {
-                label: branch,
-                data,
-                borderWidth: 1,
-                backgroundColor: color,
-                borderColor: color.replace('0.3', '1'),
-            };
-        });
+        // Destroy the existing chart instance if it exists
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
 
         const ctx = document.getElementById('fillInChart').getContext('2d');
-        new Chart(ctx, {
+        chartInstance = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: months,
-                datasets
+                datasets: [{
+                    label: branch,
+                    data,
+                    backgroundColor: 'rgba(33, 150, 243, 0.3)',
+                    borderColor: 'rgba(33, 150, 243, 1)',
+                    borderWidth: 1,
+                }]
             },
             options: {
                 scales: {
@@ -167,15 +165,27 @@ document.addEventListener('DOMContentLoaded', async function () {
         console.log("Bar chart created successfully.");
     }
 
-    // Fetch data and create chart
+    // Fetch data and populate dropdown
     const allRecords = await fetchAllData();
-    createBarChart(allRecords);
+    populateDropdown(allRecords);
 
     // Enable the export button
     exportButton.disabled = false;
     exportButton.textContent = "Export to CSV";
     exportButton.style.backgroundColor = ""; 
     exportButton.style.cursor = "pointer";
+
+    dropdown.addEventListener('change', function () {
+        const selectedBranch = dropdown.value;
+        console.log(`Branch selected: ${selectedBranch}`);
+        
+        // Calculate and display total cost for the selected branch
+        const totalCost = calculateTotalCostForBranch(allRecords, selectedBranch);
+        totalCostDisplay.textContent = `Total Cost for ${selectedBranch}: $${totalCost.toLocaleString()}`;
+
+        // Create chart for the selected branch
+        createBarChart(allRecords, selectedBranch);
+    });
 
     exportButton.addEventListener('click', function () {
         console.log("Export button clicked.");

@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     exportButton.style.cursor = "not-allowed"; 
 
     async function fetchData(offset = null) {
-        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=AND(NOT({Project Type Briq}='Commercial'),{Outcome}='Win')&sort[0][field]=Project Type Briq&sort[0][direction]=asc`;
+        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=AND({Project Type Briq}='Commercial',{Outcome}='Win')&sort[0][field]=Project Type Briq&sort[0][direction]=asc`;
         if (offset) url += `&offset=${offset}`;
         console.log(`Fetching data from URL: ${url}`);
     
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             console.log(`Filtered and fetched ${filteredRecords.length} records. Total so far: ${allRecords.length}`);
             offset = data.offset;
 
-            document.getElementById('record-countR6').textContent = `Records fetched: ${allRecords.length}`;
+            document.getElementById('record-countC6').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
     
         console.log(`All data fetched successfully. Total records after filtering: ${allRecords.length}`);
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const sortedDivisions = sortedData.map(entry => entry[0]);
         const revenueNumbers = sortedData.map(entry => entry[1]);
     
-        const ctx = document.getElementById('6monthsRChart').getContext('2d');
+        const ctx = document.getElementById('6monthsChart').getContext('2d');
     
         new Chart(ctx, {
             type: 'bar',
