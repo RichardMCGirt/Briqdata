@@ -85,8 +85,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 datasets: [{
                     label: 'Projected Revenue',
                     data: revenueNumbers,
-                    backgroundColor: 'rgba(139, 0, 0, 0.6)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(174, 2, 18, 0.8)',
+                    borderColor: 'rgba(174, 2, 18, 0.8)',
                     borderWidth: 2,
                     barThickness: 50
                 }]
