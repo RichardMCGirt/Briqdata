@@ -30,18 +30,8 @@ async function initialize() {
     const airtableTableName = 'tblfCPX293KlcKsdp';
     const currentYear = new Date().getFullYear();
 
-    const commercialRecords = await fetchAirtableData(
-        airtableApiKey,
-        airtableBaseId,
-        airtableTableName,
-        `AND(YEAR({Created}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} = 'Commercial')`
-    );
-    const residentialRecords = await fetchAirtableData(
-        airtableApiKey,
-        airtableBaseId,
-        airtableTableName,
-        `AND(YEAR({Created}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} != 'Commercial')`
-    );
+    const commercialRecords = await fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, `AND(YEAR({Last Time Outcome Modified}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} = 'Commercial')`);
+    const residentialRecords = await fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, `AND(YEAR({Last Time Outcome Modified}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} != 'Commercial')`);
 
     const commercialWinRates = calculateWinRate(commercialRecords);
     const residentialWinRates = calculateWinRate(residentialRecords);
@@ -51,7 +41,6 @@ async function initialize() {
 
     console.log("Application initialized successfully.");
 }
-
 
 async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
     let allRecords = [];
