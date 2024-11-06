@@ -94,8 +94,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 datasets: [{
                     label: `Number of Bids (${new Date().getFullYear()})`,
                     data: sortedBidData,
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(2, 20, 104, 0.8)',
+                    borderColor: 'rgba(2, 20, 104, 0.8)',
                     borderWidth: 1
                 }]
             },
