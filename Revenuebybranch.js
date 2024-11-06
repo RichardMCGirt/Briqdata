@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function () {
             console.log(`Row ${i} data:`, cols);
 
             const location = cols[0]?.trim().replace(/"/g, ""); 
-            const cumulativeSales = parseFloat(cols[11]?.replace(/"/g, ""));
+            const cumulativeSales = parseFloat(cols[8]?.replace(/"/g, ""));
 
             if (location && location !== "Total" && !isNaN(cumulativeSales)) {
                 if (!salesByBranch[location]) {
