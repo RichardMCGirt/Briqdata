@@ -162,8 +162,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 datasets: [{
                     label: `Total Returns for ${location}`,
                     data: sortedDataValues,
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(2, 20, 104, 0.8)',
+                    borderColor: 'rgba(2, 20, 104, 0.8)',
                     borderWidth: 1
                 }]
             },
