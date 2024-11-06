@@ -124,8 +124,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 datasets: [{
                     label: branch,
                     data,
-                    backgroundColor: 'rgba(33, 150, 243, 0.3)',
-                    borderColor: 'rgba(33, 150, 243, 1)',
+                    backgroundColor: 'rgba(2, 20, 104, 0.8)',
+                    borderColor: 'rgba(2, 20, 104, 0.8)',
                     borderWidth: 1,
                 }]
             },
