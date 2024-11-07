@@ -12,9 +12,8 @@ toggleDropdownVisibility(false);
 document.getElementById('fileInput2').addEventListener('change', function () {
     const file = this.files[0];
     if (!file) return;
-
+    
     console.log("File selected:", file.name);
-    document.getElementById("toggle-container").style.display = "block"; // Show toggle only when file is uploaded
 
     const reader = new FileReader();
     reader.onload = function (event) {
@@ -22,8 +21,13 @@ document.getElementById('fileInput2').addEventListener('change', function () {
         console.log("File content loaded. Parsing CSV...");
         
         citySales = parseCSV(text);
+        
         console.log("CSV parsed successfully. Aggregated city sales:", citySales);
         
+        // Show dropdown once file is loaded successfully
+        toggleDropdownVisibility(true);
+        
+        // Show the default chart for Raleigh and display formatted total
         updateUI('Raleigh');
     };
     reader.readAsText(file);
@@ -44,6 +48,7 @@ function parseCSV(text) {
 
     rows.forEach((row, index) => {
         const columns = splitCSVRow(row);
+        
         let masterAccount = (columns[2] || '').trim().replace(/^"|"$/g, '');
 
         let city = targetCities.find(targetCity => masterAccount.toLowerCase().includes(targetCity.toLowerCase()));
@@ -126,7 +131,7 @@ function populateChart(city) {
     });
 }
 
-// Show toggle and update UI for single city or all cities based on toggle state
+// Toggle to show all cities or only selected
 document.getElementById('show-all-toggle').addEventListener('change', function () {
     const showAll = this.checked;
     if (showAll) {
@@ -146,10 +151,7 @@ function displayAllCitiesChart() {
 
     if (window.myChart) window.myChart.destroy();
 
-    const activeCities = Object.entries(citySales)
-        .filter(([_, sales]) => sales > 0)
-        .sort((a, b) => a[1] - b[1]) // Sort by sales value
-        .map(([city]) => city);
+    const activeCities = targetCities.filter(city => citySales[city] > 0);
 
     window.myChart = new Chart(ctx, {
         type: 'bar',
