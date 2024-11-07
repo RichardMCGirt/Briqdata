@@ -1,11 +1,18 @@
-const targetCities = ['Raleigh', 'Charleston', 'Wilmington', 'Myrtle Beach', 'Greenville', 'Charlotte', 'Columbia'];
-let citySales = {}; // Store parsed data for all cities
+
+// Control dropdown visibility based on file input
+function toggleDropdownVisibility(show) {
+    document.getElementById('branch-dropdown2').style.display = show ? 'block' : 'none';
+}
+
+// Initially hide dropdown until a file is selected
+toggleDropdownVisibility(false);
 
 document.getElementById('fileInput2').addEventListener('change', function () {
     const file = this.files[0];
     if (!file) return;
-    
+
     console.log("File selected:", file.name);
+    document.getElementById("toggle-container").style.display = "block"; // Show toggle only when file is uploaded
 
     const reader = new FileReader();
     reader.onload = function (event) {
@@ -13,13 +20,19 @@ document.getElementById('fileInput2').addEventListener('change', function () {
         console.log("File content loaded. Parsing CSV...");
         
         citySales = parseCSV(text);
-        
         console.log("CSV parsed successfully. Aggregated city sales:", citySales);
         
-        // Show the default chart for Raleigh and display formatted total
         updateUI('Raleigh');
     };
     reader.readAsText(file);
+});
+
+// Hide dropdown if the file input is cleared (e.g., user removes the file)
+document.getElementById('fileInput2').addEventListener('input', function () {
+    if (!this.files.length) {
+        toggleDropdownVisibility(false);
+        clearUI(); // Optionally clear the chart and total display
+    }
 });
 
 // Parse CSV data and aggregate sales for matching target cities
@@ -28,36 +41,19 @@ function parseCSV(text) {
     const cityData = {};
 
     rows.forEach((row, index) => {
-        // Use a custom function to split CSV line by commas while respecting quotes
         const columns = splitCSVRow(row);
-        
-        // Log parsed columns to verify
-        console.log(`Row ${index + 1} Columns:`, columns);
+        let masterAccount = (columns[2] || '').trim().replace(/^"|"$/g, '');
 
-        let masterAccount = (columns[2] || '').trim().replace(/^"|"$/g, ''); // Remove any surrounding quotes
-
-        // Match city from target list
         let city = targetCities.find(targetCity => masterAccount.toLowerCase().includes(targetCity.toLowerCase()));
-        if (!city) {
-            console.log(`Row ${index + 1}: No matching city found in Master Account "${masterAccount}"`);
-            return; // Skip if no matching city is found
-        }
+        if (!city) return;
 
-        // Retrieve and clean the sales amount
         const salesAmountRaw = (columns[7] || '0').trim();
-        console.log(`Row ${index + 1}: Raw Sales Amount - "${salesAmountRaw}"`);
-
-        // Remove commas and dollar signs, then parse as float
         const cleanedSalesAmount = salesAmountRaw.replace(/[$,"]/g, '');
         const salesAmount = parseFloat(cleanedSalesAmount) || 0;
-        console.log(`Row ${index + 1}: Parsed Sales Amount - ${salesAmount}`);
 
-        // Aggregate sales data for each city
         cityData[city] = (cityData[city] || 0) + salesAmount;
-        console.log(`Matched city: ${city}. Current cumulative sales: ${cityData[city]}`);
     });
 
-    console.log("Aggregated city sales after parsing:", cityData);
     return cityData;
 }
 
@@ -127,6 +123,58 @@ function populateChart(city) {
         }
     });
 }
+
+// Show toggle and update UI for single city or all cities based on toggle state
+document.getElementById('show-all-toggle').addEventListener('change', function () {
+    const showAll = this.checked;
+    if (showAll) {
+        displayAllCitiesChart();
+    } else {
+        const selectedCity = document.getElementById('branch-dropdown2').value;
+        if (selectedCity) {
+            updateUI(selectedCity);
+        }
+    }
+});
+
+// Display bar chart for all cities
+function displayAllCitiesChart() {
+    const ctx = document.getElementById('salesChart2').getContext('2d');
+    document.getElementById('salesChart2').style.display = 'block';
+
+    if (window.myChart) window.myChart.destroy();
+
+    const activeCities = Object.entries(citySales)
+        .filter(([_, sales]) => sales > 0)
+        .sort((a, b) => a[1] - b[1]) // Sort by sales value
+        .map(([city]) => city);
+
+    window.myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: activeCities,
+            datasets: [{
+                label: 'Total Sales ($)',
+                data: activeCities.map(city => citySales[city] || 0),
+                backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Sales Amount ($)'
+                    }
+                }
+            }
+        }
+    });
+}
+
 
 // Format and display the total sales amount
 function displayFormattedTotal(city) {
