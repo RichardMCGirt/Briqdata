@@ -1,8 +1,6 @@
 const targetCities = ['Raleigh', 'Charleston', 'Wilmington', 'Myrtle Beach', 'Greenville', 'Charlotte', 'Columbia'];
 let citySales = {}; // Store parsed data for all cities
 
-// Function to load the most recent CSV file automatically
-document.addEventListener('DOMContentLoaded', loadMostRecentSalesFile);
 
 // Function to parse and load the selected CSV file
 function parseAndLoadFile(file) {
@@ -182,8 +180,6 @@ document.getElementById('show-all-toggle').addEventListener('change', function (
     }
 });
 
-// Trigger the loading of the most recent file automatically on page load
-document.addEventListener('DOMContentLoaded', loadMostRecentSalesFile);
 
 // Event listener for dropdown selection
 document.getElementById('branch-dropdown2').addEventListener('change', function () {
