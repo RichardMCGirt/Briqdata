@@ -1,160 +1,101 @@
-document.addEventListener('DOMContentLoaded', function () {
-    console.log("Document loaded and DOM fully constructed.");
+document.getElementById('fileInput').addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+    
+    console.log("File selected:", file.name);
 
-    const winRateDiv = document.getElementById('winratebyBranch');
-    if (!winRateDiv) {
-        const mainDiv = document.createElement('div');
-        mainDiv.id = 'winratebyBranch';
-        mainDiv.innerHTML = `
-            <div id="commercial-column">
-                <h2>Commercial Win Rates</h2>
-                <canvas id="commercialChart"></canvas>
-            </div>
-            <div id="non-commercial-column">
-                <h2> Residential Win Rates</h2>
-                <canvas id="residentialChart"></canvas>
-            </div>
-        `;
-        document.body.appendChild(mainDiv);
-        console.log("HTML structure for winratebyBranch injected.");
-    }
-
-    initialize();
+    const reader = new FileReader();
+    reader.onload = function (event) {
+        const text = event.target.result;
+        console.log("File content loaded. Parsing CSV...");
+        
+        const citySales = parseCSV(text);
+        
+        console.log("CSV parsed successfully. Aggregated city sales:", citySales);
+        populateDropdownAndChart(citySales);
+    };
+    reader.readAsText(file);
 });
 
-async function initialize() {
-    console.log("Initializing application...");
+// Parse CSV data and aggregate sales for target cities
+function parseCSV(text) {
+    const rows = text.split('\n').slice(1); // Skip header row
+    const citySales = {};
 
-    const airtableApiKey = 'patGjoWY1PkTG12oS.e9cf71910320ac1e3496ff803700f0e4319bf0ccf0fcaf4d85cd98df790b5aad';
-    const airtableBaseId = 'appX1Saz7wMYh4hhm';
-    const airtableTableName = 'tblfCPX293KlcKsdp';
-    const currentYear = new Date().getFullYear();
+    rows.forEach((row, index) => {
+        const columns = row.split(',');
+        
+        let masterAccount = (columns[2] || '').trim();
+        masterAccount = masterAccount.replace(/^"|"$/g, ''); // Remove any surrounding quotes
 
-    const commercialRecords = await fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, `AND(YEAR({Last Time Outcome Modified}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} = 'Commercial')`);
-    const residentialRecords = await fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, `AND(YEAR({Last Time Outcome Modified}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} != 'Commercial')`);
-
-    const commercialWinRates = calculateWinRate(commercialRecords);
-    const residentialWinRates = calculateWinRate(residentialRecords);
-
-    createBarChart(commercialWinRates, 'commercialChart', 'Commercial Win Rates');
-    createBarChart(residentialWinRates, 'residentialChart', 'Non-Commercial Win Rates');
-
-    console.log("Application initialized successfully.");
-}
-
-async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
-    let allRecords = [];
-    let offset;
-    const recordCountDisplay = document.getElementById('record-count');
-    let fetchedCount = 0;
-
-
-    do {
-        const url = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodeURIComponent(filterFormula)}${offset ? `&offset=${offset}` : ''}`;
-        console.log('Fetching data from URL:', url);
-
-        const response = await fetch(url, {
-            headers: { Authorization: `Bearer ${apiKey}` }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            allRecords = allRecords.concat(data.records);
-            fetchedCount += data.records.length;
-
-            // Update the record count display in the UI
-            recordCountDisplay.textContent = fetchedCount;
-
-            offset = data.offset;
-        } else {
-            console.error('Failed to fetch data from Airtable:', response.status, response.statusText);
-            return [];
-        }
-    } while (offset);
-
-    console.log("All records fetched:", allRecords);
-    return allRecords;
-}
-
-function calculateWinRate(records) {
-    const data = {};
-
-    records.forEach(record => {
-        const division = record.fields['Division'];
-        const outcome = record.fields['Outcome'];
-
-        if (!data[division]) {
-            data[division] = { winCount: 0, totalCount: 0 };
+        // Check for "raleigh" and normalize city names
+        let city = null;
+        if (masterAccount.toLowerCase().includes("raleigh") || 
+            masterAccount.toLowerCase().includes("south raleigh") || 
+            masterAccount.toLowerCase().includes("division")) {
+            city = "raleigh";
         }
 
-        if (outcome === 'Win') {
-            data[division].winCount += 1;
+        const salesAmountRaw = columns[7] || '0';
+        const salesAmount = parseFloat(salesAmountRaw.replace(/[\$,]/g, '').trim());
+
+        // Log parsed data for each row
+        console.log(`Row ${index + 1}: City - ${city}, Sales Amount - ${salesAmount}`);
+
+        if (city === "raleigh") {
+            citySales[city] = (citySales[city] || 0) + salesAmount;
+            console.log(`Matched city: ${city}. Current cumulative sales: ${citySales[city]}`);
         }
-        data[division].totalCount += 1;
     });
 
-    const winRates = {};
-    for (const division in data) {
-        const { winCount, totalCount } = data[division];
-        winRates[division] = totalCount > 0 ? (winCount / totalCount) * 100 : 0;
-    }
-    return winRates;
+    return citySales;
 }
 
-function createBarChart(data, chartId, title) {
-    // Sort divisions by win percentage in ascending order
-    const sortedData = Object.entries(data).sort((a, b) => a[1] - b[1]);
-    
-    // Separate sorted data into labels and values
-    const labels = sortedData.map(item => item[0]);
-    const winPercentages = sortedData.map(item => item[1]);
+// Populate dropdown and display chart
+function populateDropdownAndChart(citySales) {
+    const branchDropdown = document.getElementById('branch-dropdown2');
+    const ctx = document.getElementById('salesChart2').getContext('2d');
 
-    console.log(`Creating bar chart for ${title}`);
-    const canvas = document.getElementById(chartId);
-    if (!canvas) return console.error(`Canvas element with ID '${chartId}' not found.`);
+    // Clear and populate dropdown
+    branchDropdown.innerHTML = '<option value="" disabled selected>Select a branch</option>';
+    const cities = Object.keys(citySales);
+    cities.forEach(city => {
+        const option = document.createElement('option');
+        option.value = city;
+        option.textContent = city.charAt(0).toUpperCase() + city.slice(1);
+        branchDropdown.appendChild(option);
+    });
 
-    const ctx = canvas.getContext('2d');
+    console.log("Dropdown populated with cities:", cities);
+
+    // Display chart
+    document.getElementById('salesChart2').style.display = 'block';
+    console.log("Rendering chart...");
+
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: labels,
+            labels: cities.map(city => city.charAt(0).toUpperCase() + city.slice(1)),
             datasets: [{
-                label: 'Win Percentage',
-                data: winPercentages,
-                backgroundColor: labels.map(() => 'rgba(75, 192, 192, 0.7)'),
-                borderColor: '#fff',
-                borderWidth: 1,
-            }],
+                label: 'Total Sales ($)',
+                data: Object.values(citySales),
+                backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
         },
         options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: title,
-                },
-                datalabels: {
-                    display: true,
-                    color: '#000',
-                    anchor: 'end',
-                    align: 'top',
-                    formatter: (value) => `${value.toFixed(1)}%`, // Format to one decimal place
-                }
-            },
             scales: {
                 y: {
                     beginAtZero: true,
-                    max: 100,
                     title: {
                         display: true,
-                        text: 'Win Percentage (%)',
-                    },
-                },
-            },
-        },
-        plugins: [ChartDataLabels]  // Activate the datalabels plugin
+                        text: 'Sales Amount ($)'
+                    }
+                }
+            }
+        }
     });
-    console.log(`Bar chart for ${title} created successfully.`);
+
+    console.log("Chart rendered successfully.");
 }
-
-
