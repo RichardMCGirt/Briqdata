@@ -1,12 +1,13 @@
 
-// Control dropdown visibility based on file input
+// Control dropdown visibility based on toggle and file input
 function toggleDropdownVisibility(show) {
     document.getElementById('branch-dropdown2').style.display = show ? 'block' : 'none';
 }
 
-// Initially hide dropdown until a file is selected
+// Initially hide dropdown until a file is selected and toggle is off
 toggleDropdownVisibility(false);
 
+// Handle file upload
 document.getElementById('fileInput2').addEventListener('change', function () {
     const file = this.files[0];
     if (!file) return;
@@ -23,15 +24,17 @@ document.getElementById('fileInput2').addEventListener('change', function () {
         console.log("CSV parsed successfully. Aggregated city sales:", citySales);
         
         updateUI('Raleigh');
+        toggleDropdownVisibility(!document.getElementById('show-all-toggle').checked); // Only show if toggle is off
     };
     reader.readAsText(file);
 });
 
-// Hide dropdown if the file input is cleared (e.g., user removes the file)
+// Hide dropdown and clear chart if file input is cleared
 document.getElementById('fileInput2').addEventListener('input', function () {
     if (!this.files.length) {
         toggleDropdownVisibility(false);
         clearUI(); // Optionally clear the chart and total display
+        document.getElementById('toggle-container').style.display = 'none'; // Hide toggle
     }
 });
 
@@ -79,8 +82,6 @@ function splitCSVRow(row) {
     return result;
 }
 
-
-
 // Display chart and total sales for a specific city
 function updateUI(city) {
     populateChart(city);
@@ -127,13 +128,13 @@ function populateChart(city) {
 // Show toggle and update UI for single city or all cities based on toggle state
 document.getElementById('show-all-toggle').addEventListener('change', function () {
     const showAll = this.checked;
+    toggleDropdownVisibility(!showAll);
+
     if (showAll) {
         displayAllCitiesChart();
     } else {
-        const selectedCity = document.getElementById('branch-dropdown2').value;
-        if (selectedCity) {
-            updateUI(selectedCity);
-        }
+        const selectedCity = document.getElementById('branch-dropdown2').value || 'Raleigh';
+        updateUI(selectedCity);
     }
 });
 
@@ -174,7 +175,6 @@ function displayAllCitiesChart() {
         }
     });
 }
-
 
 // Format and display the total sales amount
 function displayFormattedTotal(city) {
