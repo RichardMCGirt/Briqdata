@@ -118,7 +118,7 @@
                 <h1>Sales Register Summary</h1>
 
                 <input type="file" id="fileInput2" accept=".csv" />
-        
+    
                 <!-- Dropdown for selecting individual cities -->
                 <select id="branch-dropdown2" class="branch" style="display: none;">
                     <option value="" disabled selected>Select a branch</option>
@@ -130,26 +130,27 @@
                     <option value="Charlotte">Charlotte</option>
                     <option value="Columbia">Columbia</option>
                 </select>
-                <div style="margin-top: 10px;">
+
+                <!-- Toggle for displaying all cities -->
+                <div style="margin-top: 10px; display: none;" id="toggle-container">
                     <label for="show-all-toggle" style="font-weight: bold;">Show All Cities</label>
                     <label class="switch">
                         <input type="checkbox" id="show-all-toggle">
                         <span class="slider"></span>
                     </label>
                 </div>
+                
                 <!-- Total sales display area -->
                 <div id="total-sales-display" style="margin-top: 10px; font-weight: bold;"></div>
-        
+
                 <!-- Remove chart button -->
                 <button id="removeChartButton2" style="display: none;">Remove Chart</button>
                 
                 <!-- Chart canvas -->
                 <canvas id="salesChart2" style="display: none;"></canvas>
-        
-                <!-- Toggle to show all cities -->
-               
             </div>
         </div>
+    </div>
         
         
     
