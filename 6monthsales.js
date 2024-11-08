@@ -45,12 +45,12 @@ function parseCSV(text) {
 
     rows.forEach((row, index) => {
         const columns = splitCSVRow(row);
-        let masterAccount = (columns[2] || '').trim().replace(/^"|"$/g, '');
+        let masterAccount = (columns[1] || '').trim().replace(/^"|"$/g, '');
 
         let city = targetCities.find(targetCity => masterAccount.toLowerCase().includes(targetCity.toLowerCase()));
         if (!city) return;
 
-        const salesAmountRaw = (columns[7] || '0').trim();
+        const salesAmountRaw = (columns[14] || '0').trim();
         const cleanedSalesAmount = salesAmountRaw.replace(/[$,"]/g, '');
         const salesAmount = parseFloat(cleanedSalesAmount) || 0;
 
