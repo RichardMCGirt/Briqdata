@@ -40,29 +40,30 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     async function fetchAllData() {
         console.log("Starting to fetch all data...");
-    
+        
         let allRecords = [];
         let offset = null;
         const today = new Date();
-        const sixMonthsLater = new Date(today.getFullYear(), today.getMonth() + 12, today.getDate());
-    
+        const oneYearLater = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate()); // 12 months from today
+        
         do {
             const data = await fetchData(offset);
             const filteredRecords = data.records.filter(record => {
                 const anticipatedEndDate = new Date(record.fields['Anticipated End Date Briq']);
-                return anticipatedEndDate >= today && anticipatedEndDate <= sixMonthsLater;
+                return anticipatedEndDate >= today && anticipatedEndDate <= oneYearLater;
             });
-    
+        
             allRecords = allRecords.concat(filteredRecords);
             console.log(`Filtered and fetched ${filteredRecords.length} records. Total so far: ${allRecords.length}`);
             offset = data.offset;
-
+    
             document.getElementById('record-countR12').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
-    
+        
         console.log(`All data fetched successfully. Total records after filtering: ${allRecords.length}`);
         return allRecords;
     }
+    
 
     function createBarChart(revenueByDivision) {
         console.log("Creating bar chart...");
