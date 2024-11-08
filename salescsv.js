@@ -1,41 +1,25 @@
+const targetCities = ['Raleigh', 'Charleston', 'Wilmington', 'Myrtle Beach', 'Greenville', 'Charlotte', 'Columbia'];
+let citySales = {};
 
-// Control dropdown visibility based on toggle and file input
+// Control dropdown visibility based on toggle
 function toggleDropdownVisibility(show) {
     document.getElementById('branch-dropdown2').style.display = show ? 'block' : 'none';
 }
+toggleDropdownVisibility(false); // Initially hide dropdown
 
-// Initially hide dropdown until a file is selected and toggle is off
-toggleDropdownVisibility(false);
-
-// Handle file upload
-document.getElementById('fileInput2').addEventListener('change', function () {
-    const file = this.files[0];
-    if (!file) return;
-
-    console.log("File selected:", file.name);
-    document.getElementById("toggle-container").style.display = "block"; // Show toggle only when file is uploaded
-
-    const reader = new FileReader();
-    reader.onload = function (event) {
-        const text = event.target.result;
-        console.log("File content loaded. Parsing CSV...");
-        
-        citySales = parseCSV(text);
-        console.log("CSV parsed successfully. Aggregated city sales:", citySales);
-        
-        updateUI('Raleigh');
-        toggleDropdownVisibility(!document.getElementById('show-all-toggle').checked); // Only show if toggle is off
-    };
-    reader.readAsText(file);
-});
-
-// Hide dropdown and clear chart if file input is cleared
-document.getElementById('fileInput2').addEventListener('input', function () {
-    if (!this.files.length) {
-        toggleDropdownVisibility(false);
-        clearUI(); // Optionally clear the chart and total display
-        document.getElementById('toggle-container').style.display = 'none'; // Hide toggle
-    }
+// Fetch and parse the CSV file when the button is clicked
+document.getElementById('fetch-ftp-report-btn').addEventListener('click', function () {
+    fetch('./SalesRegisterSummaryReport-1730994522-1793612095.csv')
+        .then(response => response.text())
+        .then(text => {
+            console.log("CSV content loaded. Parsing CSV...");
+            citySales = parseCSV(text);
+            console.log("CSV parsed successfully. Aggregated city sales:", citySales);
+            updateUI('Raleigh'); // Display chart for default city
+            toggleDropdownVisibility(!document.getElementById('show-all-toggle').checked); // Show dropdown if toggle is off
+            document.getElementById("toggle-container").style.display = "block"; // Show toggle after fetching data
+        })
+        .catch(error => console.error('Error fetching CSV:', error));
 });
 
 // Parse CSV data and aggregate sales for matching target cities
@@ -68,17 +52,17 @@ function splitCSVRow(row) {
 
     for (const char of row) {
         if (char === '"' && inQuotes) {
-            inQuotes = false; // End of quoted part
+            inQuotes = false;
         } else if (char === '"' && !inQuotes) {
-            inQuotes = true; // Start of quoted part
+            inQuotes = true;
         } else if (char === ',' && !inQuotes) {
             result.push(current.trim());
-            current = ''; // Reset for the next value
+            current = '';
         } else {
-            current += char; // Add character to the current field
+            current += char;
         }
     }
-    result.push(current.trim()); // Push the last field
+    result.push(current.trim());
     return result;
 }
 
@@ -91,14 +75,10 @@ function updateUI(city) {
 // Populate chart for a specific city
 function populateChart(city) {
     const ctx = document.getElementById('salesChart2').getContext('2d');
-
-    // Show the chart
     document.getElementById('salesChart2').style.display = 'block';
 
-    // Clear existing chart data if any
     if (window.myChart) window.myChart.destroy();
 
-    // Create a new chart instance for the selected city
     window.myChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -125,11 +105,9 @@ function populateChart(city) {
     });
 }
 
-// Show toggle and update UI for single city or all cities based on toggle state
+// Toggle to show all cities or single city chart
 document.getElementById('show-all-toggle').addEventListener('change', function () {
     const showAll = this.checked;
-    toggleDropdownVisibility(!showAll);
-
     if (showAll) {
         displayAllCitiesChart();
     } else {
@@ -147,7 +125,7 @@ function displayAllCitiesChart() {
 
     const activeCities = Object.entries(citySales)
         .filter(([_, sales]) => sales > 0)
-        .sort((a, b) => a[1] - b[1]) // Sort by sales value
+        .sort((a, b) => a[1] - b[1]) 
         .map(([city]) => city);
 
     window.myChart = new Chart(ctx, {

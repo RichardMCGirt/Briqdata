@@ -116,21 +116,26 @@
         <div class="container">
             <div class="chart-section full-width">
                 <h1>Sales Register Summary</h1>
-
+        
+                <!-- CSV download link -->
+                <a href="./SalesRegisterSummaryReport.csv" download style="display: block; margin-bottom: 10px;">
+                  
+                </a>
+        
                 <input type="file" id="fileInput2" accept=".csv" />
-    
+                
                 <!-- Dropdown for selecting individual cities -->
                 <select id="branch-dropdown2" class="branch" style="display: none;">
                     <option value="" disabled selected>Select a branch</option>
-                    <option value="Raleigh">Raleigh</option>
                     <option value="Charleston">Charleston</option>
-                    <option value="Wilmington">Wilmington</option>
-                    <option value="Myrtle Beach">Myrtle Beach</option>
-                    <option value="Greenville">Greenville</option>
                     <option value="Charlotte">Charlotte</option>
                     <option value="Columbia">Columbia</option>
+                    <option value="Greenville">Greenville</option>
+                    <option value="Myrtle Beach">Myrtle Beach</option>
+                    <option value="Raleigh">Raleigh</option>
+                    <option value="Wilmington">Wilmington</option>
                 </select>
-
+        
                 <!-- Toggle for displaying all cities -->
                 <div style="margin-top: 10px; display: none;" id="toggle-container">
                     <label for="show-all-toggle" style="font-weight: bold;">Show All Cities</label>
@@ -140,9 +145,12 @@
                     </label>
                 </div>
                 
+                <!-- Button to fetch FTP report -->
+                <button id="fetch-ftp-report-btn">Fetch FTP Report</button>
+        
                 <!-- Total sales display area -->
                 <div id="total-sales-display" style="margin-top: 10px; font-weight: bold;"></div>
-
+        
                 <!-- Remove chart button -->
                 <button id="removeChartButton2" style="display: none;">Remove Chart</button>
                 
@@ -150,7 +158,7 @@
                 <canvas id="salesChart2" style="display: none;"></canvas>
             </div>
         </div>
-    </div>
+        
         
         
     
@@ -165,7 +173,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
- <script src="Return.js"></script> 
+  <!-- <script src="Return.js"></script> 
  <script src="bids.js"></script> 
    <script src="Fillin.js"></script> 
     <script src="6monthsCommercial.js"></script> 
@@ -175,8 +183,9 @@
    <script src="12monthRes.js"></script>
  <script src="18monthREs.js"></script> 
    <script src="winratebybranch.js"></script> 
- <script src ="disablebutton.js"></script> 
-   <script src="salescsv.js"></script>
+ <script src ="disablebutton.js"></script> --->
+ <script src ="salescsv.js"></script> 
+
 
 </body>
 
