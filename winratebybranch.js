@@ -1,53 +1,43 @@
 document.addEventListener('DOMContentLoaded', function () {
     console.log("Document loaded and DOM fully constructed.");
 
-    const winRateDiv = document.getElementById('winratebyBranch');
-    if (!winRateDiv) {
-        const mainDiv = document.createElement('div');
-        mainDiv.id = 'winratebyBranch';
-        mainDiv.innerHTML = `
-            <div id="commercial-column">
-                <h2>Commercial Win Rates</h2>
-                <canvas id="commercialChart"></canvas>
-            </div>
-            <div id="non-commercial-column">
-                <h2> Residential Win Rates</h2>
-                <canvas id="residentialChart"></canvas>
-            </div>
-        `;
-        document.body.appendChild(mainDiv);
-        console.log("HTML structure for winratebyBranch injected.");
-    }
+    // Trigger button click on page load
+    document.getElementById("fetch-ftp-report-btn").click();
+    document.getElementById("branch-dropdown2").value = "Raleigh";
 
     initialize();
 });
+
 
 async function initialize() {
     console.log("Initializing application...");
     displayLoadingMessage("Loading data, please wait...");
 
-    const airtableApiKey = 'patGjoWY1PkTG12oS.e9cf71910320ac1e3496ff803700f0e4319bf0ccf0fcaf4d85cd98df790b5aad';
-    const airtableBaseId = 'appX1Saz7wMYh4hhm';
-    const airtableTableName = 'tblfCPX293KlcKsdp';
+    const airtableApiKey = 'patCnUsdz4bORwYNV.5c27cab8c99e7caf5b0dc05ce177182df1a9d60f4afc4a5d4b57802f44c65328';
+    const airtableBaseId = 'appi4QZE0SrWI6tt2';
+    const airtableTableName = 'tblQo2148s04gVPq1';
     const currentYear = new Date().getFullYear();
 
-    const commercialRecords = await fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, `AND(YEAR({Last Time Outcome Modified}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} = 'Commercial')`);
-    const residentialRecords = await fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, `AND(YEAR({Last Time Outcome Modified}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} != 'Commercial')`);
+    const commercialRecords = await fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, `AND(YEAR({Created}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} = 'Commercial')`);
+    const residentialRecords = await fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, `AND(YEAR({Created}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} != 'Commercial')`);
 
     const commercialWinRates = calculateWinRate(commercialRecords);
     const residentialWinRates = calculateWinRate(residentialRecords);
 
-    createBarChart(commercialWinRates, 'commercialChart', 'Commercial Win Rates');
-    createBarChart(residentialWinRates, 'residentialChart', 'Non-Commercial Win Rates');
+    // Populate both grids
+    displayWinRatesInGrid(commercialWinRates, 'commercialGrid', "Commercial");
+    displayWinRatesInGrid(residentialWinRates, 'nonCommercialGrid', "Residential");
 
     console.log("Application initialized successfully.");
-    hideLoadingMessage(); // Hide loading message after initialization
+    
+    // Hide loading overlay after grids are created
+    hideLoadingMessage();
 }
 
 async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
     let allRecords = [];
     let offset;
-    const recordCountDisplay = document.getElementById('record-count');
+    const recordCountDisplay = document.getElementById('fetch-progress');
     let fetchedCount = 0;
 
     displayLoadingMessage("Fetching data from Airtable...");
@@ -64,41 +54,35 @@ async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
             const data = await response.json();
             allRecords = allRecords.concat(data.records);
             fetchedCount += data.records.length;
-
-            // Update the record count display in the UI
             recordCountDisplay.textContent = `Records fetched: ${fetchedCount}`;
-
             offset = data.offset;
         } else {
             console.error('Failed to fetch data from Airtable:', response.status, response.statusText);
-            hideLoadingMessage(); // Hide the loading message if there's an error
+            hideLoadingMessage();
             return [];
         }
     } while (offset);
 
     console.log("All records fetched:", allRecords);
-    hideLoadingMessage(); // Hide loading message once all data is fetched
     return allRecords;
 }
 
 function displayLoadingMessage(message) {
     const fetchProgress = document.getElementById('fetch-progress');
     fetchProgress.textContent = message;
-    fetchProgress.style.display = 'block'; // Make sure it is visible
+    fetchProgress.style.display = 'block';
 }
 
 function hideLoadingMessage() {
     const fetchProgress = document.getElementById('fetch-progress');
-    fetchProgress.style.display = 'none'; // Hide the message
+    fetchProgress.style.display = 'none';
 }
-
-
 
 function calculateWinRate(records) {
     const data = {};
 
     records.forEach(record => {
-        const division = record.fields['Division'];
+        const division = record.fields['Branch'];
         const outcome = record.fields['Outcome'];
 
         if (!data[division]) {
@@ -114,63 +98,51 @@ function calculateWinRate(records) {
     const winRates = {};
     for (const division in data) {
         const { winCount, totalCount } = data[division];
-        winRates[division] = totalCount > 0 ? (winCount / totalCount) * 100 : 0;
+        winRates[division] = {
+            winCount,
+            totalCount,
+            fraction: `${winCount} / ${totalCount}`,
+            winRatePercentage: totalCount > 0 ? (winCount / totalCount) * 100 : 0
+        };
     }
     return winRates;
 }
 
-function createBarChart(data, chartId, title) {
-    // Sort divisions by win percentage in ascending order
-    const sortedData = Object.entries(data).sort((a, b) => a[1] - b[1]);
-    
-    // Separate sorted data into labels and values
-    const labels = sortedData.map(item => item[0]);
-    const winPercentages = sortedData.map(item => item[1]);
+function displayWinRatesInGrid(data, gridId, title) {
+    const gridContainer = document.getElementById(gridId);
+    if (!gridContainer) {
+        return console.error(`Grid container with ID '${gridId}' not found.`);
+    }
 
-    console.log(`Creating bar chart for ${title}`);
-    const canvas = document.getElementById(chartId);
-    if (!canvas) return console.error(`Canvas element with ID '${chartId}' not found.`);
+   
 
-    const ctx = canvas.getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Win Percentage',
-                data: winPercentages,
-                backgroundColor: labels.map(() => 'rgba(75, 192, 192, 0.7)'),
-                borderColor: '#fff',
-                borderWidth: 1,
-            }],
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: title,
-                },
-                datalabels: {
-                    display: true,
-                    color: '#000',
-                    anchor: 'end',
-                    align: 'top',
-                    formatter: (value) => `${value.toFixed(1)}%`, // Format to one decimal place
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    title: {
-                        display: true,
-                        text: 'Win Percentage (%)',
-                    },
-                },
-            },
-        },
-        plugins: [ChartDataLabels]  // Activate the datalabels plugin
+    // Sort divisions alphabetically by branch name
+    const sortedData = Object.entries(data).sort((a, b) => a[0].localeCompare(b[0]));
+
+    sortedData.forEach(([branch, winRateData]) => {
+        const branchDiv = document.createElement('div');
+        branchDiv.className = 'branch-win-rate';
+
+        // Division Name
+        const branchName = document.createElement('h3');
+        branchName.textContent = branch;
+        branchDiv.appendChild(branchName);
+
+        // Win rate as a fraction
+        const winFraction = document.createElement('p');
+        winFraction.textContent = `Win Rate: ${winRateData.fraction}`;
+        branchDiv.appendChild(winFraction);
+
+        // Win Percentage (optional)
+        const winPercentage = document.createElement('p');
+        winPercentage.textContent = `${winRateData.winRatePercentage.toFixed(1)}%`;
+        branchDiv.appendChild(winPercentage);
+
+        // Add branch div to the grid container
+        gridContainer.appendChild(branchDiv);
     });
-    console.log(`Bar chart for ${title} created successfully.`);
+
+    // Show the grid container
+    gridContainer.style.display = 'grid';
 }
+
