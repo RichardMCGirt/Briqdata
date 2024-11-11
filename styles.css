@@ -26,6 +26,60 @@
     grid-column: span 3;
 }
 
+/* General styling */
+#fetch-progress {
+    text-align: center;
+    font-size: 1.2em;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Grid container styling */
+.winrate-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* Four columns */
+    grid-template-rows: repeat(2, auto);   /* Two rows */
+    gap: 20px;
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Individual branch styling */
+.branch-win-rate {
+    background-color: #f0f4f8;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Title and data styling inside each branch */
+.branch-win-rate h3 {
+    font-size: 1.2em;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.branch-win-rate p {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #4caf50;
+}
+
+
+.grid-header {
+    text-align: center;      /* Center text horizontally */
+    font-size: 1.5em;        /* Increase font size */
+    font-weight: bold;       /* Make the text bold */
+    color: #333;             /* Set a darker color */
+    margin: 20px 0;          /* Add spacing above and below */
+}
+
+
+
   /* Center and style the loading indicator */
   #loading-indicator {
     display: none; /* Hidden by default */
