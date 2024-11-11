@@ -1,188 +1,176 @@
-const targetCities = ['Raleigh', 'Charleston', 'Wilmington', 'Myrtle Beach', 'Greenville', 'Charlotte', 'Columbia'];
-let citySales = {}; // Store parsed data for all cities
+document.addEventListener('DOMContentLoaded', function () {
+    console.log("Document loaded and DOM fully constructed.");
 
+    const winRateDiv = document.getElementById('winratebyBranch');
+    if (!winRateDiv) {
+        const mainDiv = document.createElement('div');
+        mainDiv.id = 'winratebyBranch';
+        mainDiv.innerHTML = `
+            <div id="commercial-column">
+                <h2>Commercial Win Rates</h2>
+                <canvas id="commercialChart"></canvas>
+            </div>
+            <div id="non-commercial-column">
+                <h2> Residential Win Rates</h2>
+                <canvas id="residentialChart"></canvas>
+            </div>
+        `;
+        document.body.appendChild(mainDiv);
+        console.log("HTML structure for winratebyBranch injected.");
+    }
 
-// Function to parse and load the selected CSV file
-function parseAndLoadFile(file) {
-    const reader = new FileReader();
-    reader.onload = function (event) {
-        const text = event.target.result;
-        console.log("File content loaded. Parsing CSV...");
-        
-        citySales = parseCSV(text);
-        
-        console.log("CSV parsed successfully. Aggregated city sales:", citySales);
+    initialize();
+});
 
-        // Update the dropdown options based on sales data
-        updateDropdownOptions();
-        
-        // Show the default chart for Raleigh if it has sales data
-        if (citySales['Raleigh'] > 0) updateUI('Raleigh');
-    };
-    reader.readAsText(file);
+async function initialize() {
+    console.log("Initializing application...");
+    displayLoadingMessage("Loading data, please wait...");
+
+    const airtableApiKey = 'patGjoWY1PkTG12oS.e9cf71910320ac1e3496ff803700f0e4319bf0ccf0fcaf4d85cd98df790b5aad';
+    const airtableBaseId = 'appX1Saz7wMYh4hhm';
+    const airtableTableName = 'tblfCPX293KlcKsdp';
+    const currentYear = new Date().getFullYear();
+
+    const commercialRecords = await fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, `AND(YEAR({Last Time Outcome Modified}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} = 'Commercial')`);
+    const residentialRecords = await fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, `AND(YEAR({Last Time Outcome Modified}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} != 'Commercial')`);
+
+    const commercialWinRates = calculateWinRate(commercialRecords);
+    const residentialWinRates = calculateWinRate(residentialRecords);
+
+    createBarChart(commercialWinRates, 'commercialChart', 'Commercial Win Rates');
+    createBarChart(residentialWinRates, 'residentialChart', 'Non-Commercial Win Rates');
+
+    console.log("Application initialized successfully.");
+    hideLoadingMessage(); // Hide loading message after initialization
 }
 
-// Function to update the dropdown options based on sales data
-function updateDropdownOptions() {
-    const dropdown = document.getElementById('branch-dropdown2');
-    dropdown.innerHTML = '<option value="" disabled selected>Select a branch</option>'; // Reset options
+async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
+    let allRecords = [];
+    let offset;
+    const recordCountDisplay = document.getElementById('record-count');
+    let fetchedCount = 0;
 
-    targetCities.forEach(city => {
-        if (citySales[city] > 0) { // Only add city if total sales is non-zero
-            const option = document.createElement('option');
-            option.value = city;
-            option.textContent = city;
-            dropdown.appendChild(option);
-        }
-    });
+    displayLoadingMessage("Fetching data from Airtable...");
 
-    dropdown.style.display = Object.keys(citySales).some(city => citySales[city] > 0) ? 'block' : 'none';
-}
+    do {
+        const url = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodeURIComponent(filterFormula)}${offset ? `&offset=${offset}` : ''}`;
+        console.log('Fetching data from URL:', url);
 
-// Function to parse CSV data and aggregate sales for matching target cities
-function parseCSV(text) {
-    const rows = text.split('\n').slice(1); // Skip header row
-    const cityData = {};
+        const response = await fetch(url, {
+            headers: { Authorization: `Bearer ${apiKey}` }
+        });
 
-    rows.forEach((row, index) => {
-        const columns = splitCSVRow(row);
+        if (response.ok) {
+            const data = await response.json();
+            allRecords = allRecords.concat(data.records);
+            fetchedCount += data.records.length;
 
-        let masterAccount = (columns[2] || '').trim().replace(/^"|"$/g, '');
-        let city = targetCities.find(targetCity => masterAccount.toLowerCase().includes(targetCity.toLowerCase()));
-        if (!city) return;
+            // Update the record count display in the UI
+            recordCountDisplay.textContent = `Records fetched: ${fetchedCount}`;
 
-        const salesAmountRaw = (columns[7] || '0').trim();
-        const cleanedSalesAmount = salesAmountRaw.replace(/[$,"]/g, '');
-        const salesAmount = parseFloat(cleanedSalesAmount) || 0;
-
-        cityData[city] = (cityData[city] || 0) + salesAmount;
-    });
-
-    return cityData;
-}
-
-// Helper function to split a CSV row by commas, respecting quoted values
-function splitCSVRow(row) {
-    const result = [];
-    let current = '';
-    let inQuotes = false;
-
-    for (const char of row) {
-        if (char === '"' && inQuotes) {
-            inQuotes = false;
-        } else if (char === '"' && !inQuotes) {
-            inQuotes = true;
-        } else if (char === ',' && !inQuotes) {
-            result.push(current.trim());
-            current = '';
+            offset = data.offset;
         } else {
-            current += char;
+            console.error('Failed to fetch data from Airtable:', response.status, response.statusText);
+            hideLoadingMessage(); // Hide the loading message if there's an error
+            return [];
         }
+    } while (offset);
+
+    console.log("All records fetched:", allRecords);
+    hideLoadingMessage(); // Hide loading message once all data is fetched
+    return allRecords;
+}
+
+function displayLoadingMessage(message) {
+    const fetchProgress = document.getElementById('fetch-progress');
+    fetchProgress.textContent = message;
+    fetchProgress.style.display = 'block'; // Make sure it is visible
+}
+
+function hideLoadingMessage() {
+    const fetchProgress = document.getElementById('fetch-progress');
+    fetchProgress.style.display = 'none'; // Hide the message
+}
+
+
+
+function calculateWinRate(records) {
+    const data = {};
+
+    records.forEach(record => {
+        const division = record.fields['Division'];
+        const outcome = record.fields['Outcome'];
+
+        if (!data[division]) {
+            data[division] = { winCount: 0, totalCount: 0 };
+        }
+
+        if (outcome === 'Win') {
+            data[division].winCount += 1;
+        }
+        data[division].totalCount += 1;
+    });
+
+    const winRates = {};
+    for (const division in data) {
+        const { winCount, totalCount } = data[division];
+        winRates[division] = totalCount > 0 ? (winCount / totalCount) * 100 : 0;
     }
-    result.push(current.trim());
-    return result;
+    return winRates;
 }
 
-// Display chart and total sales for a specific city
-function updateUI(city) {
-    populateChart(city);
-    displayFormattedTotal(city);
-}
+function createBarChart(data, chartId, title) {
+    // Sort divisions by win percentage in ascending order
+    const sortedData = Object.entries(data).sort((a, b) => a[1] - b[1]);
+    
+    // Separate sorted data into labels and values
+    const labels = sortedData.map(item => item[0]);
+    const winPercentages = sortedData.map(item => item[1]);
 
+    console.log(`Creating bar chart for ${title}`);
+    const canvas = document.getElementById(chartId);
+    if (!canvas) return console.error(`Canvas element with ID '${chartId}' not found.`);
 
-// Populate chart for a specific city
-function populateChart(city) {
-    const ctx = document.getElementById('salesChart2').getContext('2d');
-
-    document.getElementById('salesChart2').style.display = 'block';
-
-    if (window.myChart) window.myChart.destroy();
-
-    window.myChart = new Chart(ctx, {
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: [city],
+            labels: labels,
             datasets: [{
-                label: 'Total Sales ($)',
-                data: [citySales[city] || 0],
-                backgroundColor: 'rgba(75, 192, 192, 0.7)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            }]
+                label: 'Win Percentage',
+                data: winPercentages,
+                backgroundColor: labels.map(() => 'rgba(75, 192, 192, 0.7)'),
+                borderColor: '#fff',
+                borderWidth: 1,
+            }],
         },
         options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: title,
+                },
+                datalabels: {
+                    display: true,
+                    color: '#000',
+                    anchor: 'end',
+                    align: 'top',
+                    formatter: (value) => `${value.toFixed(1)}%`, // Format to one decimal place
+                }
+            },
             scales: {
                 y: {
                     beginAtZero: true,
+                    max: 100,
                     title: {
                         display: true,
-                        text: 'Sales Amount ($)'
-                    }
-                }
-            }
-        }
-    });
-}
-
-// Populate a chart showing all cities with sales
-function populateAllCitiesChart() {
-    const ctx = document.getElementById('salesChart2').getContext('2d');
-    document.getElementById('salesChart2').style.display = 'block';
-
-    if (window.myChart) window.myChart.destroy();
-
-    const citiesWithSales = Object.keys(citySales).filter(city => citySales[city] > 0);
-    const salesData = citiesWithSales.map(city => citySales[city]);
-
-    window.myChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: citiesWithSales,
-            datasets: [{
-                label: 'Total Sales ($)',
-                data: salesData,
-                backgroundColor: 'rgba(75, 192, 192, 0.7)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            }]
+                        text: 'Win Percentage (%)',
+                    },
+                },
+            },
         },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Sales Amount ($)'
-                    }
-                }
-            }
-        }
+        plugins: [ChartDataLabels]  // Activate the datalabels plugin
     });
+    console.log(`Bar chart for ${title} created successfully.`);
 }
-
-// Format and display the total sales amount
-function displayFormattedTotal(city) {
-    const totalSales = citySales[city] || 0;
-    const formattedTotal = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalSales);
-    document.getElementById('total-sales-display').textContent = `Total Sales for ${city}: ${formattedTotal}`;
-}
-
-// Hide dropdown if no file selected
-document.getElementById('branch-dropdown2').style.display = 'none';
-
-// Add toggle event listener for "Show All Cities" option
-document.getElementById('show-all-toggle').addEventListener('change', function () {
-    if (this.checked) {
-        updateUI(null, true);
-    } else {
-        const selectedCity = document.getElementById('branch-dropdown2').value;
-        if (selectedCity) updateUI(selectedCity);
-    }
-});
-
-
-// Event listener for dropdown selection
-document.getElementById('branch-dropdown2').addEventListener('change', function () {
-    const selectedCity = this.value;
-    updateUI(selectedCity);
-});
