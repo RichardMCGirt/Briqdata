@@ -4,9 +4,9 @@ const app = express();
 const port = 4002; // Make sure this port is not already in use
 
 const ftpConfig = {
-    host: 'ftp.liftoff-server.com', // replace with Liftoff's actual FTP hostname
-    user: 'richard.mcgirt',          // your Liftoff FTP username
-    password: 'vanir',      // your Liftoff FTP password
+    host: ' 174.108.187.19', 
+    user: 'richard.mcgirt',        
+    password: 'vanir',     
 };
 
 
