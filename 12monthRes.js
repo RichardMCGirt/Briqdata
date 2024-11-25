@@ -10,25 +10,25 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Initially disable the export button and update its text and style
     exportButton.disabled = true;
     exportButton.textContent = "Fetching data...";
-    exportButton.style.backgroundColor = "#ccc"; 
-    exportButton.style.cursor = "not-allowed"; 
+    exportButton.style.backgroundColor = "#ccc";
+    exportButton.style.cursor = "not-allowed";
 
     async function fetchData(offset = null) {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=AND(NOT({Project Type Briq}='Commercial'),{Outcome}='Win')&sort[0][field]=Project Type Briq&sort[0][direction]=asc`;
         if (offset) url += `&offset=${offset}`;
         console.log(`Fetching data from URL: ${url}`);
-    
+
         try {
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${airtableApiKey}` }
             });
-    
+
             if (!response.ok) {
                 const errorDetails = await response.json();
                 console.error('Error fetching data from Airtable:', errorDetails);
                 throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
-    
+
             const data = await response.json();
             console.log(`Number of records fetched: ${data.records.length}`);
             return data;
@@ -40,45 +40,42 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     async function fetchAllData() {
         console.log("Starting to fetch all data...");
-        
+
         let allRecords = [];
         let offset = null;
         const today = new Date();
-        const oneYearLater = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate()); // 12 months from today
-        
+        const oneYearLater = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+
         do {
             const data = await fetchData(offset);
             const filteredRecords = data.records.filter(record => {
                 const anticipatedEndDate = new Date(record.fields['Anticipated End Date Briq']);
                 return anticipatedEndDate >= today && anticipatedEndDate <= oneYearLater;
             });
-        
+
             allRecords = allRecords.concat(filteredRecords);
             console.log(`Filtered and fetched ${filteredRecords.length} records. Total so far: ${allRecords.length}`);
             offset = data.offset;
-    
+
             document.getElementById('record-countR12').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
-        
+
         console.log(`All data fetched successfully. Total records after filtering: ${allRecords.length}`);
         return allRecords;
     }
-    
 
     function createBarChart(revenueByDivision) {
         console.log("Creating bar chart...");
-    
-        // Filter out Nashville from the revenue data
+
         const filteredData = Object.entries(revenueByDivision)
             .filter(([division, revenue]) => division !== "Nashville");
-    
-        // Sort the filtered data
+
         const sortedData = filteredData.sort((a, b) => a[1] - b[1]);
         const sortedDivisions = sortedData.map(entry => entry[0]);
         const revenueNumbers = sortedData.map(entry => entry[1]);
-    
+
         const ctx = document.getElementById('12monthsRChart').getContext('2d');
-    
+
         new Chart(ctx, {
             type: 'bar',
             data: {
@@ -97,7 +94,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            callback: function(value) {
+                            callback: function (value) {
                                 return `$${value.toLocaleString()}`;
                             }
                         }
@@ -109,7 +106,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     },
                     tooltip: {
                         callbacks: {
-                            label: function(tooltipItem) {
+                            label: function (tooltipItem) {
                                 return `Projected Revenue: $${tooltipItem.raw.toLocaleString()}`;
                             }
                         }
@@ -118,11 +115,34 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
     }
-    
-    // Fetch data and create the chart
+
+    function downloadCSV(records) {
+        console.log("Generating CSV...");
+        const headers = ['Division', 'Bid Value', 'Anticipated End Date'];
+        const rows = records.map(record => [
+            record.fields['Division'],
+            record.fields['Bid Value Briq'],
+            record.fields['Anticipated End Date Briq']
+        ]);
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.map(item => `"${item || ''}"`).join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `12-Months_Residential.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     const allRecords = await fetchAllData();
-    
-    // Calculate revenue by division to pass to chart
+
     const revenueByDivision = {};
     allRecords.forEach(record => {
         const division = record.fields['Division'];
@@ -132,7 +152,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             if (!revenueByDivision[division]) {
                 revenueByDivision[division] = 0;
             }
-            revenueByDivision[division] += bidValue; 
+            revenueByDivision[division] += bidValue;
         }
     });
 
@@ -140,6 +160,10 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     exportButton.disabled = false;
     exportButton.textContent = "Export to CSV";
-    exportButton.style.backgroundColor = ""; 
-    exportButton.style.cursor = "pointer"; 
+    exportButton.style.backgroundColor = "";
+    exportButton.style.cursor = "pointer";
+
+    exportButton.addEventListener('click', () => {
+        downloadCSV(allRecords);
+    });
 });

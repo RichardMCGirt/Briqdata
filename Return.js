@@ -95,7 +95,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             locationDropdown.value = "Raleigh";
         }
     }
- 
 
     function filterRecordsByLocation(records, location) {
         console.log(`Filtering records for location: ${location}`);
@@ -203,6 +202,33 @@ document.addEventListener('DOMContentLoaded', async function () {
         console.log("Bar chart created successfully in ascending order.");
     }
 
+    function exportToCSV(records) {
+        console.log("Exporting data to CSV...");
+
+        // Define the CSV headers
+        const headers = ['Branch', 'Date Created', 'Actual $ Credit Amount'];
+        const rows = records.map(record => [
+            record.fields['Branch'],
+            record.fields['Date Created'],
+            record.fields['Actual $ Credit Amount'] || 0
+        ]);
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.map(item => `"${item || ''}"`).join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Returns_per_Branch${new Date().getFullYear()}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     const allRecords = await fetchAllData();
 
     populateDropdown(allRecords);
@@ -226,8 +252,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     });
 
+    // Add event listener for export button
     exportButton.addEventListener('click', function () {
-        console.log("Export button clicked.");
         exportToCSV(allRecords);
     });
 });

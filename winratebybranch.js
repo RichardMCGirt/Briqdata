@@ -1,13 +1,9 @@
 document.addEventListener('DOMContentLoaded', function () {
     console.log("Document loaded and DOM fully constructed.");
-
-    // Trigger button click on page load
-    document.getElementById("fetch-ftp-report-btn").click();
-    document.getElementById("branch-dropdown2").value = "Raleigh";
-
+    
+    // Directly call the initialization function to start fetching data immediately
     initialize();
 });
-
 
 async function initialize() {
     console.log("Initializing application...");
@@ -21,8 +17,8 @@ async function initialize() {
     const commercialRecords = await fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, `AND(YEAR({Created}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} = 'Commercial')`);
     const residentialRecords = await fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, `AND(YEAR({Created}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} != 'Commercial')`);
 
-    const commercialWinRates = calculateWinRate(commercialRecords);
-    const residentialWinRates = calculateWinRate(residentialRecords);
+    commercialWinRates = calculateWinRate(commercialRecords);
+    residentialWinRates = calculateWinRate(residentialRecords);
 
     // Populate both grids
     displayWinRatesInGrid(commercialWinRates, 'commercialGrid', "Commercial");
@@ -114,8 +110,6 @@ function displayWinRatesInGrid(data, gridId, title) {
         return console.error(`Grid container with ID '${gridId}' not found.`);
     }
 
-   
-
     // Sort divisions alphabetically by branch name
     const sortedData = Object.entries(data).sort((a, b) => a[0].localeCompare(b[0]));
 
@@ -146,3 +140,42 @@ function displayWinRatesInGrid(data, gridId, title) {
     gridContainer.style.display = 'grid';
 }
 
+// Function to export win rates to CSV
+function exportToCSV(data, fileName) {
+    const csvRows = [];
+    const header = ['Branch', 'Win Count', 'Total Count', 'Win Rate', 'Fraction'];
+    csvRows.push(header.join(',')); // Add header row
+
+    // Add data rows
+    Object.entries(data).forEach(([branch, winRateData]) => {
+        const row = [
+            branch,
+            winRateData.winCount,
+            winRateData.totalCount,
+            winRateData.winRatePercentage.toFixed(1) + '%',
+            `${winRateData.winCount} / ${winRateData.totalCount}`
+        ];
+        csvRows.push(row.join(',')); // Join each column value with a comma
+    });
+
+    // Convert array of rows into a single CSV string
+    const csvContent = csvRows.join('\n');
+
+    // Create a Blob and trigger the download
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName; // Set the file name
+    link.click(); // Simulate a click to trigger the download
+    URL.revokeObjectURL(url); // Clean up the URL object
+}
+
+// Adding the export button click event to export data
+document.getElementById('export-button').addEventListener('click', function() {
+    console.log("Export to CSV button clicked.");
+
+    // Export commercial and residential win rates as separate CSV files
+    exportToCSV(commercialWinRates, 'commercial_win_rates.csv');
+    exportToCSV(residentialWinRates, 'residential_win_rates.csv');
+});

@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     async function fetchData(offset = null) {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100`;
         if (offset) url += `&offset=${offset}`;
-        console.log(`Fetching data from URL: ${url}`);
 
         try {
             const response = await fetch(url, {
@@ -76,7 +75,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const totalCost = records
             .filter(record => record.fields['VanirOffice'] === branch)
             .reduce((sum, record) => sum + (parseFloat(record.fields['Total Cost of Fill In']) || 0), 0);
-        
+
         return totalCost;
     }
 
@@ -171,6 +170,34 @@ document.addEventListener('DOMContentLoaded', async function () {
         console.log("Bar chart created successfully.");
     }
 
+    // Function to export the data to CSV
+    function exportToCSV(records) {
+        console.log("Exporting data to CSV...");
+
+        // Define the CSV headers
+        const headers = ['VanirOffice', 'Total Cost of Fill In', 'Date Created'];
+        const rows = records.map(record => [
+            record.fields['VanirOffice'],
+            record.fields['Total Cost of Fill In'] || 0,
+            record.fields['Date Created']
+        ]);
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.map(item => `"${item || ''}"`).join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Fillins_by_Branch${new Date().getFullYear()}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     // Fetch data and populate dropdown
     const allRecords = await fetchAllData();
     populateDropdown(allRecords);
@@ -201,8 +228,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         createBarChart(allRecords, selectedBranch);
     });
 
+    // Add event listener for export button
     exportButton.addEventListener('click', function () {
-        console.log("Export button clicked.");
         exportToCSV(allRecords);
     });
 });
