@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         const link = document.createElement('a');
         link.href = url;
-        link.download = `12-Months_Residential.csv`;
+        link.download = `12_Months_Residential.csv`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
