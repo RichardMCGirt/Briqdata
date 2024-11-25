@@ -117,11 +117,35 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
     }
-    
-    // Fetch data and create the chart
+
+    function downloadCSV(records) {
+        console.log("Generating CSV...");
+
+        const headers = ['Division', 'Bid Value', 'Anticipated End Date'];
+        const rows = records.map(record => [
+            record.fields['Division'],
+            record.fields['Bid Value Briq'],
+            record.fields['Anticipated End Date Briq']
+        ]);
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.map(item => `"${item || ''}"`).join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `18_months_Residential.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     const allRecords = await fetchAllData();
-    
-    // Calculate revenue by division to pass to chart
+
     const revenueByDivision = {};
     allRecords.forEach(record => {
         const division = record.fields['Division'];
@@ -131,7 +155,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             if (!revenueByDivision[division]) {
                 revenueByDivision[division] = 0;
             }
-            revenueByDivision[division] += bidValue; 
+            revenueByDivision[division] += bidValue;
         }
     });
 
@@ -139,6 +163,10 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     exportButton.disabled = false;
     exportButton.textContent = "Export to CSV";
-    exportButton.style.backgroundColor = ""; 
-    exportButton.style.cursor = "pointer"; 
+    exportButton.style.backgroundColor = "";
+    exportButton.style.cursor = "pointer";
+
+    exportButton.addEventListener('click', () => {
+        downloadCSV(allRecords);
+    });
 });

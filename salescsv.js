@@ -18,7 +18,6 @@
         }
     }
     
-    
     document.getElementById('fetch-ftp-report-btn').addEventListener('click', async function () {
         console.log("Fetch button clicked. Initiating CSV fetch...");
         showLoadingIndicator(true);
@@ -39,8 +38,6 @@
         }
     });
     
-    
-
     // Parse CSV data and aggregate sales for matching target cities
     function parseCSV(text) {
         try {
@@ -70,7 +67,6 @@
         }
     }
     
-
     // Helper function to split a CSV row by commas, respecting quoted values
     function splitCSVRow(row) {
         console.log("Splitting CSV row:", row);
@@ -106,8 +102,6 @@
         const lastCity = localStorage.getItem('lastSelectedCity') || 'Raleigh';
         updateUI(lastCity);
     });
-    
-    
 
     function getCityColor(city) {
         const colors = {
@@ -158,8 +152,6 @@
             }
         });
     }
-    
-    
 
     // Toggle to show all cities or single city chart
     document.getElementById('show-all-toggle').addEventListener('change', function () {
@@ -231,4 +223,30 @@
         console.log(`Dropdown selection changed: ${selectedCity}`);
         updateUI(selectedCity);
     });
+
+    // Export to CSV function
+    function exportToCSV(citySales) {
+        const csvRows = [];
+        const header = ['City', 'Total Sales ($)'];
+        csvRows.push(header.join(','));
+
+        for (const [city, sales] of Object.entries(citySales)) {
+            csvRows.push([city, sales.toFixed(2)].join(','));
+        }
+
+        const csvContent = csvRows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'city_sales_report.csv';
+        link.click();
+    }
+
+    // Export button click listener
+    exportButton.addEventListener('click', function () {
+        console.log("Export button clicked.");
+        exportToCSV(citySales);
+    });
+
 })();

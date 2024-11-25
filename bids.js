@@ -4,10 +4,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableApiKey = 'patCnUsdz4bORwYNV.5c27cab8c99e7caf5b0dc05ce177182df1a9d60f4afc4a5d4b57802f44c65328';
     const airtableBaseId = 'appi4QZE0SrWI6tt2';
     const airtableTableName = 'tblQo2148s04gVPq1';
+    const exportButton = document.getElementById('export-button');
 
     async function fetchData(offset = null) {
         const currentYear = new Date().getFullYear();
-        // Use filterByFormula to fetch only records from the current year
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=YEAR({Created})=${currentYear}`;
         if (offset) url += `&offset=${offset}`;
         console.log(`Fetching data from URL: ${url}`);
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     async function fetchAllData() {
         console.log("Starting to fetch all data...");
-
+    
         let allRecords = [];
         let offset = null;
 
@@ -40,13 +40,11 @@ document.addEventListener('DOMContentLoaded', async function () {
             const data = await fetchData(offset);
             allRecords = allRecords.concat(data.records);
             console.log(`Fetched ${data.records.length} records. Total so far: ${allRecords.length}`);
-            offset = data.offset; // Airtable provides an offset if there are more records to fetch
+            offset = data.offset;
 
-            // Update the record count in the UI
             document.getElementById('record-count3').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
 
-        // Filter records to only include those from the current year
         const currentYear = new Date().getFullYear();
         const currentYearRecords = allRecords.filter(record => {
             const dateReceived = new Date(record.fields['Date Received']);
@@ -57,10 +55,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         return currentYearRecords;
     }
 
-    async function displayChart() {
-        const records = await fetchAllData();
+    function createBarChart(records) {
+        console.log("Creating bar chart...");
     
-        // Calculate the number of bids by branch
         const bidCounts = {};
         records.forEach(record => {
             const branch = record.fields['Branch'];
@@ -68,24 +65,20 @@ document.addEventListener('DOMContentLoaded', async function () {
                 if (!bidCounts[branch]) {
                     bidCounts[branch] = 0;
                 }
-                bidCounts[branch] += 1; // Increment bid count for the branch
+                bidCounts[branch] += 1;
             }
         });
-    
-        // Prepare data for Chart.js and sort in ascending order by bid count
+
         const branches = Object.keys(bidCounts);
         const bidData = branches.map(branch => bidCounts[branch]);
-    
-        // Sort both branches and bidData in ascending order of bidData
+
         const sortedData = branches
             .map((branch, index) => ({ branch, count: bidData[index] }))
-            .sort((a, b) => a.count - b.count); // Sort by bid count in ascending order
-    
-        // Extract sorted branches and bidData
+            .sort((a, b) => a.count - b.count);
+
         const sortedBranches = sortedData.map(item => item.branch);
         const sortedBidData = sortedData.map(item => item.count);
-    
-        // Set up Chart.js
+
         const ctx = document.getElementById('bidsChart').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
@@ -119,8 +112,43 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
     }
-    
-    // Call displayChart to fetch data and render the chart
-    displayChart();
-    
+
+    // Generate and download the CSV
+    function downloadCSV(records) {
+        console.log("Generating CSV...");
+
+        const headers = ['Branch', 'Bid Count'];
+        const rows = records.map(record => [
+            record.fields['Branch'],
+            record.fields['Bid Count'] || 0
+        ]);
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.map(item => `"${item || ''}"`).join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Bids_Submited_per_Branch${new Date().getFullYear()}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Fetch data, create chart, and set up the export button
+    const allRecords = await fetchAllData();
+    createBarChart(allRecords);
+
+    exportButton.disabled = false;
+    exportButton.textContent = "Export to CSV";
+    exportButton.style.backgroundColor = ""; 
+    exportButton.style.cursor = "pointer"; 
+
+    exportButton.addEventListener('click', () => {
+        downloadCSV(allRecords);
+    });
 });
