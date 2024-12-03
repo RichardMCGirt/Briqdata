@@ -229,7 +229,7 @@ input:checked + .slider:before {
     cursor: not-allowed; /* Keeps the cursor style on hover */
 }
 
-
+#live-update-container,
 #record-count, 
 #record-count2, 
 #record-count3, 
