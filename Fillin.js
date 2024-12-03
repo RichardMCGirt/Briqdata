@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
     const airtableBaseId = 'appeNSp44fJ8QYeY5';
     const airtableTableName = 'tblRp5bukUiw9tX9j';
-    const exportButton = document.getElementById('export-button');
+    const exportButton = document.getElementById('export-button2');
     const dropdown = document.getElementById('branch-dropdown');
     const totalCostDisplay = document.getElementById('total-cost-display');
     let chartInstance = null;
@@ -39,17 +39,37 @@ document.addEventListener('DOMContentLoaded', async function () {
         console.log("Starting to fetch all data...");
         let allRecords = [];
         let offset = null;
-
+    
+        // Get the container element to display real-time updates
+        const liveUpdateContainer = document.getElementById('live-update-container');
+        if (liveUpdateContainer) liveUpdateContainer.innerHTML = ''; // Clear previous updates if any
+    
         do {
             const data = await fetchData(offset);
             allRecords = allRecords.concat(data.records);
+            
+            // Log and display the number of records fetched so far
             console.log(`Fetched ${data.records.length} records. Total so far: ${allRecords.length}`);
-            offset = data.offset;
+            
+            // Update the container with the latest count (overwrite content)
+            if (liveUpdateContainer) {
+                liveUpdateContainer.innerHTML = `Fetched ${allRecords.length} records so far...`;
+            }
+    
+            offset = data.offset; // Update the offset for the next batch
         } while (offset);
-
+    
         console.log(`All data fetched successfully. Total records: ${allRecords.length}`);
+    
+        // Final update to indicate completion
+        if (liveUpdateContainer) {
+            liveUpdateContainer.innerHTML = `All data fetched successfully. Total records: ${allRecords.length}`;
+        }
+    
         return allRecords;
     }
+    
+    
 
     function populateDropdown(records) {
         console.log("Populating dropdown with unique branches...");
@@ -173,30 +193,69 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Function to export the data to CSV
     function exportToCSV(records) {
         console.log("Exporting data to CSV...");
-
+        
         // Define the CSV headers
-        const headers = ['VanirOffice', 'Total Cost of Fill In', 'Date Created'];
-        const rows = records.map(record => [
-            record.fields['VanirOffice'],
-            record.fields['Total Cost of Fill In'] || 0,
-            record.fields['Date Created']
-        ]);
-
+        const headers = ['VanirOffice', 'Total Cost of Fill In', 'Month and Year', 'Monthly Total'];
+        const branchMonthlySums = {};
+    
+        // Process records to calculate sums and format dates
+        records.forEach(record => {
+            const branch = record.fields['VanirOffice'] || '';
+            const cost = parseFloat(record.fields['Total Cost of Fill In']) || 0;
+            const dateCreated = record.fields['Date Created'] || '';
+    
+            const date = new Date(dateCreated);
+            if (isNaN(date.getTime())) {
+                console.warn(`Invalid or missing date encountered: ${dateCreated}`);
+                return;
+            }
+    
+            const monthName = date.toLocaleString('default', { month: 'long' });
+            const year = date.getFullYear();
+            const monthYear = `${monthName} ${year}`;
+    
+            if (!branchMonthlySums[branch]) {
+                branchMonthlySums[branch] = {};
+            }
+            if (!branchMonthlySums[branch][monthYear]) {
+                branchMonthlySums[branch][monthYear] = 0;
+            }
+    
+            branchMonthlySums[branch][monthYear] += cost;
+        });
+    
+        const rows = [];
+    
+        // Populate rows with branch, month, and monthly totals
+        for (const branch in branchMonthlySums) {
+            for (const monthYear in branchMonthlySums[branch]) {
+                rows.push([
+                    branch,
+                    '', // No individual "Total Cost of Fill In" for monthly totals
+                    monthYear,
+                    branchMonthlySums[branch][monthYear].toFixed(2)
+                ]);
+            }
+        }
+    
         const csvContent = [
-            headers.join(','),
-            ...rows.map(row => row.map(item => `"${item || ''}"`).join(','))
+            headers.join(','), // Join headers with commas
+            ...rows.map(row => row.map(item => `"${item.replace(/"/g, '""') || ''}"`).join(',')) // Escape quotes in fields
         ].join('\n');
-
+    
+        // Create a downloadable CSV file
         const blob = new Blob([csvContent], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
-
+    
         const link = document.createElement('a');
         link.href = url;
-        link.download = `Fillins_by_Branch${new Date().getFullYear()}.csv`;
+        link.download = `Fillins_by_Branch_${new Date().getFullYear()}.csv`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     }
+    
+    
 
     // Fetch data and populate dropdown
     const allRecords = await fetchAllData();
