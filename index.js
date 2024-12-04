@@ -2,13 +2,14 @@ window.onload = function() {
     // Hide the content initially while checking the login status
     document.body.style.display = 'none';
 
-    // Check if the user is logged in by verifying the 'loggedIn' flag in localStorage
-    const isLoggedIn = localStorage.getItem('loggedIn');
+    // Check if the user is logged in by verifying the 'loggedIn' flag in localStorage or cookies
+    const isLoggedIn = localStorage.getItem('loggedIn') || getCookie('loggedIn') === 'true';
 
     // If the user is not logged in, log them out, clear localStorage, and redirect to the login page
     if (!isLoggedIn) {
-        // Log the user out by clearing the 'loggedIn' flag
+        // Clear login status
         localStorage.removeItem('loggedIn');
+        document.cookie = "loggedIn=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
         // Show an error message to the user
         const errorMessage = document.createElement('p');
@@ -31,7 +32,30 @@ window.onload = function() {
     }
 };
 
-// Ensure that the login flag is cleared when the page is closed or refreshed
+// Function to set a cookie
+function setCookie(name, value, days) {
+    const date = new Date();
+    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+    const expires = "expires=" + date.toUTCString();
+    document.cookie = name + "=" + value + ";" + expires + ";path=/";
+}
+
+// Function to get a cookie value
+function getCookie(name) {
+    const decodedCookie = decodeURIComponent(document.cookie);
+    const cookies = decodedCookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+        let cookie = cookies[i].trim();
+        if (cookie.indexOf(name + "=") === 0) {
+            return cookie.substring(name.length + 1);
+        }
+    }
+    return "";
+}
+
+
+// Ensure that the login status is not cleared on page refresh
 window.onbeforeunload = function() {
-    localStorage.removeItem('loggedIn'); // Clear the login flag when window is unloaded
+    // Optional: Remove this line if you want to retain the logged-in state
+    // localStorage.removeItem('loggedIn');
 };

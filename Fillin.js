@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             if (!response.ok) throw new Error(`Error: ${response.statusText}`);
 
             const data = await response.json();
-            console.log(`Number of records fetched: ${data.records.length}`);
             return data;
         } catch (error) {
             console.error('Error fetching data from Airtable:', error);
@@ -49,7 +48,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             allRecords = allRecords.concat(data.records);
             
             // Log and display the number of records fetched so far
-            console.log(`Fetched ${data.records.length} records. Total so far: ${allRecords.length}`);
             
             // Update the container with the latest count (overwrite content)
             if (liveUpdateContainer) {
@@ -59,7 +57,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             offset = data.offset; // Update the offset for the next batch
         } while (offset);
     
-        console.log(`All data fetched successfully. Total records: ${allRecords.length}`);
     
         // Final update to indicate completion
         if (liveUpdateContainer) {
@@ -195,7 +192,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         console.log("Exporting data to CSV...");
         
         // Define the CSV headers
-        const headers = ['VanirOffice', 'Total Cost of Fill In', 'Month and Year', 'Monthly Total'];
+        const headers = ['VanirOffice', '', 'Month and Year', 'Monthly Total'];
         const branchMonthlySums = {};
     
         // Process records to calculate sums and format dates
@@ -249,7 +246,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     
         const link = document.createElement('a');
         link.href = url;
-        link.download = `Fillins_by_Branch_${new Date().getFullYear()}.csv`;
+        link.download = `Fillins_by_Branch.csv`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
