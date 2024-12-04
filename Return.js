@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     async function fetchData(offset = null) {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100`;
         if (offset) url += `&offset=${offset}`;
-        console.log(`Fetching data from URL: ${url}`);
 
         try {
             const response = await fetch(url, {
@@ -46,7 +45,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             const data = await fetchData(offset);
             allRecords = allRecords.concat(data.records);
             offset = data.offset;
-            console.log(`Total records fetched so far: ${allRecords.length}`);
             document.getElementById('record-count2').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
 
