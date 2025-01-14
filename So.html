@@ -81,10 +81,10 @@
                 const counts = {}; 
                 let totalOccurrences = 0; 
 
-                // Count occurrences
+                // Count occurrences and remove quotes from column values
                 lines.forEach(line => {
                     const columns = line.split(',');
-                    const firstColumnValue = columns[0]?.trim();
+                    let firstColumnValue = columns[0]?.trim().replace(/['"]+/g, ''); // Remove quotes
                     if (firstColumnValue) {
                         counts[firstColumnValue] = (counts[firstColumnValue] || 0) + 1;
                         totalOccurrences++;
