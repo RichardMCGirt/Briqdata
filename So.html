@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Column Display with Count and Percentage (Descending Order)</title>
+</head>
+<body>
+    <h1>Percentage of average of SOs by counter person  </h1>
+    <table border="1" id="csvTable">
+        <thead>
+            <tr>
+                <th>Counter Person</th>
+                <th>Occurrences</th>
+                <th>Percentage</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        // Fetch and parse the hardcoded CSV file
+        fetch('SalesOrdersCreatedbyDateRangebyCounterPerson-1736877747-198510929.csv')
+            .then(response => response.text())
+            .then(csvData => {
+                const lines = csvData.split('\n').slice(3); // Skip the first 3 rows
+                const counts = {}; // Object to store occurrences
+                let totalOccurrences = 0; // Total count for percentage calculation
+
+                // Count occurrences and total them
+                lines.forEach(line => {
+                    const columns = line.split(',');
+                    const firstColumnValue = columns[0]?.trim();
+                    if (firstColumnValue) {
+                        counts[firstColumnValue] = (counts[firstColumnValue] || 0) + 1;
+                        totalOccurrences++;
+                    }
+                });
+
+                // Convert counts to an array of objects for sorting
+                const sortedData = Object.entries(counts).map(([key, value]) => ({
+                    key,
+                    value,
+                    percentage: ((value / totalOccurrences) * 100).toFixed(2)
+                })).sort((a, b) => b.percentage - a.percentage); // Sort by percentage descending
+
+                // Populate the table with sorted values, counts, and percentages
+                const tableBody = document.querySelector('#csvTable tbody');
+                tableBody.innerHTML = ''; // Clear existing data
+
+                sortedData.forEach(item => {
+                    const rowElement = document.createElement('tr');
+                    const cellElement1 = document.createElement('td');
+                    const cellElement2 = document.createElement('td');
+                    const cellElement3 = document.createElement('td');
+
+                    cellElement1.textContent = item.key;
+                    cellElement2.textContent = item.value;
+                    cellElement3.textContent = `${item.percentage}%`;
+
+                    rowElement.appendChild(cellElement1);
+                    rowElement.appendChild(cellElement2);
+                    rowElement.appendChild(cellElement3);
+                    tableBody.appendChild(rowElement);
+                });
+            })
+            .catch(error => console.error('Error loading the CSV file:', error));
+    </script>
+</body>
+</html>
