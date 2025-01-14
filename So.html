@@ -13,7 +13,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             min-height: 100vh;
             background-color: #f9f9f9;
         }
@@ -39,6 +39,9 @@
         th {
             background-color: #0044cc;
             color: white;
+            position: sticky;
+            top: 0;
+            z-index: 2;
         }
 
         /* Styling odd and even rows differently */
@@ -50,12 +53,17 @@
             background-color: #ffffff;
         }
 
-        /* Ensure the table fits properly on the screen */
-        @media (max-width: 768px) {
-            table {
-                width: 100%;
-                font-size: 14px;
-            }
+        /* Set max height to fit the screen while leaving room for header and spacing */
+        tbody {
+            display: block;
+            overflow-y: auto;
+            max-height: calc(100vh - 180px); /* Adjusts based on screen height minus other elements */
+        }
+
+        thead, tbody tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
         }
     </style>
 </head>
@@ -95,15 +103,20 @@
                 const numberOfCounterPersons = Object.keys(counts).length;
                 const averageOccurrences = totalOccurrences / numberOfCounterPersons;
 
+                // Log the average in the console
                 console.log('Average Occurrences:', averageOccurrences);
 
-
-                // Convert counts to an array and calculate percentage based on average
+                // Convert counts to an array and sort by percentage, then alphabetically
                 const sortedData = Object.entries(counts).map(([key, value]) => ({
                     key,
                     value,
                     percentage: ((value / averageOccurrences) * 100).toFixed(2)
-                })).sort((a, b) => b.percentage - a.percentage); // Sort by percentage descending
+                })).sort((a, b) => {
+                    if (b.percentage !== a.percentage) {
+                        return b.percentage - a.percentage;
+                    }
+                    return a.key.localeCompare(b.key);
+                });
 
                 // Populate the table with sorted data
                 const tableBody = document.querySelector('#csvTable tbody');
