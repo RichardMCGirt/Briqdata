@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV Column Display with Count and Percentage (Descending Order)</title>
+    <title>CSV Column Display with Count and Percentage (Average)</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -66,7 +66,7 @@
             <tr>
                 <th>Counter Person</th>
                 <th>Occurrences</th>
-                <th>Percentage</th>
+                <th>Percentage (vs Average)</th>
             </tr>
         </thead>
         <tbody></tbody>
@@ -91,12 +91,19 @@
                     }
                 });
 
-                // Convert counts to an array and sort by percentage descending
+                // Calculate the average number of occurrences
+                const numberOfCounterPersons = Object.keys(counts).length;
+                const averageOccurrences = totalOccurrences / numberOfCounterPersons;
+
+                console.log('Average Occurrences:', averageOccurrences);
+
+
+                // Convert counts to an array and calculate percentage based on average
                 const sortedData = Object.entries(counts).map(([key, value]) => ({
                     key,
                     value,
-                    percentage: ((value / totalOccurrences) * 100).toFixed(2)
-                })).sort((a, b) => b.percentage - a.percentage);
+                    percentage: ((value / averageOccurrences) * 100).toFixed(2)
+                })).sort((a, b) => b.percentage - a.percentage); // Sort by percentage descending
 
                 // Populate the table with sorted data
                 const tableBody = document.querySelector('#csvTable tbody');
