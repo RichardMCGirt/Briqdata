@@ -53,14 +53,26 @@
             background-color: #ffffff;
         }
 
-        /* Set max height to fit the screen while leaving room for header and spacing */
+        /* Make tbody scrollable without breaking sticky headers */
         tbody {
             display: block;
+            max-height: calc(100vh - 180px); /* Leaves space for header */
             overflow-y: auto;
-            max-height: calc(100vh - 180px); /* Adjusts based on screen height minus other elements */
         }
 
-        thead, tbody tr {
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+        }
+
+        tbody tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        thead tr {
             display: table;
             width: 100%;
             table-layout: fixed;
