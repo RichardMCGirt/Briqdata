@@ -252,8 +252,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         document.body.removeChild(link);
     }
     
-    
-
     // Fetch data and populate dropdown
     const allRecords = await fetchAllData();
     populateDropdown(allRecords);
