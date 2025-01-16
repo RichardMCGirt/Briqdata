@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Column Display with Count and Percentage (Average)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            background-color: #f9f9f9;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 90%;
+            max-width: 1200px;
+            margin-top: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        th {
+            background-color: #0044cc;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        tr:nth-child(odd) {
+            background-color: #f2f2f2;
+        }
+
+        tr:nth-child(even) {
+            background-color: #ffffff;
+        }
+
+        tbody {
+            display: block;
+            max-height: calc(100vh - 180px);
+            overflow-y: auto;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+        }
+
+        tbody tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        thead tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        .download-info {
+            margin: 10px 0;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="/index.html" target="_blank">PO percentage by counter person</a>
+
+    <h1>Percentage of Average SOs by User</h1>
+    <div class="download-info" id="csvDate"></div>
+    <table id="csvTable">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Occurrences</th>
+                <th>Percentage</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        // Extract the date from the filename
+        function extractDateFromFileName(fileName) {
+    const datePattern = /\d{4}-\d{2}-\d{2}/; // Matches YYYY-MM-DD
+    const match = fileName.match(datePattern);
+    if (match) {
+        const [year, month, day] = match[0].split('-');
+        return `${month}/${day}/${year}`; // Convert to MM/DD/YYYY format
+    }
+    return 'Unknown Date'; // Return 'Unknown Date' if no match
+}
+
+         // Hardcoded CSV file name
+    const csvFileName = 'OpenPOReportbyVendorSalesmanDateCreated-2025-01-16.csv';
+
+// Display the extracted date
+document.getElementById('csvDate').textContent = `Current as of: ${extractDateFromFileName(csvFileName)}`;
+
+// Fetch and parse the CSV file
+fetch(csvFileName)
+    .then(response => response.text())
+    .then(csvData => {
+        const lines = csvData.split('\n').slice(10); // Skip the first 10 rows
+        const counts = {}; 
+        let totalOccurrences = 0; 
+
+        // Count occurrences for column 10
+        lines.forEach(line => {
+            const columns = line.split(',');
+            let counterPerson = columns[9]?.trim().replace(/['"]+/g, ''); // Column 10, remove quotes
+            if (counterPerson) {
+                counts[counterPerson] = (counts[counterPerson] || 0) + 1;
+                totalOccurrences++;
+            }
+        });
+
+        // Calculate the average number of occurrences
+        const numberOfCounterPersons = Object.keys(counts).length;
+        const averageOccurrences = totalOccurrences / numberOfCounterPersons;
+
+        // Log the average in the console
+        console.log('Average Occurrences:', averageOccurrences);
+
+                // Convert counts to an array and sort by percentage, then alphabetically
+                const sortedData = Object.entries(counts).map(([key, value]) => ({
+                    key,
+                    value,
+                    percentage: ((value / averageOccurrences) * 100).toFixed(2)
+                })).sort((a, b) => {
+                    if (b.percentage !== a.percentage) {
+                        return b.percentage - a.percentage;
+                    }
+                    return a.key.localeCompare(b.key);
+                });
+
+                // Populate the table with sorted data
+                const tableBody = document.querySelector('#csvTable tbody');
+                tableBody.innerHTML = ''; 
+
+                sortedData.forEach(item => {
+                    const rowElement = document.createElement('tr');
+                    const cellElement1 = document.createElement('td');
+                    const cellElement2 = document.createElement('td');
+                    const cellElement3 = document.createElement('td');
+
+                    cellElement1.textContent = item.key;
+                    cellElement2.textContent = item.value;
+                    cellElement3.textContent = `${item.percentage}%`;
+
+                    rowElement.appendChild(cellElement1);
+                    rowElement.appendChild(cellElement2);
+                    rowElement.appendChild(cellElement3);
+                    tableBody.appendChild(rowElement);
+                });
+            })
+            .catch(error => console.error('Error loading the CSV file:', error));
+    </script>
+</body>
+</html>
