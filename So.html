@@ -104,10 +104,14 @@
     <script>
         // Extract the date from the filename
         function extractDateFromFileName(fileName) {
-            const datePattern = /\d{4}-\d{2}-\d{2}/; // Matches YYYY-MM-DD
-            const match = fileName.match(datePattern);
-            return match ? match[0] : 'Unknown Date'; // Return the date if found, otherwise 'Unknown Date'
-        }
+    const datePattern = /\d{4}-\d{2}-\d{2}/; // Matches YYYY-MM-DD
+    const match = fileName.match(datePattern);
+    if (match) {
+        const [year, month, day] = match[0].split('-');
+        return `${month}/${day}/${year}`; // Convert to MM/DD/YYYY format
+    }
+    return 'Unknown Date'; // Return 'Unknown Date' if no match
+}
 
         // Hardcoded CSV file name
         const csvFileName = 'SalesOrdersCreatedbyDateRangebyCounterPerson-2025-01-16.csv';
