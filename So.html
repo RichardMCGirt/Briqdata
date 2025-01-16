@@ -80,6 +80,9 @@
     </style>
 </head>
 <body>
+
+    <a href="/index.html" target="_blank">So percentage by counter person</a>
+
     <h1>Percentage of Average SOs by User</h1>
     <table id="csvTable">
         <thead>
@@ -94,7 +97,7 @@
 
     <script>
         // Fetch and parse the hardcoded CSV file
-        fetch('SalesOrdersCreatedbyDateRangebyCounterPerson-1736948352-1317850635.csv')
+        fetch('SalesOrdersCreatedbyDateRangebyCounterPerson-1737051612-6537502.csv')
             .then(response => response.text())
             .then(csvData => {
                 const lines = csvData.split('\n').slice(3); // Skip the first 3 rows
