@@ -87,6 +87,7 @@
 <body>
 
     <a href="/index.html" target="_blank">Dashboard</a>
+    <a href="/So.html" target="_blank">Po percentage by counter person</a>
 
     <h1>Percentage of Average SOs by User</h1>
     <div class="download-info" id="csvDate"></div>
@@ -102,81 +103,76 @@
     </table>
 
     <script>
-        // Extract the date from the filename
-        function extractDateFromFileName(fileName) {
-    const datePattern = /\d{4}-\d{2}-\d{2}/; // Matches YYYY-MM-DD
-    const match = fileName.match(datePattern);
-    if (match) {
-        const [year, month, day] = match[0].split('-');
-        return `${month}/${day}/${year}`; // Convert to MM/DD/YYYY format
-    }
-    return 'Unknown Date'; // Return 'Unknown Date' if no match
-}
+        // Set the current date for "Current as of"
+        const currentDate = new Date();
+        const formattedDate = `${currentDate.getMonth() + 1}/${currentDate.getDate()}/${currentDate.getFullYear()}`;
+        document.getElementById('csvDate').textContent = `Current as of: ${formattedDate}`;
 
-         // Hardcoded CSV file name
-    const csvFileName = 'OpenPOReportbyVendorSalesmanDateCreated-2025-01-16.csv';
+        // Dynamically fetch and parse a CSV file
+        function fetchCSV(fileInputId) {
+            const fileInput = document.getElementById(fileInputId);
+            const file = fileInput.files[0];
 
-// Display the extracted date
-document.getElementById('csvDate').textContent = `Current as of: ${extractDateFromFileName(csvFileName)}`;
-
-// Fetch and parse the CSV file
-fetch(csvFileName)
-    .then(response => response.text())
-    .then(csvData => {
-        const lines = csvData.split('\n').slice(10); // Skip the first 10 rows
-        const counts = {}; 
-        let totalOccurrences = 0; 
-
-        // Count occurrences for column 10
-        lines.forEach(line => {
-            const columns = line.split(',');
-            let counterPerson = columns[9]?.trim().replace(/['"]+/g, ''); // Column 10, remove quotes
-            if (counterPerson) {
-                counts[counterPerson] = (counts[counterPerson] || 0) + 1;
-                totalOccurrences++;
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const csvData = event.target.result;
+                    parseCSV(csvData);
+                };
+                reader.readAsText(file);
+            } else {
+                console.error('No file selected');
             }
-        });
+        }
 
-        // Calculate the average number of occurrences
-        const numberOfCounterPersons = Object.keys(counts).length;
-        const averageOccurrences = totalOccurrences / numberOfCounterPersons;
+        function parseCSV(csvData) {
+            const lines = csvData.split('\n').slice(10); // Skip the first 10 rows
+            const counts = {};
+            let totalOccurrences = 0;
 
-        // Log the average in the console
-        console.log('Average Occurrences:', averageOccurrences);
+            // Count occurrences for column 10
+            lines.forEach(line => {
+                const columns = line.split(',');
+                let counterPerson = columns[9]?.trim().replace(/['"]+/g, ''); // Column 10, remove quotes
+                if (counterPerson) {
+                    counts[counterPerson] = (counts[counterPerson] || 0) + 1;
+                    totalOccurrences++;
+                }
+            });
 
-                // Convert counts to an array and sort by percentage, then alphabetically
-                const sortedData = Object.entries(counts).map(([key, value]) => ({
-                    key,
-                    value,
-                    percentage: ((value / averageOccurrences) * 100).toFixed(2)
-                })).sort((a, b) => {
-                    if (b.percentage !== a.percentage) {
-                        return b.percentage - a.percentage;
-                    }
-                    return a.key.localeCompare(b.key);
-                });
+            const numberOfCounterPersons = Object.keys(counts).length;
+            const averageOccurrences = totalOccurrences / numberOfCounterPersons;
 
-                // Populate the table with sorted data
-                const tableBody = document.querySelector('#csvTable tbody');
-                tableBody.innerHTML = ''; 
+            const sortedData = Object.entries(counts).map(([key, value]) => ({
+                key,
+                value,
+                percentage: ((value / averageOccurrences) * 100).toFixed(2)
+            })).sort((a, b) => {
+                if (b.percentage !== a.percentage) {
+                    return b.percentage - a.percentage;
+                }
+                return a.key.localeCompare(b.key);
+            });
 
-                sortedData.forEach(item => {
-                    const rowElement = document.createElement('tr');
-                    const cellElement1 = document.createElement('td');
-                    const cellElement2 = document.createElement('td');
-                    const cellElement3 = document.createElement('td');
+            const tableBody = document.querySelector('#csvTable tbody');
+            tableBody.innerHTML = '';
 
-                    cellElement1.textContent = item.key;
-                    cellElement2.textContent = item.value;
-                    cellElement3.textContent = `${item.percentage}%`;
+            sortedData.forEach(item => {
+                const rowElement = document.createElement('tr');
+                const cellElement1 = document.createElement('td');
+                const cellElement2 = document.createElement('td');
+                const cellElement3 = document.createElement('td');
 
-                    rowElement.appendChild(cellElement1);
-                    rowElement.appendChild(cellElement2);
-                    rowElement.appendChild(cellElement3);
-                    tableBody.appendChild(rowElement);
-                });
-            })
-            .catch(error => console.error('Error loading the CSV file:', error));
+                cellElement1.textContent = item.key;
+                cellElement2.textContent = item.value;
+                cellElement3.textContent = `${item.percentage}%`;
+
+                rowElement.appendChild(cellElement1);
+                rowElement.appendChild(cellElement2);
+                rowElement.appendChild(cellElement3);
+                tableBody.appendChild(rowElement);
+            });
+        }
     </script>
 </body>
 </html>
