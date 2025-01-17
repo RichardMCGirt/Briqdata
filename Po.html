@@ -82,6 +82,25 @@
             font-weight: bold;
             color: #333;
         }
+
+        #dropZone {
+            border: 2px dashed #0044cc;
+            padding: 20px;
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+            background-color: #e8f0ff;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+
+        #dropZone.dragover {
+            background-color: #cce7ff;
+        }
+
+        #fileInput {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -106,6 +125,7 @@
         <strong>Required File Name:</strong> 
         <span style="color: #0044cc; font-weight: bold;">OpenPOReportbyVendorSalesmanDateCreated.csv</span>
     </div>
+    <div id="dropZone">Drag and drop your CSV file here or <label for="fileInput" style="color: #0044cc; cursor: pointer; text-decoration: underline;">browse</label> to upload.</div>
     <input type="file" id="fileInput" accept=".csv" />
     <p id="errorMessage" style="color: red; display: none;"></p>
     <table id="csvTable">
@@ -125,83 +145,113 @@
         const formattedDate = `${currentDate.getMonth() + 1}/${currentDate.getDate()}/${currentDate.getFullYear()}`;
         document.getElementById('csvDate').textContent = formattedDate;
 
-        // File input handler
-        document.getElementById('fileInput').addEventListener('change', function (event) {
-            const file = event.target.files[0];
-            const errorMessage = document.getElementById('errorMessage');
-            if (file) {
-                if (file.name.includes('OpenPOReportbyVendorSalesmanDateCreated')) {
-                    errorMessage.style.display = 'none'; // Clear any error messages
-                    const reader = new FileReader();
-                    reader.onload = function (e) {
-                        parseCSV(e.target.result);
-                    };
-                    reader.readAsText(file); // Read file content
-                } else {
-                    errorMessage.textContent = `Invalid file selected. Please upload a file named like "OpenPOReportbyVendorSalesmanDateCreated.csv".`;
-                    errorMessage.style.display = 'block';
-                    event.target.value = ''; // Reset file input
-                }
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Highlight drop zone on drag events
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.add('dragover');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.remove('dragover');
+            });
+        });
+
+        // Handle file drop
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                processFile(files[0]);
             }
         });
 
-       // Helper function to format names
-function formatName(name) {
-    // Replace periods with spaces, split the name, and capitalize each word
-    return name
-        .replace(/\./g, ' ')
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-}
+        // Handle file selection via file input
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                processFile(e.target.files[0]);
+            }
+        });
 
-// CSV Parsing Function
-function parseCSV(csvData) {
-    const lines = csvData.split('\n').slice(10); // Skip the first 10 lines
-    const counts = {};
-    let totalOccurrences = 0;
-
-    lines.forEach(line => {
-        const columns = line.split(',');
-        let counterPerson = columns[9]?.trim().replace(/['"]+/g, '');
-        if (counterPerson) {
-            counterPerson = formatName(counterPerson); // Format the name
-            counts[counterPerson] = (counts[counterPerson] || 0) + 1;
-            totalOccurrences++;
+        // Process file
+        function processFile(file) {
+            if (file.name.includes('OpenPOReportbyVendorSalesmanDateCreated')) {
+                errorMessage.style.display = 'none';
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    parseCSV(e.target.result);
+                };
+                reader.readAsText(file);
+            } else {
+                errorMessage.textContent = `Invalid file selected. Please upload a file named like "OpenPOReportbyVendorSalesmanDateCreated.csv".`;
+                errorMessage.style.display = 'block';
+            }
         }
-    });
 
-    const numberOfCounterPersons = Object.keys(counts).length;
-    const averageOccurrences = totalOccurrences / numberOfCounterPersons;
+        // Helper function to format names
+        function formatName(name) {
+            return name
+                .replace(/\./g, ' ')
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' ');
+        }
 
-    const sortedData = Object.entries(counts).map(([key, value]) => ({
-        key,
-        value,
-        percentage: ((value / averageOccurrences) * 100).toFixed(2)
-    })).sort((a, b) => {
-        if (b.percentage !== a.percentage) return b.percentage - a.percentage;
-        return a.key.localeCompare(b.key);
-    });
+        // CSV Parsing Function
+        function parseCSV(csvData) {
+            const lines = csvData.split('\n').slice(10); // Skip the first 10 lines
+            const counts = {};
+            let totalOccurrences = 0;
 
-    const tableBody = document.querySelector('#csvTable tbody');
-    tableBody.innerHTML = '';
+            lines.forEach(line => {
+                const columns = line.split(',');
+                let counterPerson = columns[9]?.trim().replace(/['"]+/g, '');
+                if (counterPerson) {
+                    counterPerson = formatName(counterPerson); // Format the name
+                    counts[counterPerson] = (counts[counterPerson] || 0) + 1;
+                    totalOccurrences++;
+                }
+            });
 
-    sortedData.forEach(item => {
-        const rowElement = document.createElement('tr');
-        const cellElement1 = document.createElement('td');
-        const cellElement2 = document.createElement('td');
-        const cellElement3 = document.createElement('td');
+            const numberOfCounterPersons = Object.keys(counts).length;
+            const averageOccurrences = totalOccurrences / numberOfCounterPersons;
 
-        cellElement1.textContent = item.key;
-        cellElement2.textContent = item.value;
-        cellElement3.textContent = `${item.percentage}%`;
+            const sortedData = Object.entries(counts).map(([key, value]) => ({
+                key,
+                value,
+                percentage: ((value / averageOccurrences) * 100).toFixed(2)
+            })).sort((a, b) => {
+                if (b.percentage !== a.percentage) return b.percentage - a.percentage;
+                return a.key.localeCompare(b.key);
+            });
 
-        rowElement.appendChild(cellElement1);
-        rowElement.appendChild(cellElement2);
-        rowElement.appendChild(cellElement3);
-        tableBody.appendChild(rowElement);
-    });
-}
+            const tableBody = document.querySelector('#csvTable tbody');
+            tableBody.innerHTML = '';
 
+            sortedData.forEach(item => {
+                const rowElement = document.createElement('tr');
+                const cellElement1 = document.createElement('td');
+                const cellElement2 = document.createElement('td');
+                const cellElement3 = document.createElement('td');
+
+                cellElement1.textContent = item.key;
+                cellElement2.textContent = item.value;
+                cellElement3.textContent = `${item.percentage}%`;
+
+                rowElement.appendChild(cellElement1);
+                rowElement.appendChild(cellElement2);
+                rowElement.appendChild(cellElement3);
+                tableBody.appendChild(rowElement);
+            });
+        }
     </script>
 </body>
+</html>
