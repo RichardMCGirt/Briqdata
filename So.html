@@ -110,7 +110,7 @@
     <input type="file" id="csvFileInput" accept=".csv">
     <div>
         <strong>Required File Name:</strong>
-        <span style="color: #0044cc; font-weight: bold; margin-left: 10px;">SalesOrdersCreatedbyDateRangebyCounterPerson-1737119257-1689427777.csv</span>
+        <span style="color: #0044cc; font-weight: bold; margin-left: 10px;">SalesOrdersCreatedbyDateRangebyCounterPerson.csv</span>
       </div>
       
     <table id="csvTable">
@@ -148,9 +148,6 @@
         }
     }
 });
-
-
-
 
         function parseCSV(csvData) {
             const lines = csvData.split('\n').slice(3); // Skip the first 3 rows
