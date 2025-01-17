@@ -121,20 +121,24 @@
         document.getElementById('csvDate').textContent = `Current as of: ${formattedDate}`;
 
         // File input handler
-        document.getElementById('fileInput').addEventListener('change', function () {
-            const file = this.files[0];
+        document.getElementById('fileInput').addEventListener('change', function (event) {
+    const file = event.target.files[0];
+    if (file) {
+        // Check if the file name contains the required string
+        if (file.name.includes('OpenPOReportbyVendorSalesmanDateCreated')) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const csvData = e.target.result;
+                parseCSV(csvData); // Process the file
+            };
+            reader.readAsText(file); // Read the file as text
+        } else {
+            alert('Invalid file: The file name must contain "OpenPOReportbyVendorSalesmanDateCreated".');
+            event.target.value = ''; // Clear the file input
+        }
+    }
+});
 
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (event) {
-                    const csvData = event.target.result;
-                    parseCSV(csvData);
-                };
-                reader.readAsText(file);
-            } else {
-                console.error('No file selected');
-            }
-        });
 
         // Parse CSV data
         function parseCSV(csvData) {
