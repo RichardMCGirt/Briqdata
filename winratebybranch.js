@@ -82,20 +82,26 @@ function calculateWinRate(records) {
         const outcome = record.fields['Outcome'];
 
         if (!data[division]) {
-            data[division] = { winCount: 0, totalCount: 0 };
+            data[division] = { winCount: 0, lossCount: 0, totalCount: 0 };
         }
 
         if (outcome === 'Win') {
             data[division].winCount += 1;
+        } else if (outcome === 'Loss') {
+            data[division].lossCount += 1;
         }
+
         data[division].totalCount += 1;
     });
 
+    console.log("Wins and Losses by Branch:", data);
+
     const winRates = {};
     for (const division in data) {
-        const { winCount, totalCount } = data[division];
+        const { winCount, lossCount, totalCount } = data[division];
         winRates[division] = {
             winCount,
+            lossCount,
             totalCount,
             fraction: `${winCount} / ${totalCount}`,
             winRatePercentage: totalCount > 0 ? (winCount / totalCount) * 100 : 0
@@ -104,41 +110,50 @@ function calculateWinRate(records) {
     return winRates;
 }
 
+
 function displayWinRatesInGrid(data, gridId, title) {
+    console.log(`Populating grid: ${gridId} with title: ${title}`);
+    console.log("Data to display:", data);
+
     const gridContainer = document.getElementById(gridId);
     if (!gridContainer) {
-        return console.error(`Grid container with ID '${gridId}' not found.`);
+        console.error(`Grid container with ID '${gridId}' not found.`);
+        return;
     }
 
-    // Sort divisions alphabetically by branch name
-    const sortedData = Object.entries(data).sort((a, b) => a[0].localeCompare(b[0]));
+    // Clear existing content
+    gridContainer.innerHTML = '';
 
+    // Handle empty data
+    if (Object.keys(data).length === 0) {
+        gridContainer.textContent = `No ${title.toLowerCase()} data available for the current year.`;
+        return;
+    }
+
+    // Populate the grid
+    const sortedData = Object.entries(data).sort((a, b) => a[0].localeCompare(b[0]));
     sortedData.forEach(([branch, winRateData]) => {
         const branchDiv = document.createElement('div');
         branchDiv.className = 'branch-win-rate';
 
-        // Division Name
         const branchName = document.createElement('h3');
         branchName.textContent = branch;
         branchDiv.appendChild(branchName);
 
-        // Win rate as a fraction
         const winFraction = document.createElement('p');
         winFraction.textContent = `Win Rate: ${winRateData.fraction}`;
         branchDiv.appendChild(winFraction);
 
-        // Win Percentage (optional)
         const winPercentage = document.createElement('p');
         winPercentage.textContent = `${winRateData.winRatePercentage.toFixed(1)}%`;
         branchDiv.appendChild(winPercentage);
 
-        // Add branch div to the grid container
         gridContainer.appendChild(branchDiv);
     });
 
-    // Show the grid container
     gridContainer.style.display = 'grid';
 }
+
 
 // Function to export win rates to CSV
 function exportToCSV(data, fileName) {
