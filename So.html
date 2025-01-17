@@ -127,16 +127,25 @@
 
         // Parse CSV data when file is uploaded
         document.getElementById('csvFileInput').addEventListener('change', function (event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const csvData = e.target.result;
-                    parseCSV(csvData);
-                };
-                reader.readAsText(file);
-            }
-        });
+    const file = event.target.files[0];
+    if (file) {
+        // Check if the file name contains the required string
+        if (file.name.includes('SalesOrdersCreatedbyDateRangebyCounterPerson')) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const csvData = e.target.result;
+                parseCSV(csvData); // Process the file
+            };
+            reader.readAsText(file); // Read the file as text
+        } else {
+            alert('Invalid file: The file name must contain "SalesOrdersCreatedbyDateRangebyCounterPerson".');
+            event.target.value = ''; // Clear the file input
+        }
+    }
+});
+
+
+
 
         function parseCSV(csvData) {
             const lines = csvData.split('\n').slice(3); // Skip the first 3 rows
