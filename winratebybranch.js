@@ -6,29 +6,49 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 async function initialize() {
-    console.log("Initializing application...");
-    displayLoadingMessage("Loading data, please wait...");
+    try {
+        console.log("Initializing application...");
+        displayLoadingMessage("Loading data, please wait...");
 
-    const airtableApiKey = 'patCnUsdz4bORwYNV.5c27cab8c99e7caf5b0dc05ce177182df1a9d60f4afc4a5d4b57802f44c65328';
-    const airtableBaseId = 'appi4QZE0SrWI6tt2';
-    const airtableTableName = 'tblQo2148s04gVPq1';
-    const currentYear = new Date().getFullYear();
+        // Airtable configuration
+        const airtableApiKey = 'patCnUsdz4bORwYNV.5c27cab8c99e7caf5b0dc05ce177182df1a9d60f4afc4a5d4b57802f44c65328';
+        const airtableBaseId = 'appi4QZE0SrWI6tt2';
+        const airtableTableName = 'tblQo2148s04gVPq1';
+        const currentYear = new Date().getFullYear();
 
-    const commercialRecords = await fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, `AND(YEAR({Created}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} = 'Commercial')`);
-    const residentialRecords = await fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, `AND(YEAR({Created}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} != 'Commercial')`);
+        // Fetch both commercial and residential records
+        const [commercialRecords, residentialRecords] = await Promise.all([
+            fetchAirtableData(
+                airtableApiKey,
+                airtableBaseId,
+                airtableTableName,
+                `AND(YEAR({Created}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} = 'Commercial')`
+            ),
+            fetchAirtableData(
+                airtableApiKey,
+                airtableBaseId,
+                airtableTableName,
+                `AND(YEAR({Created}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} != 'Commercial')`
+            )
+        ]);
 
-    commercialWinRates = calculateWinRate(commercialRecords);
-    residentialWinRates = calculateWinRate(residentialRecords);
+        // Calculate win rates
+        const commercialWinRates = calculateWinRate(commercialRecords);
+        const residentialWinRates = calculateWinRate(residentialRecords);
 
-    // Populate both grids
-    displayWinRatesInGrid(commercialWinRates, 'commercialGrid', "Commercial");
-    displayWinRatesInGrid(residentialWinRates, 'nonCommercialGrid', "Residential");
+        // Populate grids with calculated win rates
+        displayWinRatesInGrid(commercialWinRates, 'commercialGrid', "Commercial");
+        displayWinRatesInGrid(residentialWinRates, 'nonCommercialGrid', "Residential");
 
-    console.log("Application initialized successfully.");
-    
-    // Hide loading overlay after grids are created
-    hideLoadingMessage();
+        console.log("Application initialized successfully.");
+    } catch (error) {
+        console.error("Error during initialization:", error);
+    } finally {
+        // Ensure the loading message is hidden even if an error occurs
+        hideLoadingMessage();
+    }
 }
+
 
 async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
     let allRecords = [];
