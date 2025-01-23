@@ -1,1 +1,4 @@
 briqdata.vanirinstalledsales.info
+
+curl -X GET "https://api.airtable.com/v0/appi4QZE0SrWI6tt2/tblQo2148s04gVPq1?filterByFormula=AND(OR(%7BOutcome%7D%20%3D%20%27Win%27%2C%20%7BOutcome%7D%20%3D%20%27Loss%27)%2C%20%7BProject%20Type%7D%20!%3D%20%27Commercial%27%2C%20FIND(%272025%27%2C%20DATETIME_FORMAT(%7BCreated%20Time%7D%2C%20%27YYYY%27))%20%3E%200)" \
+-H "Authorization: Bearer pat1Eu3iQYHDmLSWr.ecfb8470f9c2b8409a0017e65f5b8cf626208e4df1a06905a41019cb38a8534b"
