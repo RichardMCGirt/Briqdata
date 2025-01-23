@@ -4,67 +4,98 @@ document.addEventListener('DOMContentLoaded', function () {
     // Directly call the initialization function to start fetching data immediately
     initialize();
 });
+let residentialWinRates = {};
+let commercialWinRates = {};
 
 async function initialize() {
     console.log("Initializing application...");
     displayLoadingMessage("Loading data, please wait...");
 
-    const airtableApiKey = 'patCnUsdz4bORwYNV.5c27cab8c99e7caf5b0dc05ce177182df1a9d60f4afc4a5d4b57802f44c65328';
+    const airtableApiKey = 'pat1Eu3iQYHDmLSWr.ecfb8470f9c2b8409a0017e65f5b8cf626208e4df1a06905a41019cb38a8534b';
     const airtableBaseId = 'appi4QZE0SrWI6tt2';
     const airtableTableName = 'tblQo2148s04gVPq1';
-    const currentYear = new Date().getFullYear();
 
-    const residentialRecords = await fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, `AND(YEAR({Created}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} != 'Commercial')`);
+    // Single-line formula
+    const filterFormula = "AND(OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} != 'Commercial')";
+
+    const residentialRecords = await fetchAirtableData(
+        airtableApiKey,
+        airtableBaseId,
+        airtableTableName,
+        filterFormula // Pass the raw formula here
+    );
+
+    if (residentialRecords.length === 0) {
+        console.warn("No records found for the given filter.");
+    }
 
     residentialWinRates = calculateWinRate(residentialRecords);
 
-    // Populate both grids
-    displayWinRatesInGrid(residentialWinRates, 'res');
+    // Populate the grid
+    displayWinRatesInGrid(residentialWinRates, 'res', 'Residential');
 
     console.log("Application initialized successfully.");
-    
-    // Hide loading overlay after grids are created
     hideLoadingMessage();
 }
 
+
 async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
-    let allRecords = [];
-    let offset;
-    const recordCountDisplay = document.getElementById('fetch-progress');
-    let fetchedCount = 0;
+    try {
+        let allRecords = [];
+        let offset;
+        const recordCountDisplay = document.getElementById('fetch-progress');
+        let fetchedCount = 0;
 
-    displayLoadingMessage("Fetching data from Airtable...");
+        displayLoadingMessage("Fetching data from Airtable...");
 
-    do {
-        const url = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodeURIComponent(filterFormula)}${offset ? `&offset=${offset}` : ''}`;
-        console.log('Fetching data from URL:', url);
+        // Properly encode the filter formula before using it
+        const encodedFormula = encodeURIComponent(filterFormula);
 
-        const response = await fetch(url, {
-            headers: { Authorization: `Bearer ${apiKey}` }
-        });
+        do {
+            const url = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodedFormula}${offset ? `&offset=${offset}` : ''}`;
+            console.log('Fetching data from URL:', url);
 
-        if (response.ok) {
+            const response = await fetch(url, {
+                headers: { Authorization: `Bearer ${apiKey}` }
+            });
+
+            if (!response.ok) {
+                console.error('Failed to fetch data from Airtable:', response.status, response.statusText);
+                hideLoadingMessage();
+                throw new Error(`Airtable API error: ${response.status} - ${response.statusText}`);
+            }
+
             const data = await response.json();
             allRecords = allRecords.concat(data.records);
             fetchedCount += data.records.length;
-            recordCountDisplay.textContent = `Records fetched: ${fetchedCount}`;
+            if (recordCountDisplay) {
+                recordCountDisplay.textContent = `Records fetched: ${fetchedCount}`;
+            }
             offset = data.offset;
-        } else {
-            console.error('Failed to fetch data from Airtable:', response.status, response.statusText);
-            hideLoadingMessage();
-            return [];
-        }
-    } while (offset);
+        } while (offset);
 
-    console.log("All records fetched:", allRecords);
-    return allRecords;
+        console.log("All records fetched:", allRecords);
+        return allRecords;
+
+    } catch (error) {
+        console.error("Error fetching Airtable data:", error);
+        return []; // Return empty array on failure
+    }
 }
+
+
+
 
 function displayLoadingMessage(message) {
     const fetchProgress = document.getElementById('fetch-progress');
-    fetchProgress.textContent = message;
-    fetchProgress.style.display = 'block';
+    if (fetchProgress) {
+        fetchProgress.textContent = message;
+        fetchProgress.style.display = 'block';
+    } else {
+        console.warn('Fetch progress element not found.');
+    }
 }
+
 
 function hideLoadingMessage() {
     const fetchProgress = document.getElementById('fetch-progress');
@@ -109,11 +140,7 @@ function calculateWinRate(records) {
     return winRates;
 }
 
-
-
-
-
-function displayWinRatesInGrid(data, gridId, title) {
+function displayWinRatesInGrid(data, gridId, title = 'Win Rates') {
     console.log(`Populating grid: ${gridId} with title: ${title}`);
     console.log("Data to display:", data);
 
@@ -132,8 +159,10 @@ function displayWinRatesInGrid(data, gridId, title) {
         return;
     }
 
+    // Sort data by win rate percentage in descending order
+    const sortedData = Object.entries(data).sort((a, b) => b[1].winRatePercentage - a[1].winRatePercentage);
+
     // Populate the grid
-    const sortedData = Object.entries(data).sort((a, b) => a[0].localeCompare(b[0]));
     sortedData.forEach(([branch, winRateData]) => {
         const branchDiv = document.createElement('div');
         branchDiv.className = 'branch-win-rate';
@@ -155,6 +184,7 @@ function displayWinRatesInGrid(data, gridId, title) {
 
     gridContainer.style.display = 'grid';
 }
+
 
 
 // Function to export win rates to CSV
