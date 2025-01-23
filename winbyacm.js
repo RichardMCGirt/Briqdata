@@ -16,13 +16,13 @@ async function initialize() {
     const airtableTableName = 'tblQo2148s04gVPq1';
 
     // Single-line formula
-    const filterFormula = "AND(OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} != 'Commercial')";
+    const filterFormula = "OR({Outcome} = 'Win', {Outcome} = 'Loss')";
 
     const residentialRecords = await fetchAirtableData(
         airtableApiKey,
         airtableBaseId,
         airtableTableName,
-        filterFormula // Pass the raw formula here
+        filterFormula // Pass the raw formula
     );
 
     if (residentialRecords.length === 0) {
@@ -66,13 +66,18 @@ async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
             }
 
             const data = await response.json();
-            allRecords = allRecords.concat(data.records);
+            allRecords = allRecords.concat(data.records); // Append records to the list
             fetchedCount += data.records.length;
+
+            // Display progress if recordCountDisplay exists
             if (recordCountDisplay) {
                 recordCountDisplay.textContent = `Records fetched: ${fetchedCount}`;
             }
+
+            // Check if there's an offset for the next batch
             offset = data.offset;
-        } while (offset);
+
+        } while (offset); // Continue fetching while offset exists
 
         console.log("All records fetched:", allRecords);
         return allRecords;
@@ -82,6 +87,7 @@ async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
         return []; // Return empty array on failure
     }
 }
+
 
 
 
@@ -186,43 +192,3 @@ function displayWinRatesInGrid(data, gridId, title = 'Win Rates') {
 }
 
 
-
-// Function to export win rates to CSV
-function exportToCSV(data, fileName) {
-    const csvRows = [];
-    const header = ['Branch', 'Win Count', 'Total Count', 'Win Rate', 'Fraction'];
-    csvRows.push(header.join(',')); // Add header row
-
-    // Add data rows
-    Object.entries(data).forEach(([branch, winRateData]) => {
-        const row = [
-            branch,
-            winRateData.winCount,
-            winRateData.totalCount,
-            winRateData.winRatePercentage.toFixed(1) + '%',
-            `${winRateData.winCount} / ${winRateData.totalCount}`
-        ];
-        csvRows.push(row.join(',')); // Join each column value with a comma
-    });
-
-    // Convert array of rows into a single CSV string
-    const csvContent = csvRows.join('\n');
-
-    // Create a Blob and trigger the download
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName; // Set the file name
-    link.click(); // Simulate a click to trigger the download
-    URL.revokeObjectURL(url); // Clean up the URL object
-}
-
-// Adding the export button click event to export data
-document.getElementById('export-button').addEventListener('click', function() {
-    console.log("Export to CSV button clicked.");
-
-    // Export commercial and residential win rates as separate CSV files
-    exportToCSV(commercialWinRates, 'commercial_win_rates.csv');
-    exportToCSV(residentialWinRates, 'residential_win_rates.csv');
-});
