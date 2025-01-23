@@ -43,7 +43,7 @@ async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
     try {
         let allRecords = [];
         let offset;
-        const recordCountDisplay = document.getElementById('fetch-progress');
+        const recordCountDisplay = document.getElementById('fetch-acm');
         let fetchedCount = 0;
 
         displayLoadingMessage("Fetching data from Airtable...");
