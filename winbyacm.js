@@ -19,7 +19,7 @@ async function initialize() {
     residentialWinRates = calculateWinRate(residentialRecords);
 
     // Populate both grids
-    displayWinRatesInGrid(residentialWinRates, 'nonCommercialGrid', "Residential");
+    displayWinRatesInGrid(residentialWinRates, 'res');
 
     console.log("Application initialized successfully.");
     
