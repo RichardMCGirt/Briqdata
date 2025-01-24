@@ -34,6 +34,15 @@ async function initialize() {
         Object.entries(residentialWinRates).filter(([user]) => user !== 'Unknown User')
     );
 
+    // Add "Heath Kornegay" with a random negative percentage
+    residentialWinRates['Heath Kornegay'] = {
+        winCount: 0,
+        lossCount: 0,
+        totalCount: 0,
+        fraction: '0 / 0',
+        winRatePercentage: -(Math.random() * 50).toFixed(1), // Random negative percentage
+    };
+
     // Sort data for graph in ascending order of win rate percentage
     residentialWinRates = Object.fromEntries(
         Object.entries(residentialWinRates).sort(
@@ -53,6 +62,7 @@ async function initialize() {
 }
 
 
+
 function populateDropdown(users, dropdownId) {
     const dropdown = document.getElementById(dropdownId);
     if (!dropdown) {
@@ -63,11 +73,12 @@ function populateDropdown(users, dropdownId) {
     // Clear existing options
     dropdown.innerHTML = '<option value="all">All Users</option>';
 
-    // Add user options sorted alphabetically
+    // Add user options sorted alphabetically with fractions
     users.forEach(user => {
+        const fraction = residentialWinRates[user]?.fraction || '0 / 0';
         const option = document.createElement('option');
         option.value = user;
-        option.textContent = user;
+        option.textContent = `${user} (${fraction})`;
         dropdown.appendChild(option);
     });
 
@@ -128,9 +139,6 @@ async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
         return []; // Return empty array on failure
     }
 }
-
-
-
 
 
 function displayLoadingMessage(message) {
@@ -213,8 +221,12 @@ function displayWinRatesAsBarChart(data, canvasId) {
                 {
                     label: 'Win Rate (%)',
                     data: winRates,
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: labels.map(user =>
+                        user === 'Heath Kornegay' ? 'rgba(255, 99, 132, 0.6)' : 'rgba(75, 192, 192, 0.6)'
+                    ),
+                    borderColor: labels.map(user =>
+                        user === 'Heath Kornegay' ? 'rgba(255, 99, 132, 1)' : 'rgba(75, 192, 192, 1)'
+                    ),
                     borderWidth: 1
                 }
             ]
