@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Directly call the initialization function to start fetching data immediately
     initialize();
+    fetchAllFields();
 });
 let residentialWinRates = {};
 let commercialWinRates = {};
@@ -33,15 +34,6 @@ async function initialize() {
     residentialWinRates = Object.fromEntries(
         Object.entries(residentialWinRates).filter(([user]) => user !== 'Unknown User')
     );
-
-    // Add "Heath Kornegay" with a random negative percentage
-    residentialWinRates['Heath Kornegay'] = {
-        winCount: 0,
-        lossCount: 0,
-        totalCount: 0,
-        fraction: '0 / 0',
-        winRatePercentage: -(Math.random() * 50).toFixed(1), // Random negative percentage
-    };
 
     // Sort data for graph in ascending order of win rate percentage
     residentialWinRates = Object.fromEntries(
@@ -85,60 +77,101 @@ function populateDropdown(users, dropdownId) {
     // Add event listener for filtering
     dropdown.addEventListener('change', event => {
         const selectedUser = event.target.value;
+
+        // Include Heath Kornegay in the data if "All Users" is selected
         const filteredData =
-            selectedUser === 'all' ? residentialWinRates : { [selectedUser]: residentialWinRates[selectedUser] };
+            selectedUser === 'all'
+                ? {
+                      ...residentialWinRates,
+                      'Heath Kornegay': {
+                          winCount: 0,
+                          lossCount: 0,
+                          totalCount: 0,
+                          fraction: heathFraction,
+                          winRatePercentage: -(Math.random() * 50).toFixed(1), // Random negative percentage
+                      },
+                  }
+                : { [selectedUser]: residentialWinRates[selectedUser] || null };
+
         displayWinRatesAsBarChart(filteredData, 'winRateChart');
     });
 }
 
-async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
+async function fetchAllFields() {
+    const airtableApiKey = 'pat1Eu3iQYHDmLSWr.ecfb8470f9c2b8409a0017e65f5b8cf626208e4df1a06905a41019cb38a8534b';
+    const airtableBaseId = 'appi4QZE0SrWI6tt2';
+    const airtableTableName = 'tblQo2148s04gVPq1';
+
+    const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
+    const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${airtableApiKey}` },
+    });
+
+    if (!response.ok) {
+        console.error("Failed to fetch Airtable fields:", await response.text());
+        return;
+    }
+
+    const data = await response.json();
+
+    if (data.records && data.records.length > 0) {
+        console.log("Fields in table:", Object.keys(data.records[0].fields));
+    } else {
+        console.warn("No records found in the table.");
+    }
+}
+
+
+
+async function fetchAirtableData(apiKey, baseId, tableName) {
     try {
         let allRecords = [];
         let offset;
-        const recordCountDisplay = document.getElementById('fetch-acm');
-        let fetchedCount = 0;
 
-        displayLoadingMessage("Fetching data from Airtable...");
+        const today = new Date();
+        const lastYearDate = new Date(today);
+        lastYearDate.setDate(today.getDate() - 365); // Subtract 365 days
+        const formattedLastYearDate = lastYearDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
 
-        // Properly encode the filter formula before using it
+        // Use the correct field name
+        const filterFormula = `AND(IS_AFTER({Created}, "${formattedLastYearDate}"), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
         const encodedFormula = encodeURIComponent(filterFormula);
 
         do {
-            const url = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodedFormula}${offset ? `&offset=${offset}` : ''}`;
-            console.log('Fetching data from URL:', url);
+            const url = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodedFormula}${
+                offset ? `&offset=${offset}` : ''
+            }`;
+
+            console.log("Generated URL:", url); // Debug the URL
 
             const response = await fetch(url, {
-                headers: { Authorization: `Bearer ${apiKey}` }
+                headers: { Authorization: `Bearer ${apiKey}` },
             });
 
             if (!response.ok) {
-                console.error('Failed to fetch data from Airtable:', response.status, response.statusText);
-                hideLoadingMessage();
+                const errorText = await response.text();
+                console.error("Airtable API Error:", errorText);
                 throw new Error(`Airtable API error: ${response.status} - ${response.statusText}`);
             }
 
             const data = await response.json();
-            allRecords = allRecords.concat(data.records); // Append records to the list
-            fetchedCount += data.records.length;
+            allRecords = allRecords.concat(data.records);
 
-            // Display progress if recordCountDisplay exists
-            if (recordCountDisplay) {
-                recordCountDisplay.textContent = `Records fetched: ${fetchedCount}`;
-            }
+            offset = data.offset; // Continue fetching if there are more records
+        } while (offset);
 
-            // Check if there's an offset for the next batch
-            offset = data.offset;
-
-        } while (offset); // Continue fetching while offset exists
-
-        console.log("All records fetched:", allRecords);
+        console.log("Fetched Records:", allRecords);
         return allRecords;
-
     } catch (error) {
-        console.error("Error fetching Airtable data:", error);
-        return []; // Return empty array on failure
+        console.error("Error fetching data:", error);
+        return [];
     }
 }
+
+
+
+
+
 
 
 function displayLoadingMessage(message) {
@@ -209,9 +242,23 @@ function displayWinRatesAsBarChart(data, canvasId) {
         canvas.chartInstance.destroy();
     }
 
-    // Sort data by win rate percentage in ascending order
-    const labels = Object.keys(data);
-    const winRates = labels.map(user => data[user].winRatePercentage);
+    // Filter out invalid data
+    const validData = Object.entries(data).filter(([key, value]) => value && value.winRatePercentage !== undefined);
+
+    // Handle empty data gracefully
+    if (validData.length === 0) {
+        console.warn("No valid data to display in the chart.");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const message = "No data available for the selected user.";
+        ctx.font = "16px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+        return;
+    }
+
+    // Extract labels and win rates from valid data
+    const labels = validData.map(([key]) => key);
+    const winRates = validData.map(([key, value]) => value.winRatePercentage);
 
     canvas.chartInstance = new Chart(ctx, {
         type: 'bar',
@@ -227,9 +274,9 @@ function displayWinRatesAsBarChart(data, canvasId) {
                     borderColor: labels.map(user =>
                         user === 'Heath Kornegay' ? 'rgba(255, 99, 132, 1)' : 'rgba(75, 192, 192, 1)'
                     ),
-                    borderWidth: 1
-                }
-            ]
+                    borderWidth: 1,
+                },
+            ],
         },
         options: {
             responsive: true,
@@ -237,18 +284,12 @@ function displayWinRatesAsBarChart(data, canvasId) {
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        callback: value => `${value}%`
-                    }
-                }
-            }
-        }
+                        callback: value => `${value}%`,
+                    },
+                },
+            },
+        },
     });
 }
 
-dropdown.addEventListener('change', event => {
-    const selectedUser = event.target.value;
-    const filteredData =
-        selectedUser === 'all' ? residentialWinRates : { [selectedUser]: residentialWinRates[selectedUser] };
-    displayWinRatesAsBarChart(filteredData, 'winRateChart');
-});
 
