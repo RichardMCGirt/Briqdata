@@ -132,15 +132,19 @@
           
         </div>
 
-        <h3 class="grid-header">Percentage of Wins Based on Submitter</h3>
-        <div id="res" class="winrate-grid scrollable-container">
-            <!-- Non-Commercial win rate cards will be dynamically populated here -->
+        <div id="controls">
+            <label for="user-filter">Filter by User:</label>
+            <select id="user-filter">
+                <option value="all">All Users</option>
+            </select>
         </div>
+        <canvas id="winRateChart"></canvas>
         
         
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
    <script src="Fillin.js"></script> 
  <script src="Return.js"></script> 
  <script src="bids.js"></script> 

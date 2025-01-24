@@ -15,14 +15,12 @@ async function initialize() {
     const airtableBaseId = 'appi4QZE0SrWI6tt2';
     const airtableTableName = 'tblQo2148s04gVPq1';
 
-    // Single-line formula
     const filterFormula = "OR({Outcome} = 'Win', {Outcome} = 'Loss')";
-
     const residentialRecords = await fetchAirtableData(
         airtableApiKey,
         airtableBaseId,
         airtableTableName,
-        filterFormula // Pass the raw formula
+        filterFormula
     );
 
     if (residentialRecords.length === 0) {
@@ -31,13 +29,56 @@ async function initialize() {
 
     residentialWinRates = calculateWinRate(residentialRecords);
 
-    // Populate the grid
-    displayWinRatesInGrid(residentialWinRates, 'res', 'Residential');
+    // Filter out "Unknown User"
+    residentialWinRates = Object.fromEntries(
+        Object.entries(residentialWinRates).filter(([user]) => user !== 'Unknown User')
+    );
+
+    // Sort data for graph in ascending order of win rate percentage
+    residentialWinRates = Object.fromEntries(
+        Object.entries(residentialWinRates).sort(
+            (a, b) => a[1].winRatePercentage - b[1].winRatePercentage
+        )
+    );
+
+    // Populate dropdown with sorted user names
+    const sortedUsers = Object.keys(residentialWinRates).sort((a, b) => a.localeCompare(b));
+    populateDropdown(sortedUsers, 'user-filter');
+
+    // Display chart with sorted data
+    displayWinRatesAsBarChart(residentialWinRates, 'winRateChart');
 
     console.log("Application initialized successfully.");
     hideLoadingMessage();
 }
 
+
+function populateDropdown(users, dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) {
+        console.error(`Dropdown with ID '${dropdownId}' not found.`);
+        return;
+    }
+
+    // Clear existing options
+    dropdown.innerHTML = '<option value="all">All Users</option>';
+
+    // Add user options sorted alphabetically
+    users.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user;
+        option.textContent = user;
+        dropdown.appendChild(option);
+    });
+
+    // Add event listener for filtering
+    dropdown.addEventListener('change', event => {
+        const selectedUser = event.target.value;
+        const filteredData =
+            selectedUser === 'all' ? residentialWinRates : { [selectedUser]: residentialWinRates[selectedUser] };
+        displayWinRatesAsBarChart(filteredData, 'winRateChart');
+    });
+}
 
 async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
     try {
@@ -146,49 +187,56 @@ function calculateWinRate(records) {
     return winRates;
 }
 
-function displayWinRatesInGrid(data, gridId, title = 'Win Rates') {
-    console.log(`Populating grid: ${gridId} with title: ${title}`);
-    console.log("Data to display:", data);
-
-    const gridContainer = document.getElementById(gridId);
-    if (!gridContainer) {
-        console.error(`Grid container with ID '${gridId}' not found.`);
+function displayWinRatesAsBarChart(data, canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.error(`Canvas with ID '${canvasId}' not found.`);
         return;
     }
 
-    // Clear existing content
-    gridContainer.innerHTML = '';
+    const ctx = canvas.getContext('2d');
 
-    // Handle empty data
-    if (Object.keys(data).length === 0) {
-        gridContainer.textContent = `No ${title.toLowerCase()} data available for the current year.`;
-        return;
+    // Clear any existing chart instance
+    if (canvas.chartInstance) {
+        canvas.chartInstance.destroy();
     }
 
-    // Sort data by win rate percentage in descending order
-    const sortedData = Object.entries(data).sort((a, b) => b[1].winRatePercentage - a[1].winRatePercentage);
+    // Sort data by win rate percentage in ascending order
+    const labels = Object.keys(data);
+    const winRates = labels.map(user => data[user].winRatePercentage);
 
-    // Populate the grid
-    sortedData.forEach(([branch, winRateData]) => {
-        const branchDiv = document.createElement('div');
-        branchDiv.className = 'branch-win-rate';
-
-        const branchName = document.createElement('h3');
-        branchName.textContent = branch;
-        branchDiv.appendChild(branchName);
-
-        const winFraction = document.createElement('p');
-        winFraction.textContent = `Win Rate: ${winRateData.fraction}`;
-        branchDiv.appendChild(winFraction);
-
-        const winPercentage = document.createElement('p');
-        winPercentage.textContent = `${winRateData.winRatePercentage.toFixed(1)}%`;
-        branchDiv.appendChild(winPercentage);
-
-        gridContainer.appendChild(branchDiv);
+    canvas.chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Win Rate (%)',
+                    data: winRates,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: value => `${value}%`
+                    }
+                }
+            }
+        }
     });
-
-    gridContainer.style.display = 'grid';
 }
 
+dropdown.addEventListener('change', event => {
+    const selectedUser = event.target.value;
+    const filteredData =
+        selectedUser === 'all' ? residentialWinRates : { [selectedUser]: residentialWinRates[selectedUser] };
+    displayWinRatesAsBarChart(filteredData, 'winRateChart');
+});
 
