@@ -15,7 +15,7 @@ async function initializez() {
     const airtableBaseId = 'appX1Saz7wMYh4hhm';
     const airtableTableName = 'tblfCPX293KlcKsdp';
 
-    const filterFormula = `AND(IS_AFTER({Last Modified Time}, DATEADD(TODAY(), -365, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
+    const filterFormula = `AND(IS_AFTER({Last Time Outcome Modified}, DATEADD(TODAY(), -90, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
     const residentialRecords = await fetchAirtableDatas(
         airtableApiKey,
         airtableBaseId,
@@ -106,7 +106,7 @@ async function fetchAirtableDatas(apiKey, baseId, tableName) {
         let offset;
 
         // Formula to filter records created in the last 30 days
-        const filterFormula = `AND(IS_AFTER({Last Modified Time}, DATEADD(TODAY(), -365, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
+        const filterFormula = `AND(IS_AFTER({Last Time Outcome Modified}, DATEADD(TODAY(), -90, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
         const encodedFormula = encodeURIComponent(filterFormula);
 
         do {
@@ -161,8 +161,8 @@ function calculateWinRates(records) {
 
     records.forEach(record => {
         // Directly access the ACM field value
-        const submittedBy = record.fields['ACM'] || 'Empty';
-        console.log("Record ACM Value:", submittedBy); // Debugging ACM values
+        const submittedBy = record.fields['AC'] || 'Empty';
+        console.log("Record AC Value:", submittedBy); // Debugging ACM values
 
         if (!data[submittedBy]) {
             data[submittedBy] = { winCount: 0, lossCount: 0, totalCount: 0 };
@@ -179,7 +179,7 @@ function calculateWinRates(records) {
         data[submittedBy].totalCount += 1;
     });
 
-    console.log("Wins and Losses by ACM:", data);
+    console.log("Wins and Losses by AC:", data);
 
     const winRates = {};
     for (const submittedBy in data) {
