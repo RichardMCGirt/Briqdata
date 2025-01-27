@@ -9,14 +9,14 @@ let commercialWinRates = {};
 
 async function initializez() {
     console.log("Initializing application...");
-    displayLoadingMessage("Loading data, please wait...");
+    displayLoadingMessages("Loading data, please wait...");
 
     const airtableApiKey = 'pat1Eu3iQYHDmLSWr.ecfb8470f9c2b8409a0017e65f5b8cf626208e4df1a06905a41019cb38a8534b';
     const airtableBaseId = 'appX1Saz7wMYh4hhm';
     const airtableTableName = 'tblfCPX293KlcKsdp';
 
     const filterFormula = `AND(IS_AFTER({Last Modified Time}, DATEADD(TODAY(), -365, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
-    const residentialRecords = await fetchAirtableData(
+    const residentialRecords = await fetchAirtableDatas(
         airtableApiKey,
         airtableBaseId,
         airtableTableName,
@@ -25,7 +25,7 @@ async function initializez() {
     console.log(`Total records fetched: ${residentialRecords.length}`);
 
    
-    residentialWinRates = calculateWinRate(residentialRecords);
+    residentialWinRates = calculateWinRates(residentialRecords);
 
     // Filter out "Unknown User"
     residentialWinRates = Object.fromEntries(
@@ -47,7 +47,7 @@ async function initializez() {
     displayWinRatesAsBarChart(residentialWinRates, 'winRateChart');
 
     console.log("Application initialized successfully.");
-    hideLoadingMessage();
+    hideLoadingMessages();
 }
 
 
@@ -100,7 +100,7 @@ function populateDropdown(users, dropdownId) {
     });
 }
 
-async function fetchAirtableData(apiKey, baseId, tableName) {
+async function fetchAirtableDatas(apiKey, baseId, tableName) {
     try {
         let allRecords = [];
         let offset;
@@ -140,11 +140,7 @@ async function fetchAirtableData(apiKey, baseId, tableName) {
     }
 }
 
-
-
-
-
-function displayLoadingMessage(message) {
+function displayLoadingMessages(message) {
     const fetchProgress = document.getElementById('fetch-progress');
     if (fetchProgress) {
         fetchProgress.textContent = message;
@@ -155,12 +151,12 @@ function displayLoadingMessage(message) {
 }
 
 
-function hideLoadingMessage() {
+function hideLoadingMessages() {
     const fetchProgress = document.getElementById('fetch-progress');
     fetchProgress.style.display = 'none';
 }
 
-function calculateWinRate(records) {
+function calculateWinRates(records) {
     const data = {};
 
     records.forEach(record => {
