@@ -12,10 +12,10 @@ async function initializez() {
     displayLoadingMessages("Loading data, please wait...");
 
     const airtableApiKey = 'pat1Eu3iQYHDmLSWr.ecfb8470f9c2b8409a0017e65f5b8cf626208e4df1a06905a41019cb38a8534b';
-    const airtableBaseId = 'appX1Saz7wMYh4hhm';
-    const airtableTableName = 'tblfCPX293KlcKsdp';
+    const airtableBaseId = 'appX1Saz7wMYh4hhm'
+    const airtableTableName = 'tblfCPX293KlcKsd';
 
-    const filterFormula = `AND(IS_AFTER({Last Time Outcome Modified}, DATEADD(TODAY(), -90, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
+    const filterFormula = `AND(IS_AFTER({Last Time Modified}, DATEADD(TODAY(), -90, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
     const residentialRecords = await fetchAirtableDatas(
         airtableApiKey,
         airtableBaseId,
@@ -25,7 +25,7 @@ async function initializez() {
     console.log(`Total records fetched: ${residentialRecords.length}`);
 
    
-    residentialWinRates = calculateWinRates(residentialRecords);
+    Winrates = calculateWinRates(residentialRecords);
 
     // Filter out "Unknown User"
     residentialWinRates = Object.fromEntries(
@@ -106,7 +106,7 @@ async function fetchAirtableDatas(apiKey, baseId, tableName) {
         let offset;
 
         // Formula to filter records created in the last 30 days
-        const filterFormula = `AND(IS_AFTER({Last Time Outcome Modified}, DATEADD(TODAY(), -90, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
+        const filterFormula = `AND(IS_AFTER({Last Time Modified}, DATEADD(TODAY(), -90, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
         const encodedFormula = encodeURIComponent(filterFormula);
 
         do {
