@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Directly call the initialization function to start fetching data immediately
     initialize();
-    fetchAllFields();
 });
 let residentialWinRates = {};
 let commercialWinRates = {};
@@ -16,23 +15,21 @@ async function initialize() {
     const airtableBaseId = 'appX1Saz7wMYh4hhm';
     const airtableTableName = 'tblfCPX293KlcKsdp';
 
-    const filterFormula = `AND(IS_AFTER({Date Created}, DATEADD(TODAY(), -30, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
+    const filterFormula = `AND(IS_AFTER({Date Created}, DATEADD(TODAY(), -365, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
     const residentialRecords = await fetchAirtableData(
         airtableApiKey,
         airtableBaseId,
         airtableTableName,
         filterFormula
     );
+    console.log(`Total records fetched: ${residentialRecords.length}`);
 
-    if (residentialRecords.length === 0) {
-        console.warn("No records found for the given filter.");
-    }
-
+   
     residentialWinRates = calculateWinRate(residentialRecords);
 
     // Filter out "Unknown User"
     residentialWinRates = Object.fromEntries(
-        Object.entries(residentialWinRates).filter(([user]) => user !== 'Unknown User')
+        Object.entries(residentialWinRates).filter(([user]) => user !== 'Empty')
     );
 
     // Sort data for graph in ascending order of win rate percentage
@@ -103,42 +100,13 @@ function populateDropdown(users, dropdownId) {
     });
 }
 
-
-async function fetchAllFields() {
-    const airtableApiKey = 'pat1Eu3iQYHDmLSWr.ecfb8470f9c2b8409a0017e65f5b8cf626208e4df1a06905a41019cb38a8534b';
-    const airtableBaseId = 'appX1Saz7wMYh4hhm';
-    const airtableTableName = 'tblfCPX293KlcKsdp';
-
-    const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
-    const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${airtableApiKey}` },
-    });
-
-    if (!response.ok) {
-        console.error("Failed to fetch Airtable fields:", await response.text());
-        return;
-    }
-
-    const data = await response.json();
-
-    if (data.records && data.records.length > 0) {
-        console.log("Fields in table:", Object.keys(data.records[0].fields));
-    } else {
-        console.warn("No records found in the table.");
-    }
-}
-
-
-
-const filterFormula = `AND(IS_AFTER({Date Created}, DATEADD(TODAY(), -30, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
-
 async function fetchAirtableData(apiKey, baseId, tableName) {
     try {
         let allRecords = [];
         let offset;
 
         // Formula to filter records created in the last 30 days
-        const filterFormula = `AND(IS_AFTER({Date Created}, DATEADD(TODAY(), -30, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
+        const filterFormula = `AND(IS_AFTER({Date Created}, DATEADD(TODAY(), -365, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
         const encodedFormula = encodeURIComponent(filterFormula);
 
         do {
