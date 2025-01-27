@@ -131,11 +131,20 @@
         <h3 class="grid-header"> Win Rates last 365 Days</h3>
 
         <div id="controls">
-            <label for="user-filter">Filter by User:</label>
+            <label for="user-filter">Filter by ACM:</label>
             <select id="user-filter"></select>
         </div>
         <div id="fetch-progress" style="display: none;">Loading...</div>
         <canvas id="winRateChart" width="800" height="200"></canvas>
+
+        <h3 class="grid-header"> Returns in last 7 days</h3>
+
+        <div id="fmreturns">
+            <label for="user-filter2">Filter by FM:</label>
+            <select id="user-filter2"></select>
+        </div>
+        <div id="fetch-progress2" style="display: none;">Loading...</div>
+        <canvas id="FMR" width="800" height="200"></canvas>
         </div>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -144,7 +153,6 @@
    <script src="Fillin.js"></script> 
  <script src="Return.js"></script> 
  <script src="bids.js"></script> 
- <script src="Fillin.js"></script> 
 
   <script src="6monthsCommercial.js"></script> 
    <script src="12monthsCommercial.js"></script>
@@ -155,6 +163,7 @@
    <script src="winratebybranch.js"></script> 
 <script src ="index.js"></script> 
  <script src ="winbyacm.js"></script> 
+ <script src ="Fillinsbyfm.js"></script>
 
 
 

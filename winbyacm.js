@@ -41,10 +41,10 @@ async function initializez() {
 
     // Populate dropdown with sorted user names
     const sortedUsers = Object.keys(residentialWinRates).sort((a, b) => a.localeCompare(b));
-    populateDropdown(sortedUsers, 'user-filter');
+    populateDropdown3(sortedUsers, 'user-filter');
 
     // Display chart with sorted data
-    displayWinRatesAsBarChart(residentialWinRates, 'winRateChart');
+    displayWinRatesAsBarChart2(residentialWinRates, 'winRateChart');
 
     console.log("Application initialized successfully.");
     hideLoadingMessages();
@@ -52,7 +52,7 @@ async function initializez() {
 
 
 
-function populateDropdown(users, dropdownId) {
+function populateDropdown3(users, dropdownId) {
     const dropdown = document.getElementById(dropdownId);
     if (!dropdown) {
         console.error(`Dropdown with ID '${dropdownId}' not found.`);
@@ -96,7 +96,7 @@ function populateDropdown(users, dropdownId) {
                   }
                 : { [selectedUser]: residentialWinRates[selectedUser] || null };
 
-        displayWinRatesAsBarChart(filteredData, 'winRateChart');
+        displayWinRatesAsBarChart2(filteredData, 'winRateChart');
     });
 }
 
@@ -196,7 +196,7 @@ function calculateWinRates(records) {
 }
 
 
-function displayWinRatesAsBarChart(data, canvasId) {
+function displayWinRatesAsBarChart2(data, canvasId) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) {
         console.error(`Canvas with ID '${canvasId}' not found.`);
