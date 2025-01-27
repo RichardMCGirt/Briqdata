@@ -13,10 +13,10 @@ async function initialize() {
     displayLoadingMessage("Loading data, please wait...");
 
     const airtableApiKey = 'pat1Eu3iQYHDmLSWr.ecfb8470f9c2b8409a0017e65f5b8cf626208e4df1a06905a41019cb38a8534b';
-    const airtableBaseId = 'appi4QZE0SrWI6tt2';
-    const airtableTableName = 'tblQo2148s04gVPq1';
+    const airtableBaseId = 'appX1Saz7wMYh4hhm';
+    const airtableTableName = 'tblfCPX293KlcKsdp';
 
-    const filterFormula = "OR({Outcome} = 'Win', {Outcome} = 'Loss')";
+    const filterFormula = `AND(IS_AFTER({Date Created}, DATEADD(TODAY(), -30, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
     const residentialRecords = await fetchAirtableData(
         airtableApiKey,
         airtableBaseId,
@@ -65,8 +65,14 @@ function populateDropdown(users, dropdownId) {
     // Clear existing options
     dropdown.innerHTML = '<option value="all">All Users</option>';
 
-    // Add user options sorted alphabetically with fractions
-    users.forEach(user => {
+    // Filter out users with "0 / 0" or undefined fractions
+    const validUsers = users.filter(user => {
+        const fraction = residentialWinRates[user]?.fraction;
+        return fraction && fraction !== '0 / 0'; // Exclude "0 / 0" or undefined
+    });
+
+    // Add valid user options sorted alphabetically with fractions
+    validUsers.forEach(user => {
         const fraction = residentialWinRates[user]?.fraction || '0 / 0';
         const option = document.createElement('option');
         option.value = user;
@@ -97,10 +103,11 @@ function populateDropdown(users, dropdownId) {
     });
 }
 
+
 async function fetchAllFields() {
     const airtableApiKey = 'pat1Eu3iQYHDmLSWr.ecfb8470f9c2b8409a0017e65f5b8cf626208e4df1a06905a41019cb38a8534b';
-    const airtableBaseId = 'appi4QZE0SrWI6tt2';
-    const airtableTableName = 'tblQo2148s04gVPq1';
+    const airtableBaseId = 'appX1Saz7wMYh4hhm';
+    const airtableTableName = 'tblfCPX293KlcKsdp';
 
     const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
     const response = await fetch(url, {
@@ -123,18 +130,15 @@ async function fetchAllFields() {
 
 
 
+const filterFormula = `AND(IS_AFTER({Date Created}, DATEADD(TODAY(), -30, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
+
 async function fetchAirtableData(apiKey, baseId, tableName) {
     try {
         let allRecords = [];
         let offset;
 
-        const today = new Date();
-        const lastYearDate = new Date(today);
-        lastYearDate.setDate(today.getDate() - 365); // Subtract 365 days
-        const formattedLastYearDate = lastYearDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-
-        // Use the correct field name
-        const filterFormula = `AND(IS_AFTER({Created}, "${formattedLastYearDate}"), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
+        // Formula to filter records created in the last 30 days
+        const filterFormula = `AND(IS_AFTER({Date Created}, DATEADD(TODAY(), -30, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
         const encodedFormula = encodeURIComponent(filterFormula);
 
         do {
@@ -155,20 +159,18 @@ async function fetchAirtableData(apiKey, baseId, tableName) {
             }
 
             const data = await response.json();
+            console.log("Fetched Records:", data.records); // Log fetched records
             allRecords = allRecords.concat(data.records);
 
             offset = data.offset; // Continue fetching if there are more records
         } while (offset);
 
-        console.log("Fetched Records:", allRecords);
         return allRecords;
     } catch (error) {
         console.error("Error fetching data:", error);
         return [];
     }
 }
-
-
 
 
 
@@ -194,8 +196,9 @@ function calculateWinRate(records) {
     const data = {};
 
     records.forEach(record => {
-        // Extract 'Submitted By' field
-        const submittedBy = record.fields['Submitted By']?.name || 'Unknown User';
+        // Directly access the ACM field value
+        const submittedBy = record.fields['ACM'] || 'Empty';
+        console.log("Record ACM Value:", submittedBy); // Debugging ACM values
 
         if (!data[submittedBy]) {
             data[submittedBy] = { winCount: 0, lossCount: 0, totalCount: 0 };
@@ -212,7 +215,7 @@ function calculateWinRate(records) {
         data[submittedBy].totalCount += 1;
     });
 
-    console.log("Wins and Losses by Submitted By:", data);
+    console.log("Wins and Losses by ACM:", data);
 
     const winRates = {};
     for (const submittedBy in data) {
@@ -227,6 +230,7 @@ function calculateWinRate(records) {
     }
     return winRates;
 }
+
 
 function displayWinRatesAsBarChart(data, canvasId) {
     const canvas = document.getElementById(canvasId);
