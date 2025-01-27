@@ -2,12 +2,12 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log("Document loaded and DOM fully constructed.");
     
     // Directly call the initialization function to start fetching data immediately
-    initialize();
+    initializez();
 });
 let residentialWinRates = {};
 let commercialWinRates = {};
 
-async function initialize() {
+async function initializez() {
     console.log("Initializing application...");
     displayLoadingMessage("Loading data, please wait...");
 
