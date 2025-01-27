@@ -15,7 +15,7 @@ async function initializez() {
     const airtableBaseId = 'appX1Saz7wMYh4hhm'
     const airtableTableName = 'tblfCPX293KlcKsd';
 
-    const filterFormula = `AND(IS_AFTER({Last Time Modified}, DATEADD(TODAY(), -90, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
+    const filterFormula = `AND(IS_AFTER({Last Time Modified}, DATEADD(TODAY(), -180, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
     const residentialRecords = await fetchAirtableDatas(
         airtableApiKey,
         airtableBaseId,
@@ -106,7 +106,7 @@ async function fetchAirtableDatas(apiKey, baseId, tableName) {
         let offset;
 
         // Formula to filter records created in the last 30 days
-        const filterFormula = `AND(IS_AFTER({Last Time Modified}, DATEADD(TODAY(), -90, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
+        const filterFormula = `AND(IS_AFTER({Last Time Modified}, DATEADD(TODAY(), -180, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
         const encodedFormula = encodeURIComponent(filterFormula);
 
         do {
