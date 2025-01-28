@@ -6,6 +6,8 @@
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
+    overflow: hidden; /* Prevent content overflow */
+
 }
 
 
@@ -297,4 +299,21 @@ button {
 button:hover {
     background-color: #0056b3;
     transform: translateY(-3px);
+}
+
+/* Adjust grid layout for smaller screens */
+@media (max-width: 1200px) {
+    .grid-container {
+        grid-template-columns: repeat(2, 1fr); /* Two columns */
+    }
+}
+
+@media (max-width: 768px) {
+    .grid-container {
+        grid-template-columns: 1fr; /* One column */
+    }
+
+    .chart-section {
+        margin-bottom: 20px; /* Add spacing between items */
+    }
 }

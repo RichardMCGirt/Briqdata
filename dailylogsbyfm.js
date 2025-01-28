@@ -43,15 +43,43 @@ async function initializet() {
 function calculateTotalRecordsByPM(records) {
     const data = {};
 
+    // First, identify records where "Jack Naughton" is present
+    const recordsWithJack = records.filter(record => {
+        const pm = record.fields['PM'] ? capitalizeName(record.fields['PM'].trim()) : 'Unknown';
+        return pm === "Jack Naughton";
+    });
+
     // Aggregate data by PM
     records.forEach(record => {
-        const pm = record.fields['PM'] || 'Unknown';
+        // Normalize and capitalize PM values
+        let pm = record.fields['PM'] ? capitalizeName(record.fields['PM'].trim()) : 'Unknown';
+
+        // Rename "Charles Adamson" to "Charles" for the x-axis
+        if (pm === 'Charles Adamson') {
+            pm = 'Charles';
+        }
+
+        // Exclude "Charles" records if "Jack Naughton" exists
+        if (pm === 'Charles' && recordsWithJack.length > 0) {
+            return; // Skip this record for Charles
+        }
+
+        // Add or update the record in data
         if (!data[pm]) {
             data[pm] = { totalCount: 0 };
         }
 
         // Increment total count for the PM
         data[pm].totalCount += 1;
+
+        // Special case: Combine "Jack Naughton" and "Charles Adamson" into one bar
+        if (pm === 'Jack Naughton' || pm === 'Charles') {
+            const combinedKey = 'Jack Naughton and Charles';
+            if (!data[combinedKey]) {
+                data[combinedKey] = { totalCount: 0 };
+            }
+            data[combinedKey].totalCount += 1;
+        }
     });
 
     // Convert the object to an array, sort by totalCount, and convert back to an object
@@ -68,6 +96,20 @@ function calculateTotalRecordsByPM(records) {
 
 
 
+
+
+// Helper function to capitalize the first letter of each word
+function capitalizeName(name) {
+    return name
+        .toLowerCase() // Convert to lowercase
+        .split(' ') // Split into words
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize first letter
+        .join(' '); // Join words back together
+}
+
+
+
+
 function populateDropdown4(users, dropdownId) {
     const dropdown = document.getElementById(dropdownId);
     if (!dropdown) {
@@ -78,32 +120,49 @@ function populateDropdown4(users, dropdownId) {
     // Clear existing options
     dropdown.innerHTML = '<option value="all">All PMs</option>';
 
-    // Filter out "Heath Kornegay" and ensure valid users
-    const validUsers = users.filter(user => user !== 'Heath Kornegay');
+    // Filter out "Heath Kornegay", normalize, and capitalize names
+    const validUsers = users
+    .filter(user => user.trim().toLowerCase() !== 'heath kornegay')
+    .map(user => capitalizeName(user.trim()))
+    .sort((a, b) => a.localeCompare(b));
+
 
     // Add valid user options sorted alphabetically
     validUsers.forEach(user => {
-        const fraction = residentialWinRates[user]?.fraction || '0 / 0'; // Default fraction value
         const option = document.createElement('option');
         option.value = user;
-        option.textContent = `${user} (${fraction})`;
+        option.textContent = `${user}`;
         dropdown.appendChild(option);
     });
 
     // Add event listener for filtering
     dropdown.addEventListener('change', event => {
         const selectedUser = event.target.value;
-
+    
+        // Normalize the selected user to match the keys in residentialWinRates
+        const normalizedUser = selectedUser === 'all' ? 'all' : capitalizeName(selectedUser.trim());
+    
+        console.log("Selected User:", selectedUser);
+        console.log("Normalized User:", normalizedUser);
+    
         // Filter data based on selection
         const filteredData =
-            selectedUser === 'all'
-                ? residentialWinRates // Show all PMs
-                : { [selectedUser]: residentialWinRates[selectedUser] || null };
-
+        normalizedUser === 'all'
+            ? residentialWinRates // Show all PMs
+            : residentialWinRates[normalizedUser]
+                ? { [normalizedUser]: residentialWinRates[normalizedUser] }
+                : {}; // Return empty object if no data for the user
+    
+    
+        console.log("Filtered Data:", filteredData);
+    
         // Update chart with filtered data
         displayWinRatesAsBarChart4(filteredData, 'FDL');
     });
+    
+    
 }
+
 
 
 async function fetchAirtableDatas4(apiKey, baseId, tableName) {
@@ -112,7 +171,7 @@ async function fetchAirtableDatas4(apiKey, baseId, tableName) {
         let offset;
 
         // Formula to filter records created in the last 30 days
-        const filterFormula = `LEN({PM}) > 0`;
+        const filterFormula = `AND(LEN({PM}) > 0, IS_BEFORE(DATEADD(TODAY(), -7, 'days'), {Date Record Created}))`;
         const encodedFormula = encodeURIComponent(filterFormula);
 
         do {
@@ -179,8 +238,8 @@ function displayWinRatesAsBarChart4(data, canvasId) {
     const validData = Object.entries(data).filter(([key, value]) => value && value.totalCount !== undefined);
 
     // Handle empty data gracefully
-    if (validData.length === 0) {
-        console.warn("No valid data to display in the chart.");
+    if (!data || Object.keys(data).length === 0) {
+        console.warn("No valid data to display in the chart for the selected user.");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         const message = "No data available for the selected user.";
         ctx.font = "16px Arial";
@@ -188,6 +247,7 @@ function displayWinRatesAsBarChart4(data, canvasId) {
         ctx.fillText(message, canvas.width / 2, canvas.height / 2);
         return;
     }
+    
 
     // Extract labels and total counts from valid data
     const labels = validData.map(([key]) => key); // Names of PMs
