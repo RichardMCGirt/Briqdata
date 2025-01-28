@@ -72,14 +72,7 @@ function calculateTotalRecordsByPM(records) {
         // Increment total count for the PM
         data[pm].totalCount += 1;
 
-        // Special case: Combine "Jack Naughton" and "Charles Adamson" into one bar
-        if (pm === 'Jack Naughton' || pm === 'Charles') {
-            const combinedKey = 'Jack Naughton and Charles';
-            if (!data[combinedKey]) {
-                data[combinedKey] = { totalCount: 0 };
-            }
-            data[combinedKey].totalCount += 1;
-        }
+       
     });
 
     // Convert the object to an array, sort by totalCount, and convert back to an object
