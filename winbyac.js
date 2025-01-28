@@ -59,7 +59,7 @@ function populateDropdown3(users, dropdownId) {
     }
 
     // Clear existing options
-    dropdown.innerHTML = '<option value="all">All Users</option>';
+    dropdown.innerHTML = '<option value="all">All ACs</option>';
 
     // Filter out users with "0 / 0" or undefined fractions
     const validUsers = users.filter(user => {
