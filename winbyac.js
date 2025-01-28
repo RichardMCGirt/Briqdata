@@ -9,14 +9,14 @@ let commercialWinRates = {};
 
 async function initializez() {
     console.log("Initializing application...");
-    displayLoadingMessages("Loading data, please wait...");
+    displayLoadingMessages2("Loading data, please wait...");
 
     const airtableApiKey = 'pat1Eu3iQYHDmLSWr.ecfb8470f9c2b8409a0017e65f5b8cf626208e4df1a06905a41019cb38a8534b';
     const airtableBaseId = 'appi4QZE0SrWI6tt2';
     const airtableTableName = 'tblQo2148s04gVPq1';
 
     const filterFormula = `AND(IS_AFTER({Last Time Outcome Modified}, DATEADD(TODAY(), -365, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
-    const residentialRecords = await fetchAirtableDatas(
+    const residentialRecords = await fetchAirtableDatas2(
         airtableApiKey,
         airtableBaseId,
         airtableTableName,
@@ -25,7 +25,7 @@ async function initializez() {
     console.log(`Total records fetched: ${residentialRecords.length}`);
 
    
-    residentialWinRates = calculateWinRates(residentialRecords);
+    residentialWinRates = calculateWinRates2(residentialRecords);
 
     // Filter out "Unknown User"
     residentialWinRates = Object.fromEntries(
@@ -47,9 +47,8 @@ async function initializez() {
     displayWinRatesAsBarChart2(residentialWinRates, 'winRateChart');
 
     console.log("Application initialized successfully.");
-    hideLoadingMessages();
+    hideLoadingMessages2();
 }
-
 
 
 function populateDropdown3(users, dropdownId) {
@@ -100,7 +99,7 @@ function populateDropdown3(users, dropdownId) {
     });
 }
 
-async function fetchAirtableDatas(apiKey, baseId, tableName) {
+async function fetchAirtableDatas2(apiKey, baseId, tableName) {
     try {
         let allRecords = [];
         let offset;
@@ -140,7 +139,7 @@ async function fetchAirtableDatas(apiKey, baseId, tableName) {
     }
 }
 
-function displayLoadingMessages(message) {
+function displayLoadingMessages2(message) {
     const fetchProgress = document.getElementById('fetch-progress');
     if (fetchProgress) {
         fetchProgress.textContent = message;
@@ -151,17 +150,17 @@ function displayLoadingMessages(message) {
 }
 
 
-function hideLoadingMessages() {
+function hideLoadingMessages2() {
     const fetchProgress = document.getElementById('fetch-progress');
     fetchProgress.style.display = 'none';
 }
 
-function calculateWinRates(records) {
+function calculateWinRates2(records) {
     const data = {};
 
     records.forEach(record => {
         // Directly access the ACM field value
-        const submittedBy = record.fields['ACM'] || 'Empty';
+        const submittedBy = record.fields['AC'] || 'Empty';
         console.log("Record ACM Value:", submittedBy); // Debugging ACM values
 
         if (!data[submittedBy]) {
