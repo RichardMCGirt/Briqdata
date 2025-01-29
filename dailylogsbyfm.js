@@ -254,8 +254,8 @@ function displayWinRatesAsBarChart4(data, canvasId) {
                 {
                     label: 'Total Records',
                     data: totalCounts,
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(173, 13, 28, 0.8)',
+                    borderColor: 'rgba(173, 13, 28, 0.8)',
                     borderWidth: 1,
                 },
             ],
