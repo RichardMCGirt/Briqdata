@@ -160,7 +160,7 @@ function calculateWinRates2(records) {
 
     records.forEach(record => {
         // Directly access the ACM field value
-        const submittedBy = record.fields['AC'] || 'Empty';
+        const submittedBy = record.fields['SubmitedBY'] || 'Empty';
         console.log("Record ACM Value:", submittedBy); // Debugging ACM values
 
         if (!data[submittedBy]) {
