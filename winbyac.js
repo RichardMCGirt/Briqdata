@@ -76,27 +76,21 @@ function populateDropdown3(users, dropdownId) {
         dropdown.appendChild(option);
     });
 
-    // Add event listener for filtering
     dropdown.addEventListener('change', event => {
         const selectedUser = event.target.value;
-
-        // Include Heath Kornegay in the data if "All Users" is selected
-        const filteredData =
-            selectedUser === 'all'
-                ? {
-                      ...residentialWinRates,
-                      'Heath Kornegay': {
-                          winCount: 0,
-                          lossCount: 0,
-                          totalCount: 0,
-                          fraction: heathFraction,
-                          winRatePercentage: -(Math.random() * 50).toFixed(1), // Random negative percentage
-                      },
-                  }
-                : { [selectedUser]: residentialWinRates[selectedUser] || null };
-
+    
+        let filteredData;
+        if (selectedUser === 'all') {
+            // Reset dataset to include all fetched records
+            filteredData = { ...residentialWinRates };
+        } else {
+            // Filter for only the selected user
+            filteredData = { [selectedUser]: residentialWinRates[selectedUser] || null };
+        }
+    
         displayWinRatesAsBarChart2(filteredData, 'winRateChart');
     });
+    
 }
 
 async function fetchAirtableDatas2(apiKey, baseId, tableName) {
