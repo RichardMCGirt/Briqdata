@@ -19,7 +19,7 @@ function getFormattedDate() {
 
 
 // Construct the CSV file name dynamically
-const csvFileName = `OpenPOReportbyVendorSalesmanDateCreated-1738591242-1971443506.csv`;
+const csvFileName = `OpenPOReportbyVendorSalesmanDateCreated-2025-01-16 (1).csv`;
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     const errorMessage = document.getElementById('errorMessage');
@@ -136,9 +136,6 @@ const csvFileName = `OpenPOReportbyVendorSalesmanDateCreated-1738591242-19714435
 
     // Messages with dynamic date in CSV file name
 const messages = [
-    "Navigating to https://vanirlive.omnna-lbm.live/...",
-    "Submitting login...",
-    "Login successful.",
     "Navigating to https://vanirlive.omnna-lbm.live/index.php?module=Reports&action=ListView...",
     "Generating report...",
     "Exporting report to CSV...",
@@ -160,7 +157,7 @@ downloadButton.addEventListener('click', () => {
             outputContainer.textContent = messages[index];
             index++;
 
-            setTimeout(displayNextMessage, 1000); // 1-second per message
+            setTimeout(displayNextMessage, 500); // 1-second per message
         } else {
             // Wait 4 seconds before fetching the file
             setTimeout(() => {
