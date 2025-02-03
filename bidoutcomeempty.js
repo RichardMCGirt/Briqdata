@@ -15,7 +15,7 @@ async function initializez2() {
     const airtableBaseId = 'appi4QZE0SrWI6tt2';
     const airtableTableName = 'tblQo2148s04gVPq1';
 
-    const filterFormula = `{Outcome} = "None"`;
+    const filterFormula = `AND(NOT(OR({Outcome} = "Win", {Outcome} = "Loss", {Outcome} = "None")))`;
     const residentialRecords = await fetchAirtableDatas7(
         airtableApiKey,
         airtableBaseId,
@@ -31,7 +31,7 @@ async function initializez2() {
     // Sort by number of "None" occurrences in descending order
     residentialWinRates3 = Object.fromEntries(
         Object.entries(residentialWinRates3).sort(
-            (a, b) => a[1].noneCount - b[1].noneCount
+            (a, b) => a[1].totalCount - b[1].totalCount 
         )
     );
 
@@ -94,7 +94,7 @@ async function fetchAirtableDatas7(apiKey, baseId, tableName) {
         let offset;
 
         // Formula to filter records created in the last 30 days
-        const filterFormula = `{Outcome} = "None"`;
+        const filterFormula = `AND(NOT(OR({Outcome} = "Win", {Outcome} = "Loss", {Outcome} = "None")))`;
         const encodedFormula = encodeURIComponent(filterFormula);
 
         do {
@@ -196,7 +196,7 @@ function displayWinRatesAsBarChart7(data, canvasId) {
     }
 
     // Filter out invalid data
-    const validData = Object.entries(data).filter(([key, value]) => value && value.noneCount !== undefined);
+    const validData = Object.entries(data).filter(([key, value]) => value && value.totalCount !== undefined);
 
     // Handle empty data gracefully
     if (validData.length === 0) {
@@ -211,7 +211,7 @@ function displayWinRatesAsBarChart7(data, canvasId) {
 
     // Extract labels and "None" counts from valid data
     const labels = validData.map(([key]) => key);
-    const noneCounts = validData.map(([key, value]) => value.noneCount);
+    const noneCounts = validData.map(([key, value]) => value.totalCount);
 
     canvas.chartInstance = new Chart(ctx, {
         type: 'bar',
