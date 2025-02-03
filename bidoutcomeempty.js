@@ -26,10 +26,7 @@ async function initializez2() {
 
     residentialWinRates3 = calculateWinRates7(residentialRecords);
 
-    // Filter out "Unknown User"
-    residentialWinRates3 = Object.fromEntries(
-        Object.entries(residentialWinRates3).filter(([user]) => user !== 'Empty')
-    );
+   
 
     // Sort by number of "None" occurrences in descending order
     residentialWinRates3 = Object.fromEntries(
