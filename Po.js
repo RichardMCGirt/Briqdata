@@ -2,7 +2,24 @@
     const currentDate = new Date();
     const formattedDate = `${currentDate.getMonth() + 1}/${currentDate.getDate()}/${currentDate.getFullYear()}`;
     document.getElementById('csvDate').textContent = formattedDate;
+// Set current date for display and file naming
 
+document.getElementById('csvDate').textContent = `${currentDate.getMonth() + 1}/${currentDate.getDate()}/${currentDate.getFullYear()}`;
+
+// Function to get the current date in YYYY-MM-DD format
+function getFormattedDate() {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Two-digit month
+    const day = String(date.getDate()).padStart(2, '0'); // Two-digit day
+    return `${year}-${month}-${day}`; // Format YYYY-MM-DD
+}
+
+
+
+
+// Construct the CSV file name dynamically
+const csvFileName = `OpenPOReportbyVendorSalesmanDateCreated-1738591242-1971443506.csv`;
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     const errorMessage = document.getElementById('errorMessage');
@@ -117,58 +134,59 @@
         });
     }
 
-    const messages = [
-        "Starting report generation...",
-        "Setting download behavior...",
-        "Navigating to login page...",
-        "Checking for login fields...",
-        "Login fields detected. Proceeding to login...",
-        "Submitting login...",
-        "Login successful.",
-        "Navigating to report page...",
-        "Selecting report template...",
-        "Generating report...",
-        "Waiting for the report to generate...",
-        "Exporting report to CSV...",
-        "Waiting for CSV file to download...",
-        "Download attempt 1: Checking for CSV files...",
-        "CSV file found: OpenOrdersByCounterPerson-Detail-1736179445-745847148.csv",
-        "Report downloaded successfully: /Users/richardmcgirt/Desktop/LOSKUDATA/downloads/OpenOrdersByCounterPerson-Detail-1736179445-745847148.csv",
-        "Report generation completed."
-    ];
-    
-    downloadButton.addEventListener('click', () => {
-        const outputContainer = document.getElementById("errorMessage");
-        outputContainer.style.display = 'block';
-        outputContainer.textContent = ""; // Clear previous messages
-    
-        let index = 0;
-    
-        function displayNextMessage() {
-            if (index < messages.length) {
-                outputContainer.textContent = messages[index];
-                index++;
-    
-                setTimeout(displayNextMessage, 4000); // 4 seconds per message
-            } else {
-                // After all messages, fetch and parse the CSV file
-                fetch('OpenPOReportbyVendorSalesmanDateCreated-2025-01-16.csv')
+    // Messages with dynamic date in CSV file name
+const messages = [
+    "Navigating to https://vanirlive.omnna-lbm.live/...",
+    "Submitting login...",
+    "Login successful.",
+    "Navigating to https://vanirlive.omnna-lbm.live/index.php?module=Reports&action=ListView...",
+    "Generating report...",
+    "Exporting report to CSV...",
+    "Waiting for CSV file to download...",
+    `CSV file found: ${csvFileName}`,
+    "Report downloaded successfully:",
+    "Parsing report."
+];
+
+downloadButton.addEventListener('click', () => {
+    const outputContainer = document.getElementById("errorMessage");
+    outputContainer.style.display = 'block';
+    outputContainer.textContent = ""; // Clear previous messages
+
+    let index = 0;
+
+    function displayNextMessage() {
+        if (index < messages.length) {
+            outputContainer.textContent = messages[index];
+            index++;
+
+            setTimeout(displayNextMessage, 1000); // 1-second per message
+        } else {
+            // Wait 4 seconds before fetching the file
+            setTimeout(() => {
+                console.log(`Attempting to fetch file: ${csvFileName}`);
+                
+                fetch(csvFileName)
                     .then(response => response.text())
                     .then(csvData => {
+                        console.log("CSV Data Loaded:", csvData); // Log data to debug
                         outputContainer.style.display = 'none'; // Hide message
                         parseCSV(csvData);
                     })
                     .catch(error => {
                         console.error('Error fetching the CSV file:', error);
-                        outputContainer.textContent = 'Error loading the CSV file. Please check if it exists in the root folder.';
+                        outputContainer.textContent = `Error loading the CSV file. Please check if "${csvFileName}" exists in the root folder.`;
                         outputContainer.style.display = 'block';
                     });
-            }
+            }, 10); // 4-second delay after last message
         }
-    
-        // Start displaying messages
-        displayNextMessage();
-    });
+    }
+
+    // Start displaying messages
+    displayNextMessage();
+});
+
+
     
 
 
