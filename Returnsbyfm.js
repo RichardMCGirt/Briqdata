@@ -63,7 +63,6 @@ async function fetchAirtableDatas(apiKey, baseId, tableName) {
 
             // Log each record's fields
             data.records.forEach(record => {
-                console.log("Record Fields:", record.fields);
             });
 
             allRecords = allRecords.concat(data.records);
