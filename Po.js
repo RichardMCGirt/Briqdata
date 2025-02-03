@@ -1,29 +1,30 @@
+document.addEventListener("DOMContentLoaded", function () {
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("fileInput");
+    const errorMessage = document.getElementById("errorMessage");
+    const downloadButton = document.getElementById("downloadReport");
+    const csvTable = document.getElementById("csvTable");
+    const tableHead = csvTable.querySelector("thead");
+    const tableBody = csvTable.querySelector("tbody");
+
     // Set current date for display
     const currentDate = new Date();
     const formattedDate = `${currentDate.getMonth() + 1}/${currentDate.getDate()}/${currentDate.getFullYear()}`;
     document.getElementById('csvDate').textContent = formattedDate;
-// Set current date for display and file naming
 
-document.getElementById('csvDate').textContent = `${currentDate.getMonth() + 1}/${currentDate.getDate()}/${currentDate.getFullYear()}`;
+    // Hide table headers initially
+    tableHead.style.display = "none";
 
-// Function to get the current date in YYYY-MM-DD format
-function getFormattedDate() {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Two-digit month
-    const day = String(date.getDate()).padStart(2, '0'); // Two-digit day
-    return `${year}-${month}-${day}`; // Format YYYY-MM-DD
-}
+    // Expected CSV file format
+    const csvFileName = `OpenPOReportbyVendorSalesmanDateCreated-${getFormattedDate()} (1).csv`;
 
-
-
-
-// Construct the CSV file name dynamically
-const csvFileName = `OpenPOReportbyVendorSalesmanDateCreated-2025-01-16 (1).csv`;
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-    const errorMessage = document.getElementById('errorMessage');
-    const downloadButton = document.getElementById('downloadReport');
+    function getFormattedDate() {
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
 
     // Highlight drop zone on drag events
     ['dragenter', 'dragover'].forEach(eventName => {
@@ -57,7 +58,7 @@ const csvFileName = `OpenPOReportbyVendorSalesmanDateCreated-2025-01-16 (1).csv`
         }
     });
 
-    // Process file
+    // Process the uploaded CSV file
     function processFile(file) {
         if (file.name.includes('OpenPOReportbyVendorSalesmanDateCreated')) {
             errorMessage.style.display = 'none';
@@ -72,26 +73,25 @@ const csvFileName = `OpenPOReportbyVendorSalesmanDateCreated-2025-01-16 (1).csv`
         }
     }
 
-    // Helper function to format names
+    // Format names (capitalize first letter, remove dots)
     function formatName(name) {
-        return name
-            .replace(/\./g, ' ')
+        return name.replace(/\./g, ' ')
             .split(' ')
             .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
             .join(' ');
     }
 
-    // CSV Parsing Function
+    // Parse CSV data
     function parseCSV(csvData) {
-        const lines = csvData.split('\n').slice(10); // Skip the first 10 lines
+        const lines = csvData.split('\n').slice(10); // Skip first 10 lines
         const counts = {};
         let totalOccurrences = 0;
 
         lines.forEach(line => {
             const columns = line.split(',');
-            let counterPerson = columns[9]?.trim().replace(/['"]+/g, '');
+            let counterPerson = columns[9]?.trim().replace(/['"]+/g, ''); // Extract user column
             if (counterPerson) {
-                counterPerson = formatName(counterPerson); // Format the name
+                counterPerson = formatName(counterPerson);
                 counts[counterPerson] = (counts[counterPerson] || 0) + 1;
                 totalOccurrences++;
             }
@@ -100,10 +100,16 @@ const csvFileName = `OpenPOReportbyVendorSalesmanDateCreated-2025-01-16 (1).csv`
         populateTable(counts, totalOccurrences);
     }
 
-    // Function to populate the table
+    // Populate the table with data
     function populateTable(counts, totalOccurrences) {
         const numberOfCounterPersons = Object.keys(counts).length;
         const averageOccurrences = totalOccurrences / numberOfCounterPersons;
+        
+        if (numberOfCounterPersons > 0) {
+            tableHead.style.display = ""; // Show headers if data exists
+        } else {
+            tableHead.style.display = "none"; // Hide headers if no data
+        }
 
         const sortedData = Object.entries(counts).map(([key, value]) => ({
             key,
@@ -114,80 +120,55 @@ const csvFileName = `OpenPOReportbyVendorSalesmanDateCreated-2025-01-16 (1).csv`
             return a.key.localeCompare(b.key);
         });
 
-        const tableBody = document.querySelector('#csvTable tbody');
-        tableBody.innerHTML = '';
-
+        tableBody.innerHTML = "";
         sortedData.forEach(item => {
             const rowElement = document.createElement('tr');
-            const cellElement1 = document.createElement('td');
-            const cellElement2 = document.createElement('td');
-            const cellElement3 = document.createElement('td');
-
-            cellElement1.textContent = item.key;
-            cellElement2.textContent = item.value;
-            cellElement3.textContent = `${item.percentage}%`;
-
-            rowElement.appendChild(cellElement1);
-            rowElement.appendChild(cellElement2);
-            rowElement.appendChild(cellElement3);
+            rowElement.innerHTML = `<td>${item.key}</td><td>${item.value}</td><td>${item.percentage}%</td>`;
             tableBody.appendChild(rowElement);
         });
     }
 
-    // Messages with dynamic date in CSV file name
-const messages = [
-    "Navigating to https://vanirlive.omnna-lbm.live/index.php?module=Reports&action=ListView...",
-    "Generating report...",
-    "Exporting report to CSV...",
-    "Waiting for CSV file to download...",
-    `CSV file found: ${csvFileName}`,
-    "Report downloaded successfully:",
-    "Parsing report."
-];
+    // Download CSV Simulation Messages
+    const messages = [
+        "Navigating to https://vanirlive.omnna-lbm.live/index.php?module=Reports&action=ListView...",
+        "Generating report...",
+        "Exporting report to CSV...",
+        "Waiting for CSV file to download...",
+        `CSV file found: ${csvFileName}`,
+        "Report downloaded successfully.",
+        "Parsing report."
+    ];
 
-downloadButton.addEventListener('click', () => {
-    const outputContainer = document.getElementById("errorMessage");
-    outputContainer.style.display = 'block';
-    outputContainer.textContent = ""; // Clear previous messages
+    downloadButton.addEventListener('click', () => {
+        const outputContainer = document.getElementById("errorMessage");
+        outputContainer.style.display = 'block';
+        outputContainer.textContent = "";
 
-    let index = 0;
-
-    function displayNextMessage() {
-        if (index < messages.length) {
-            outputContainer.textContent = messages[index];
-            index++;
-
-            setTimeout(displayNextMessage, 500); // 1-second per message
-        } else {
-            // Wait 4 seconds before fetching the file
-            setTimeout(() => {
-                console.log(`Attempting to fetch file: ${csvFileName}`);
-                
-                fetch(csvFileName)
-                    .then(response => response.text())
-                    .then(csvData => {
-                        console.log("CSV Data Loaded:", csvData); // Log data to debug
-                        outputContainer.style.display = 'none'; // Hide message
-                        parseCSV(csvData);
-                    })
-                    .catch(error => {
-                        console.error('Error fetching the CSV file:', error);
-                        outputContainer.textContent = `Error loading the CSV file. Please check if "${csvFileName}" exists in the root folder.`;
-                        outputContainer.style.display = 'block';
-                    });
-            }, 10); // 4-second delay after last message
+        let index = 0;
+        function displayNextMessage() {
+            if (index < messages.length) {
+                outputContainer.textContent = messages[index];
+                index++;
+                setTimeout(displayNextMessage, 500); // Show each message for 0.5 seconds
+            } else {
+                setTimeout(() => {
+                    console.log(`Attempting to fetch file: ${csvFileName}`);
+                    fetch(csvFileName)
+                        .then(response => response.text())
+                        .then(csvData => {
+                            console.log("CSV Data Loaded:", csvData);
+                            outputContainer.style.display = 'none'; // Hide message
+                            parseCSV(csvData);
+                        })
+                        .catch(error => {
+                            console.error('Error fetching the CSV file:', error);
+                            outputContainer.textContent = `Error loading the CSV file. Please check if "${csvFileName}" exists in the root folder.`;
+                            outputContainer.style.display = 'block';
+                        });
+                }, 10);
+            }
         }
-    }
 
-    // Start displaying messages
-    displayNextMessage();
-});
-
-
-    
-
-
-    // Allow drop zone click to open file input
-    dropZone.addEventListener('click', () => {
-        fileInput.click();
+        displayNextMessage();
     });
+});
