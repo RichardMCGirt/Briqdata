@@ -37,7 +37,7 @@ async function initializez2() {
 
     // Populate dropdown with sorted user names
     const sortedUsers = Object.keys(residentialWinRates3);
-    populateDropdown3(sortedUsers, 'user-filter');
+    populateDropdown3(sortedUsers, 'user-filter5');
 
     // Display chart with sorted data
     displayWinRatesAsBarChart7(residentialWinRates3, 'winRateChart6');

@@ -111,7 +111,7 @@ function populateDropdown4(users, dropdownId) {
     }
 
     // Clear existing options
-    dropdown.innerHTML = '<option value="all">All PMs</option>';
+    dropdown.innerHTML = '<option value="all">All FMs</option>';
 
     // Filter out "Heath Kornegay", normalize, and capitalize names
     const validUsers = users
