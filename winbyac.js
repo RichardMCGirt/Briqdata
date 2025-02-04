@@ -1,9 +1,10 @@
 document.addEventListener('DOMContentLoaded', function () {
-    console.log("Document loaded and DOM fully constructed.");
-    
-    // Directly call the initialization function to start fetching data immediately
-    initializez();
+    setTimeout(() => {
+        console.log("Document loaded, initializing app...");
+        initializez();
+    }, 500);
 });
+
 let residentialWinRates = {};
 let commercialWinRates = {};
 
@@ -22,8 +23,11 @@ async function initializez() {
         airtableTableName,
         filterFormula
     );
-    console.log(`Total records fetched: ${residentialRecords.length}`);
-
+    if (!residentialRecords.length) {
+        console.error("No records fetched from Airtable.");
+        return;
+    }
+    
    
     residentialWinRates = calculateWinRates2(residentialRecords);
 
@@ -40,8 +44,8 @@ async function initializez() {
     );
 
     // Populate dropdown with sorted user names
-    const sortedUsers = Object.keys(residentialWinRates).sort((a, b) => a.localeCompare(b));
-    populateDropdown3(sortedUsers, 'user-filter');
+    const sortedUsers9 = Object.keys(residentialWinRates).sort((a, b) => a.localeCompare(b));
+    populateDropdown9(sortedUsers9, 'user-filter');
 
     // Display chart with sorted data
     displayWinRatesAsBarChart2(residentialWinRates, 'winRateChart');
@@ -49,14 +53,18 @@ async function initializez() {
     console.log("Application initialized successfully.");
     hideLoadingMessages2();
 }
+console.log("Win Rates Object:", residentialWinRates);
 
 
-function populateDropdown3(users, dropdownId) {
+function populateDropdown9(users, dropdownId) {
     const dropdown = document.getElementById(dropdownId);
     if (!dropdown) {
         console.error(`Dropdown with ID '${dropdownId}' not found.`);
         return;
+    } else {
+        console.log(`Dropdown with ID '${dropdownId}' found.`);
     }
+    
 
     // Clear existing options
     dropdown.innerHTML = '<option value="all">All ACs</option>';
