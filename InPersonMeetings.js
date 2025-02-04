@@ -4,7 +4,7 @@ const ninetyDaysAgoStr = ninetyDaysAgo.toISOString().split('T')[0]; // Format as
 
 const filterFormula = `AND(
   {Activity} = "In Person",
-  IS_AFTER(LAST_MODIFIED_TIME(), "${ninetyDaysAgoStr}")
+  IS_AFTER(CREATED_TIME(), "${ninetyDaysAgoStr}")
 )`;
 
 
