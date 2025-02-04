@@ -112,8 +112,10 @@ function displayActivityCountsAsBarChart(data, canvasId) {
         canvas.chartInstance.destroy();
     }
 
+    // Filter out "Unknown" values and sort data by total count (ascending order)
     const validData = Object.entries(data)
-        .filter(([key, value]) => key !== "Unknown" && value.totalCount !== undefined);
+        .filter(([key, value]) => key !== "Unknown" && value.totalCount !== undefined)
+        .sort((a, b) => a[1].totalCount - b[1].totalCount); // Ascending order
 
     if (!validData.length) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -131,7 +133,7 @@ function displayActivityCountsAsBarChart(data, canvasId) {
         data: {
             labels,
             datasets: [{
-                label: 'In-Person Meetings (Last 90 Days)',
+                label: 'In-Person Activities (Last 90 Days)',
                 data: totalCounts,
                 backgroundColor: 'rgba(173, 13, 28, 0.8)',
                 borderColor: 'rgba(173, 13, 28, 0.8)',
@@ -145,6 +147,7 @@ function displayActivityCountsAsBarChart(data, canvasId) {
         },
     });
 }
+
 
 // Main Initialization Function
 async function initializeApp() {
