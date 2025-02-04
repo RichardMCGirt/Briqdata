@@ -57,17 +57,15 @@ function populateDropdown3(users, dropdownId) {
     // Clear existing options
     dropdown.innerHTML = '<option value="all">All ACs</option>';
 
-    // Filter out users with "0 / 0" or undefined fractions
-    const validUsers = users.filter(user => {
-       
-    });
+    // Filter out users with totalCount === 0
+    const validUsers = users.filter(user => residentialWinRates3[user]?.totalCount > 0);
 
-    // Add valid user options sorted alphabetically with fractions
+    // Add valid user options sorted alphabetically with just totalCount
     validUsers.forEach(user => {
-        const fraction = residentialWinRates3[user]?.fraction || '0 / 0';
+        const total = residentialWinRates3[user]?.totalCount || '0'; // Only show totalCount
         const option = document.createElement('option');
         option.value = user;
-        option.textContent = `${user} (${fraction})`;
+        option.textContent = `${user} (${total})`; // Display only the total count
         dropdown.appendChild(option);
     });
 
@@ -77,16 +75,21 @@ function populateDropdown3(users, dropdownId) {
         let filteredData;
         if (selectedUser === 'all') {
             // Reset dataset to include all fetched records
-            filteredData = { ...residentialWinRates };
+            filteredData = Object.fromEntries(
+                Object.entries(residentialWinRates3).filter(([_, value]) => value.totalCount > 0)
+            );
         } else {
             // Filter for only the selected user
-            filteredData = { [selectedUser]: residentialWinRates[selectedUser] || null };
+            filteredData = residentialWinRates3[selectedUser]?.totalCount > 0
+                ? { [selectedUser]: residentialWinRates3[selectedUser] }
+                : {};
         }
     
         displayWinRatesAsBarChart7(filteredData, 'winRateChart6');
     });
-    
 }
+
+
 
 async function fetchAirtableDatas7(apiKey, baseId, tableName) {
     try {
@@ -195,8 +198,8 @@ function displayWinRatesAsBarChart7(data, canvasId) {
         canvas.chartInstance.destroy();
     }
 
-    // Filter out invalid data
-    const validData = Object.entries(data).filter(([key, value]) => value && value.totalCount !== undefined);
+    // Filter out invalid data where totalCount is zero
+    const validData = Object.entries(data).filter(([_, value]) => value && value.totalCount > 0);
 
     // Handle empty data gracefully
     if (validData.length === 0) {
@@ -211,7 +214,7 @@ function displayWinRatesAsBarChart7(data, canvasId) {
 
     // Extract labels and "None" counts from valid data
     const labels = validData.map(([key]) => key);
-    const noneCounts = validData.map(([key, value]) => value.totalCount);
+    const noneCounts = validData.map(([_, value]) => value.totalCount);
 
     canvas.chartInstance = new Chart(ctx, {
         type: 'bar',
@@ -241,5 +244,6 @@ function displayWinRatesAsBarChart7(data, canvasId) {
         },
     });
 }
+
 
 
