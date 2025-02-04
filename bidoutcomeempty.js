@@ -219,7 +219,7 @@ function displayWinRatesAsBarChart7(data, canvasId) {
             labels,
             datasets: [
                 {
-                    label: 'Number of "None" Outcomes',
+                    label: 'Open Opportunities',
                     data: noneCounts,
                     backgroundColor: labels.map(user =>
                         user === 'Heath Kornegay' ? 'rgba(255, 99, 132, 0.6)' : 'rgba(75, 192, 192, 0.6)'
