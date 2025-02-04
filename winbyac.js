@@ -230,10 +230,10 @@ function displayWinRatesAsBarChart2(data, canvasId) {
                     label: 'Win Rate (%)',
                     data: winRates,
                     backgroundColor: labels.map(user =>
-                        user === 'Heath Kornegay' ? 'rgba(11, 156, 49, 0.8)' : 'rgba(11, 156, 49, 0.8)'
+                        user === 'Heath Kornegay' ? 'rgba(4, 124, 33, 0.8)' : 'rgba(4, 124, 33, 0.8)'
                     ),
                     borderColor: labels.map(user =>
-                        user === 'Heath Kornegay' ? 'rgba(11, 156, 49, 0.8)' : 'rgba(11, 156, 49, 0.8)'
+                        user === 'Heath Kornegay' ? 'rgba(4, 124, 33, 0.8)' : 'rgba(4, 124, 33, 0.8)'
                     ),
                     borderWidth: 1,
                 },
