@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     
         // Final update to indicate completion
         if (liveUpdateContainer) {
-            liveUpdateContainer.innerHTML = `All data fetched successfully. Total records: ${allRecords.length}`;
+            liveUpdateContainer.innerHTML = `Total records: ${allRecords.length}`;
         }
     
         return allRecords;
