@@ -1,84 +1,18 @@
-document.addEventListener('DOMContentLoaded', function () {
-    console.log("Document loaded and DOM fully constructed.");
-    initializet();
-});
+const ninetyDaysAgo = new Date();
+ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+const ninetyDaysAgoStr = ninetyDaysAgo.toISOString().split('T')[0]; // Format as YYYY-MM-DD
 
-async function initializet() {
-    console.log("Initializing application...");
-    displayLoadingMessages2("Loading data, please wait...");
+const filterFormula = `AND(
+  {Activity} = "In Person",
+  IS_AFTER(LAST_MODIFIED_TIME(), "${ninetyDaysAgoStr}")
+)`;
 
-    const airtableApiKey = 'pat1Eu3iQYHDmLSWr.ecfb8470f9c2b8409a0017e65f5b8cf626208e4df1a06905a41019cb38a8534b';
-    const airtableBaseId = 'appX1Saz7wMYh4hhm';
-    const airtableTableName = 'tbl4CTO6s1j7kz06k';
 
-    
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-    const ninetyDaysAgoStr = ninetyDaysAgo.toISOString().split('T')[0]; // Format as YYYY-MM-DD
 
-    
-    const filterFormula = `AND(IS_AFTER({Date}, "${ninetyDaysAgoStr}"), {Activity} = "In Person")`;
+console.log("Fetching records from Airtable with filter:", filterFormula);
 
-    console.log("Fetching records from Airtable with filter:", filterFormula);
-    
-  
-    const records = await fetchAirtableDatas4(airtableApiKey, airtableBaseId, airtableTableName, filterFormula);
-    console.log(`Total records fetched:`, records.length);
-    console.log("Sample records:", records.slice(0, 5));
-
-   
-    console.log("Aggregating activity counts by Submitted by...");
-    const userActivityCounts = calculateActivityCountsByUser(records);
-    console.log("Aggregated data:", userActivityCounts);
-
- 
-    const sortedUsers = Object.keys(userActivityCounts).sort();
-    console.log("Sorted users for dropdown:", sortedUsers);
-    populateDropdown4(sortedUsers, 'user-filter3');
-
-  
-    console.log("Displaying In-Person Activities as Bar Chart...");
-    displayActivityCountsAsBarChart(userActivityCounts, 'activity-chart');
-
-    console.log("Application initialized successfully.");
-    hideLoadingMessages2();
-}
-
-function hideLoadingMessages2() {
-    const fetchProgress = document.getElementById('fetch-progress3');
-    fetchProgress.style.display = 'none';
-}
-
-function displayLoadingMessages2(message) {
-    const fetchProgress = document.getElementById('fetch-progress3');
-    if (fetchProgress) {
-        fetchProgress.textContent = message;
-        fetchProgress.style.display = 'block';
-    } else {
-        console.warn('Fetch progress element not found.');
-    }
-}
-
-/**
- * Aggregates activity counts by "Submitted by".
- */
-function calculateActivityCountsByUser(records) {
-    const data = {};
-
-    records.forEach(record => {
-        const submittedBy = record.fields['Submitted by'] ? record.fields['Submitted by'].trim() : 'Unknown';
-        
-        if (!data[submittedBy]) {
-            data[submittedBy] = { totalCount: 0 };
-        }
-
-        data[submittedBy].totalCount += 1;
-    });
-
-    return data;
-}
-
-async function fetchAirtableDatas4(apiKey, baseId, tableName, formula) {
+// Fetch Airtable Data
+async function fetchAirtableData(apiKey, baseId, tableName, formula) {
     try {
         let allRecords = [];
         let offset;
@@ -111,10 +45,25 @@ async function fetchAirtableDatas4(apiKey, baseId, tableName, formula) {
     }
 }
 
-/**
- * Populates dropdown and sets up filtering.
- */
-function populateDropdown4(users, dropdownId) {
+// Aggregate Activity Counts by 'Submitted By'
+function aggregateBySubmittedBy(records) {
+    const data = {};
+
+    records.forEach(record => {
+        const submittedBy = record.fields['Submitted By'] ? record.fields['Submitted By'].trim() : 'Unknown';
+
+        if (!data[submittedBy]) {
+            data[submittedBy] = { totalCount: 0 };
+        }
+
+        data[submittedBy].totalCount += 1;
+    });
+
+    return data;
+}
+
+// Populate Dropdown
+function populateDropdown(users, dropdownId) {
     const dropdown = document.getElementById(dropdownId);
     if (!dropdown) {
         console.error(`Dropdown with ID '${dropdownId}' not found.`);
@@ -139,7 +88,7 @@ function populateDropdown4(users, dropdownId) {
         const selectedUser = event.target.value.trim();
 
         const filteredData =
-            selectedUser === 'All Users'
+            selectedUser === 'all'
                 ? userActivityCounts
                 : userActivityCounts[selectedUser]
                 ? { [selectedUser]: userActivityCounts[selectedUser] }
@@ -149,9 +98,7 @@ function populateDropdown4(users, dropdownId) {
     });
 }
 
-/**
- * Displays the bar chart.
- */
+// Display Bar Chart
 function displayActivityCountsAsBarChart(data, canvasId) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) {
@@ -165,7 +112,6 @@ function displayActivityCountsAsBarChart(data, canvasId) {
         canvas.chartInstance.destroy();
     }
 
-    // Filter out "Unknown" values
     const validData = Object.entries(data)
         .filter(([key, value]) => key !== "Unknown" && value.totalCount !== undefined);
 
@@ -185,7 +131,7 @@ function displayActivityCountsAsBarChart(data, canvasId) {
         data: {
             labels,
             datasets: [{
-                label: 'In-Person Activities (Last 90 Days)',
+                label: 'In-Person Meetings (Last 90 Days)',
                 data: totalCounts,
                 backgroundColor: 'rgba(173, 13, 28, 0.8)',
                 borderColor: 'rgba(173, 13, 28, 0.8)',
@@ -199,3 +145,48 @@ function displayActivityCountsAsBarChart(data, canvasId) {
         },
     });
 }
+
+// Main Initialization Function
+async function initializeApp() {
+    console.log("Initializing application...");
+    displayLoadingMessages("Loading data, please wait...");
+
+    const airtableApiKey = 'pat1Eu3iQYHDmLSWr.ecfb8470f9c2b8409a0017e65f5b8cf626208e4df1a06905a41019cb38a8534b';
+    const airtableBaseId = 'appX1Saz7wMYh4hhm';
+    const airtableTableName = 'tbl4CTO6s1j7kz06k';
+
+    const records = await fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, filterFormula);
+    
+    console.log(`Total records fetched:`, records.length);
+    console.log("Sample records:", records.slice(0, 5));
+
+    const userActivityCounts = aggregateBySubmittedBy(records);
+    console.log("Aggregated data:", userActivityCounts);
+
+    const sortedUsers = Object.keys(userActivityCounts).sort();
+    console.log("Sorted users for dropdown:", sortedUsers);
+    populateDropdown(sortedUsers, 'user-filter');
+
+    console.log("Displaying In-Person Activities as Bar Chart...");
+    displayActivityCountsAsBarChart(userActivityCounts, 'activity-chart');
+
+    console.log("Application initialized successfully.");
+    hideLoadingMessages();
+}
+
+// Loading Messages
+function hideLoadingMessages() {
+    const fetchProgress = document.getElementById('fetch-progress');
+    if (fetchProgress) fetchProgress.style.display = 'none';
+}
+
+function displayLoadingMessages(message) {
+    const fetchProgress = document.getElementById('fetch-progress');
+    if (fetchProgress) {
+        fetchProgress.textContent = message;
+        fetchProgress.style.display = 'block';
+    }
+}
+
+// Run the initialization
+document.addEventListener('DOMContentLoaded', initializeApp);
