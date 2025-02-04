@@ -63,14 +63,14 @@ function aggregateBySubmittedBy(records) {
 }
 
 // Populate Dropdown
-function populateDropdown(users, dropdownId) {
+function populateDropdown10(users, dropdownId, userActivityCounts) {
     const dropdown = document.getElementById(dropdownId);
     if (!dropdown) {
         console.error(`Dropdown with ID '${dropdownId}' not found.`);
         return;
     }
 
-    dropdown.innerHTML = '<option value="all">All Users</option>';
+    dropdown.innerHTML = '<option value="all">All Submitters</option>';
 
     const validUsers = users
         .filter(user => user.trim().toLowerCase() !== 'unknown') // Exclude "Unknown"
@@ -97,6 +97,7 @@ function populateDropdown(users, dropdownId) {
         displayActivityCountsAsBarChart(filteredData, 'activity-chart');
     });
 }
+
 
 // Display Bar Chart
 function displayActivityCountsAsBarChart(data, canvasId) {
@@ -168,7 +169,7 @@ async function initializeApp() {
 
     const sortedUsers = Object.keys(userActivityCounts).sort();
     console.log("Sorted users for dropdown:", sortedUsers);
-    populateDropdown(sortedUsers, 'user-filter');
+    populateDropdown10(sortedUsers, 'user-filter9', userActivityCounts);
 
     console.log("Displaying In-Person Activities as Bar Chart...");
     displayActivityCountsAsBarChart(userActivityCounts, 'activity-chart');
