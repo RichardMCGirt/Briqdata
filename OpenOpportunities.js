@@ -168,7 +168,7 @@ function calculateWinRates7(records) {
         data[submittedBy].totalCount += 1;
     });
 
-    console.log("None Outcomes Count by ACM:", data);
+    console.log("None Outcomes Count by AC:", data);
 
     const noneRates = {};
     for (const submittedBy in data) {
