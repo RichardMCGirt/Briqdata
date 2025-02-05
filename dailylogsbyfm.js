@@ -260,7 +260,7 @@ function displayWinRatesAsBarChart4(data, canvasId) {
         data: {
             labels,
             datasets: [{
-                label: 'Total Records',
+                label: 'Logs Recorded',
                 data: totalCounts,
                 backgroundColor: 'rgba(173, 13, 28, 0.8)',
                 borderColor: 'rgba(173, 13, 28, 0.8)',

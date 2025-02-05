@@ -82,7 +82,7 @@ h3::before {
     content: "";
     display: block;
     width: 100%;
-    height: 3px;
+    height: 2px;
     background-color: #0056b3; /* Blue line */
     position: absolute;
     top: 0;

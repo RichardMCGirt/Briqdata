@@ -215,21 +215,20 @@ function displayWinRatesAsBarChart7(data, canvasId) {
     // Extract labels and "None" counts from valid data
     const labels = validData.map(([key]) => key);
     const noneCounts = validData.map(([_, value]) => value.totalCount);
-
+    const generateDarkBlueColor = () => {
+        return 'rgba(0, 0, 139, 0.8)'; // Dark Blue with 80% opacity
+    };
+    
     canvas.chartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
             labels,
             datasets: [
                 {
-                    label: 'Open Opportunities',
+                    label: 'Possible Wins',
                     data: noneCounts,
-                    backgroundColor: labels.map(user =>
-                        user === 'Heath Kornegay' ? 'rgba(255, 99, 132, 0.6)' : 'rgba(75, 192, 192, 0.6)'
-                    ),
-                    borderColor: labels.map(user =>
-                        user === 'Heath Kornegay' ? 'rgba(255, 99, 132, 1)' : 'rgba(75, 192, 192, 1)'
-                    ),
+                    backgroundColor: labels.map(() => generateDarkBlueColor()), // Apply to all bars
+                    borderColor: 'rgba(0, 0, 50, 1)', // Darker blue for the border
                     borderWidth: 1,
                 },
             ],
@@ -243,6 +242,8 @@ function displayWinRatesAsBarChart7(data, canvasId) {
             },
         },
     });
+    
+    
 }
 
 
