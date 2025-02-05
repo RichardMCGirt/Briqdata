@@ -134,7 +134,7 @@ function displayActivityCountsAsBarChart(data, canvasId) {
         data: {
             labels,
             datasets: [{
-                label: 'In-Person Activities (Last 90 Days)',
+                label: 'In-Person Meetings',
                 data: totalCounts,
                 backgroundColor: 'rgba(173, 13, 28, 0.8)',
                 borderColor: 'rgba(173, 13, 28, 0.8)',
