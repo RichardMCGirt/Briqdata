@@ -16,15 +16,9 @@ document.addEventListener("DOMContentLoaded", function () {
     tableHead.style.display = "none";
 
     // Expected CSV file format
-    const csvFileName = `OpenPOReportbyVendorSalesmanDateCreated-${getFormattedDate()} (1).csv`;
+    const csvFileName = `OpenPOReportbyVendorSalesmanDateCreated-2025-01-16 (1).csv`;
 
-    function getFormattedDate() {
-        const date = new Date();
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
+    
 
     // Highlight drop zone on drag events
     ['dragenter', 'dragover'].forEach(eventName => {

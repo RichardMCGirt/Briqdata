@@ -12,7 +12,7 @@ async function initializet() {
     const airtableTableName = 'tblVrmq2waEpElxt4'; // First table
     const airtableTableName2 = 'tblMm1V1Y5vL2lGS5'; // Second table
 
-    const filterFormula = `AND(LEN({PM}) > 0, IS_BEFORE(DATEADD(TODAY(), -7, 'days'), {Date Record Created}))`;
+    const filterFormula = `AND(LEN({PM}) > 0, IS_BEFORE(DATEADD(TODAY(), -7, 'days'), {NYC_Adjusted_Date}))`;
 
     console.log("Fetching records from the first table with filter:", filterFormula);
     
@@ -73,24 +73,18 @@ function displayLoadingMessages2(message) {
  */
 function calculateTotalRecordsByPM(records, secondaryRecords) {
     const data = {};
-    
-    // Filter records where PM is Jack Naughton
-    const recordsWithJack = records.filter(record => {
-        const pm = record.fields['PM'] ? capitalizeName(record.fields['PM'].trim()) : 'Unknown';
-        return pm === "Jack Naughton";
-    });
 
-    // Count records per PM from the first table
     records.forEach(record => {
         let pm = record.fields['PM'] ? capitalizeName(record.fields['PM'].trim()) : 'Unknown';
 
-        // Exclude Charles Adamson if Jack Naughton exists
-        if (pm === 'Charles Adamson' && recordsWithJack.length > 0) {
-            return;
-        }
-
         if (!data[pm]) {
             data[pm] = { totalCount: 0 };
+        }
+
+        // 🚀 Limit Brandon Sisk to a max of 5
+        if (pm === "Brandon Sisk" && data[pm].totalCount >= 5) {
+            console.log("Skipping extra Brandon Sisk record:", record.fields);
+            return; // Stop counting after 5
         }
 
         data[pm].totalCount += 1;
@@ -99,7 +93,8 @@ function calculateTotalRecordsByPM(records, secondaryRecords) {
     // Merge missing PMs from the second table
     const mergedData = mergeMissingNames(data, secondaryRecords);
 
-    // Sort after merging, first by totalCount (descending), then alphabetically
+    console.log("Final Count for Brandon Sisk (Capped at 5):", mergedData["Brandon Sisk"]);
+
     return Object.entries(mergedData)
         .sort(([nameA, a], [nameB, b]) => a.totalCount - b.totalCount || nameA.localeCompare(nameB))
         .reduce((acc, [pm, values]) => {
@@ -107,6 +102,10 @@ function calculateTotalRecordsByPM(records, secondaryRecords) {
             return acc;
         }, {});
 }
+
+
+
+
 
 
 /**
@@ -141,6 +140,16 @@ function mergeMissingNames(existingData, secondaryRecords) {
     return updatedData;
 }
 
+function capitalizeName(name) {
+    if (!name) return "Unknown"; // Handle empty names
+    return name
+        .toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+}
+
+
 
 
 async function fetchAirtableDatas4(apiKey, baseId, tableName, formula) {
@@ -150,10 +159,7 @@ async function fetchAirtableDatas4(apiKey, baseId, tableName, formula) {
         const encodedFormula = encodeURIComponent(formula);
 
         do {
-            const url = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodedFormula}${
-                offset ? `&offset=${offset}` : ''
-            }`;
-
+            const url = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodedFormula}${offset ? `&offset=${offset}` : ''}`;
 
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${apiKey}` },
@@ -166,6 +172,15 @@ async function fetchAirtableDatas4(apiKey, baseId, tableName, formula) {
             }
 
             const data = await response.json();
+
+            // Convert Date to NYC Time after fetching
+            data.records.forEach(record => {
+                if (record.fields['Date Record Created']) {
+                    const utcDate = new Date(record.fields['Date Record Created']);
+                    record.fields['NYC_Time'] = utcDate.toLocaleString("en-US", { timeZone: "America/New_York" });
+                }
+            });
+
             allRecords = allRecords.concat(data.records);
             offset = data.offset;
         } while (offset);
@@ -177,13 +192,7 @@ async function fetchAirtableDatas4(apiKey, baseId, tableName, formula) {
     }
 }
 
-function capitalizeName(name) {
-    return name
-        .toLowerCase() // Convert to lowercase
-        .split(' ') // Split into words
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize first letter
-        .join(' '); // Join words back together
-}
+
 
 
 /**
