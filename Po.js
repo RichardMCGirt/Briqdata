@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Download CSV Simulation Messages
     const messages = [
-        "Navigating to https://vanirlive.omnna-lbm.live/index.php?module=Reports&action=ListView...",
+        "Navigating to https://vanirlive.omnna-lbm.live/index.php?module=Customreport&action=CustomreportAjax&file=Customreportview&parenttab=Analytics&entityId=6309274",
         "Generating report...",
         "Exporting report to CSV...",
         "Waiting for CSV file to download...",
