@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         do {
             const data = await fetchData(offset);
             const filteredRecords = data.records.filter(record => {
-                const anticipatedEndDate = new Date(record.fields['Anticipated End Date Briq']);
+                const anticipatedEndDate = new Date(record.fields['Anticipated End Date']);
                 return anticipatedEndDate >= today && anticipatedEndDate <= sixMonthsLater;
             });
     
@@ -128,8 +128,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         const headers = ['Division', 'Bid Value', 'Anticipated End Date'];
         const rows = records.map(record => [
             record.fields['Division'],
-            record.fields['Bid Value Briq'],
-            record.fields['Anticipated End Date Briq']
+            record.fields['Bid Value'],
+            record.fields['Anticipated End Date']
         ]);
 
         const csvContent = [
@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const revenueByDivision = {};
     allRecords.forEach(record => {
         const division = record.fields['Division'];
-        const bidValue = parseFloat(record.fields['Bid Value Briq']) || 0;
+        const bidValue = parseFloat(record.fields['Bid Value']) || 0;
 
         if (division && division !== "Test Division") {
             if (!revenueByDivision[division]) {
