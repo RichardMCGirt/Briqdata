@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             console.log(`Filtered and fetched ${filteredRecords.length} records. Total so far: ${allRecords.length}`);
             offset = data.offset;
 
-            document.getElementById('record-countC18').textContent = `Records fetched: ${allRecords.length}`;
+            document.getElementById('record-countR18').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
 
         console.log(`All data fetched successfully. Total records after filtering: ${allRecords.length}`);
@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const sortedDivisions = sortedData.map(entry => entry[0]);
         const revenueNumbers = sortedData.map(entry => entry[1]);
 
-        const ctx = document.getElementById('18monthsChart').getContext('2d');
+        const ctx = document.getElementById('18monthsRChart').getContext('2d');
 
         new Chart(ctx, {
             type: 'bar',
