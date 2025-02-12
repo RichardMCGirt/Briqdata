@@ -1,20 +1,25 @@
 document.addEventListener('DOMContentLoaded', async function () {
     console.log("Document loaded and DOM fully constructed.");
 
+    // Declare constants BEFORE using them
     const airtableApiKey = 'patGjoWY1PkTG12oS.e9cf71910320ac1e3496ff803700f0e4319bf0ccf0fcaf4d85cd98df790b5aad';
     const airtableBaseId = 'appX1Saz7wMYh4hhm';
     const airtableTableName = 'tblfCPX293KlcKsdp';
+
+    let projectType = "Commercial".trim();
+    let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=AND({Project Type}='${projectType}',{Outcome}='Win')`;
+
     const exportButton = document.getElementById('export-button');
     const currentYear = new Date().getFullYear();
 
     // Initially disable the export button and update its text and style
     exportButton.disabled = true;
     exportButton.textContent = "Fetching data...";
-    exportButton.style.backgroundColor = "#ccc";
-    exportButton.style.cursor = "not-allowed";
+    exportButton.style.backgroundColor = "#ccc"; 
+    exportButton.style.cursor = "not-allowed"; 
 
     async function fetchData(offset = null) {
-        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=AND({Project Type Briq}='Commercial',{Outcome}='Win')&sort[0][field]=Project Type Briq&sort[0][direction]=asc`;
+        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=AND(%7BProject%20Type%7D%3D'Commercial',%7BOutcome%7D%3D'Win')&sort%5B0%5D%5Bfield%5D=Project%20Type&sort%5B0%5D%5Bdirection%5D=asc`;
         if (offset) url += `&offset=${offset}`;
         console.log(`Fetching data from URL: ${url}`);
 
@@ -38,18 +43,20 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     }
 
+    let debugUrl = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=5`;
+
     async function fetchAllData() {
         console.log("Starting to fetch all data...");
 
         let allRecords = [];
         let offset = null;
         const today = new Date();
-        const sixMonthsLater = new Date(today.getFullYear(), today.getMonth() + 18, today.getDate());
+        const sixMonthsLater = new Date(today.getFullYear(), today.getMonth() + 6, today.getDate());
 
         do {
             const data = await fetchData(offset);
             const filteredRecords = data.records.filter(record => {
-                const anticipatedEndDate = new Date(record.fields['Anticipated End Date Briq']);
+                const anticipatedEndDate = new Date(record.fields['Anticipated End Date']);
                 return anticipatedEndDate >= today && anticipatedEndDate <= sixMonthsLater;
             });
 
@@ -94,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            callback: function (value) {
+                            callback: function(value) {
                                 return `$${value.toLocaleString()}`;
                             }
                         }
@@ -106,7 +113,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     },
                     tooltip: {
                         callbacks: {
-                            label: function (tooltipItem) {
+                            label: function(tooltipItem) {
                                 return `Projected Revenue: $${tooltipItem.raw.toLocaleString()}`;
                             }
                         }
@@ -121,8 +128,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         const headers = ['Division', 'Bid Value', 'Anticipated End Date'];
         const rows = records.map(record => [
             record.fields['Division'],
-            record.fields['Bid Value Briq'],
-            record.fields['Anticipated End Date Briq']
+            record.fields['Bid Value'],
+            record.fields['Anticipated End Date']
         ]);
 
         const csvContent = [
@@ -135,7 +142,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         const link = document.createElement('a');
         link.href = url;
-        link.download = `18_months_Commercial.csv`;
+        link.download = `6monthCommercial.csv`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -146,13 +153,13 @@ document.addEventListener('DOMContentLoaded', async function () {
     const revenueByDivision = {};
     allRecords.forEach(record => {
         const division = record.fields['Division'];
-        const bidValue = parseFloat(record.fields['Bid Value Briq']) || 0;
+        const bidValue = parseFloat(record.fields['Bid Value']) || 0;
 
         if (division && division !== "Test Division") {
             if (!revenueByDivision[division]) {
                 revenueByDivision[division] = 0;
             }
-            revenueByDivision[division] += bidValue;
+            revenueByDivision[division] += bidValue; 
         }
     });
 
@@ -160,8 +167,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     exportButton.disabled = false;
     exportButton.textContent = "Export to CSV";
-    exportButton.style.backgroundColor = "";
-    exportButton.style.cursor = "pointer";
+    exportButton.style.backgroundColor = ""; 
+    exportButton.style.cursor = "pointer"; 
 
     exportButton.addEventListener('click', () => {
         downloadCSV(allRecords);

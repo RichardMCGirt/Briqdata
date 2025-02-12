@@ -1,20 +1,25 @@
 document.addEventListener('DOMContentLoaded', async function () {
     console.log("Document loaded and DOM fully constructed.");
 
+    // Declare constants BEFORE using them
     const airtableApiKey = 'patGjoWY1PkTG12oS.e9cf71910320ac1e3496ff803700f0e4319bf0ccf0fcaf4d85cd98df790b5aad';
     const airtableBaseId = 'appX1Saz7wMYh4hhm';
     const airtableTableName = 'tblfCPX293KlcKsdp';
+
+    let projectType = "Commercial".trim();
+    let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=AND({Project Type}='${projectType}',{Outcome}='Win')`;
+
     const exportButton = document.getElementById('export-button');
     const currentYear = new Date().getFullYear();
 
     // Initially disable the export button and update its text and style
     exportButton.disabled = true;
     exportButton.textContent = "Fetching data...";
-    exportButton.style.backgroundColor = "#ccc";
-    exportButton.style.cursor = "not-allowed";
+    exportButton.style.backgroundColor = "#ccc"; 
+    exportButton.style.cursor = "not-allowed"; 
 
     async function fetchData(offset = null) {
-        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=AND(NOT({Project Type Briq}='Commercial'),{Outcome}='Win')&sort[0][field]=Project Type Briq&sort[0][direction]=asc`;
+        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=AND(NOT(%7BProject%20Type%7D%3D'Commercial'),%7BOutcome%7D%3D'Win')&sort%5B0%5D%5Bfield%5D=Project%20Type&sort%5B0%5D%5Bdirection%5D=asc`;
         if (offset) url += `&offset=${offset}`;
         console.log(`Fetching data from URL: ${url}`);
 
@@ -37,6 +42,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             return { records: [] };
         }
     }
+
+    let debugUrl = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=5`;
 
     async function fetchAllData() {
         console.log("Starting to fetch all data...");
