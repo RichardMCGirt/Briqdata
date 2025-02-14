@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         let allRecords = [];
         let offset = null;
         const today = new Date();
-        const sixMonthsLater = new Date(today.getFullYear(), today.getMonth() + 6, today.getDate());
+        const sixMonthsLater = new Date(today.getFullYear(), today.getMonth() + 18, today.getDate());
 
         do {
             const data = await fetchData(offset);
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         const link = document.createElement('a');
         link.href = url;
-        link.download = `6monthCommercial.csv`;
+        link.download = `18monthCommercial.csv`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
