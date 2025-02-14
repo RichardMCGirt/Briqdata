@@ -11,8 +11,8 @@ async function initializez2() {
     console.log("Initializing application...");
     displayLoadingMessages7("Loading data, please wait...");
 
-    const airtableApiKey = 'pat1Eu3iQYHDmLSWr.ecfb8470f9c2b8409a0017e65f5b8cf626208e4df1a06905a41019cb38a8534b';
-    const airtableBaseId = 'appi4QZE0SrWI6tt2';
+    const airtableApiKey = 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238';
+    const airtableBaseId = 'appK9gZS77OmsIK50';
     const airtableTableName = 'tblQo2148s04gVPq1';
 
     const filterFormula = `AND(NOT(OR({Outcome} = "Win", {Outcome} = "Loss", {Outcome} = "None")))`;

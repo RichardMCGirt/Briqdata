@@ -2,9 +2,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     console.log("Document loaded and DOM fully constructed.");
 
     // Declare constants BEFORE using them
-    const airtableApiKey = 'patGjoWY1PkTG12oS.e9cf71910320ac1e3496ff803700f0e4319bf0ccf0fcaf4d85cd98df790b5aad';
-    const airtableBaseId = 'appX1Saz7wMYh4hhm';
-    const airtableTableName = 'tblfCPX293KlcKsdp';
+    const airtableApiKey = 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238';
+    const airtableBaseId = 'appK9gZS77OmsIK50';
+    const airtableTableName = 'tblQo2148s04gVPq1';
 
     let projectType = "Commercial".trim();
     let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=AND({Project Type}='${projectType}',{Outcome}='Win')`;
