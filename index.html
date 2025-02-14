@@ -117,8 +117,8 @@
         </div>
     
 
-        <!-- <div id="winratebyBranch"> -->
-           <!-- <h3 class="grid-header">Commercial Win Rates Current Year</h3>
+        <!-- <div id="winratebyBranch">
+            <h3 class="grid-header">Commercial Win Rates Current Year</h3>
             <div id="commercialGrid" class="winrate-grid">
             </div>
         
@@ -128,21 +128,29 @@
 
             <hr>
         
-        <h3 class="grid-header"> Win Rates last 90 Days</h3>
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <h3 class="grid-header">Win Rates last 90 Days</h3>
+            
+                <div id="controls">
+                    <label for="user-filter">Filter by AC:</label>
+                    <select id="user-filter"></select>
+                </div>
+                <div id="fetch-progress" style="display: none;">Loading...</div>
+                <canvas id="winRateChart" width="800" height="150"></canvas>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
 
-        <div id="controls">
-            <label for="user-filter">Filter by AC:</label>
-            <select id="user-filter"></select>
-        </div>
-        <div id="fetch-progress" style="display: none;">Loading...</div>
-        <canvas id="winRateChart" width="800" height="150"></canvas>
-        
         <h3 class="grid-header"> Open Opportunities </h3>
 
         <div id="fetch-progress6" style="display: none;">Loading...</div>  
         <label for="user-filter5">Filter by AC:</label>
         <select id="user-filter5"></select>
         <canvas id="winRateChart6" width="800" height="150"></canvas>
+        </div>
+
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+
 
         <h3 class="grid-header"> In-Person Meetings (Last 90 Days) </h3>
 
@@ -153,6 +161,9 @@
         
         <div id="activity-chart-container">
             <canvas id="activity-chart" width="800" height="150"></canvas>
+            </div>
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+
 
              <h3 class="grid-header"> Returns in last 7 days</h3>
 
@@ -162,6 +173,10 @@
         </div>
         <div id="fetch-progress2" style="display: none;">Loading...</div>
         <canvas id="FMR" width="800" height="150"></canvas>
+
+        </div>
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+
         <h3 class="grid-header"> Field Manager Commercial Daily Logs Last 7 days</h3>
 
         <div id="fmdailylogs">
