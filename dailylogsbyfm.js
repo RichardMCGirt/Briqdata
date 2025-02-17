@@ -11,7 +11,7 @@ async function initializet() {
     const airtableTableName = 'tblVrmq2waEpElxt4'; // First table
     const airtableTableName2 = 'tblMm1V1Y5vL2lGS5'; // Second table
 
-    const filterFormula = `AND(LEN({PM}) > 0, IS_BEFORE(DATEADD(TODAY(), -7, 'days'), {NYC_Adjusted_Date}))`;
+    const filterFormula = `AND(LEN({PM}) > 0, IS_AFTER({Date Record Created}, DATEADD(TODAY(), -8, 'days')))`;
 
    
     
@@ -61,30 +61,29 @@ function displayLoadingMessages2(message) {
         console.warn('Fetch progress element not found.');
     }
 }
-/**
- * Aggregates total records by PM from the first table.
- */
+
 function calculateTotalRecordsByPM(records, secondaryRecords) {
     const data = {};
 
+    console.log("Processing primary records...");
+
     records.forEach(record => {
         let pm = record.fields['PM'] ? capitalizeName(record.fields['PM'].trim()) : 'Unknown';
+
+        console.log(`Processing PM: ${pm}`); // DEBUGGING
 
         if (!data[pm]) {
             data[pm] = { totalCount: 0 };
         }
 
-        // 🚀 Limit Brandon Sisk to a max of 5
-        if (pm === "Brandon Sisk" && data[pm].totalCount >= 5) {
-            return; // Stop counting after 5
-        }
-
         data[pm].totalCount += 1;
+        console.log(`Updated count for ${pm}: ${data[pm].totalCount}`);
     });
 
     // Merge missing PMs from the second table
     const mergedData = mergeMissingNames(data, secondaryRecords);
 
+    console.log("Final PM list after merging missing names:", mergedData);
 
     return Object.entries(mergedData)
         .sort(([nameA, a], [nameB, b]) => a.totalCount - b.totalCount || nameA.localeCompare(nameB))
@@ -94,42 +93,27 @@ function calculateTotalRecordsByPM(records, secondaryRecords) {
         }, {});
 }
 
-
-
-
-
-
-/**
- * Merges missing names from the second table into the dataset, setting count to 0 if they do not exist.
- */
 function mergeMissingNames(existingData, secondaryRecords) {
     const updatedData = { ...existingData };
 
-    secondaryRecords.forEach(record => {
-        const name = record.fields['Full Name'] ? capitalizeName(record.fields['Full Name'].trim()) : 'Unknown';
-        if (!updatedData[name]) {
-            updatedData[name] = { totalCount: 0 };
-        }
-    });
-
-    return updatedData;
-}
-
-function mergeMissingNames(existingData, secondaryRecords) {
-    const updatedData = { ...existingData };
+    console.log("Checking secondary records for missing names...");
 
     secondaryRecords.forEach(record => {
         const name = record.fields['Full Name'] ? capitalizeName(record.fields['Full Name'].trim()) : 'Unknown';
 
-        console.log("Checking Secondary Table Name:", name); // DEBUGGING
+        console.log(`Checking Secondary Table Name: ${name}`); // DEBUGGING
+
         if (!updatedData[name]) {
             updatedData[name] = { totalCount: 0 };
             console.log(`Added missing name from secondary table: ${name}`);
         }
     });
 
+    console.log("Updated Data after merging secondary records:", updatedData);
+
     return updatedData;
 }
+
 
 function capitalizeName(name) {
     if (!name) return "Unknown"; // Handle empty names
@@ -140,17 +124,20 @@ function capitalizeName(name) {
         .join(' ');
 }
 
-
-
-
 async function fetchAirtableDatas4(apiKey, baseId, tableName, formula) {
     try {
         let allRecords = [];
         let offset;
         const encodedFormula = encodeURIComponent(formula);
 
+        console.log("Starting Airtable fetch...");
+        console.log("Base ID:", baseId);
+        console.log("Table Name:", tableName);
+        console.log("Encoded Formula:", encodedFormula);
+
         do {
             const url = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodedFormula}${offset ? `&offset=${offset}` : ''}`;
+            console.log("Fetching URL:", url);
 
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${apiKey}` },
@@ -163,19 +150,29 @@ async function fetchAirtableDatas4(apiKey, baseId, tableName, formula) {
             }
 
             const data = await response.json();
+            console.log("Fetched Records Count:", data.records.length);
 
             // Convert Date to NYC Time after fetching
             data.records.forEach(record => {
                 if (record.fields['Date Record Created']) {
                     const utcDate = new Date(record.fields['Date Record Created']);
                     record.fields['NYC_Time'] = utcDate.toLocaleString("en-US", { timeZone: "America/New_York" });
+
+                    console.log("Original UTC Date:", utcDate.toISOString());
+                    console.log("Converted NYC Time:", record.fields['NYC_Time']);
                 }
             });
 
             allRecords = allRecords.concat(data.records);
+            console.log("Total Records Fetched So Far:", allRecords.length);
+
             offset = data.offset;
+            if (offset) {
+                console.log("Next Offset:", offset);
+            }
         } while (offset);
 
+        console.log("Final Total Records:", allRecords.length);
         return allRecords;
     } catch (error) {
         console.error("Error fetching data:", error);
@@ -184,11 +181,6 @@ async function fetchAirtableDatas4(apiKey, baseId, tableName, formula) {
 }
 
 
-
-
-/**
- * Populates dropdown and sets up filtering.
- */
 function populateDropdown4(users, dropdownId) {
     const dropdown = document.getElementById(dropdownId);
     if (!dropdown) {
@@ -224,9 +216,7 @@ function populateDropdown4(users, dropdownId) {
     });
 }
 
-/**
- * Displays the bar chart.
- */
+
 function displayWinRatesAsBarChart4(data, canvasId) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) {
