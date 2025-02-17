@@ -152,7 +152,7 @@ function displayActivityCountsAsBarChart(data, canvasId) {
 
 // Main Initialization Function
 async function initializeApp() {
-    console.log("Initializing application...");
+
     displayLoadingMessages("Loading data, please wait...");
 
     const airtableApiKey = 'pat1Eu3iQYHDmLSWr.ecfb8470f9c2b8409a0017e65f5b8cf626208e4df1a06905a41019cb38a8534b';
@@ -161,20 +161,17 @@ async function initializeApp() {
 
     const records = await fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, filterFormula);
     
-    console.log(`Total records fetched:`, records.length);
-    console.log("Sample records:", records.slice(0, 5));
+   
 
     const userActivityCounts = aggregateBySubmittedBy(records);
-    console.log("Aggregated data:", userActivityCounts);
 
     const sortedUsers = Object.keys(userActivityCounts).sort();
-    console.log("Sorted users for dropdown:", sortedUsers);
     populateDropdown10(sortedUsers, 'user-filter9', userActivityCounts);
 
-    console.log("Displaying In-Person Activities as Bar Chart...");
+
     displayActivityCountsAsBarChart(userActivityCounts, 'activity-chart');
 
-    console.log("Application initialized successfully.");
+   
     hideLoadingMessages();
 }
 

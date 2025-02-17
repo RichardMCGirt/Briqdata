@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', async function () {
-    console.log("Document loaded and DOM fully constructed.");
 
     // Declare constants BEFORE using them
     const airtableApiKey = 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238';
@@ -22,7 +21,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     async function fetchData(offset = null) {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=AND(%7BProject%20Type%7D%3D'Commercial',%7BOutcome%7D%3D'Win')&sort%5B0%5D%5Bfield%5D=Project%20Type&sort%5B0%5D%5Bdirection%5D=asc`;
         if (offset) url += `&offset=${offset}`;
-        console.log(`Fetching data from URL: ${url}`);
+        
 
         try {
             const response = await fetch(url, {
@@ -36,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
 
             const data = await response.json();
-            console.log(`Number of records fetched: ${data.records.length}`);
+           
             return data;
         } catch (error) {
             console.error('Error fetching data from Airtable:', error.message);
@@ -45,7 +44,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     async function fetchDivisionNames(divisionIds) {
-        console.log("Fetching division names for IDs:", divisionIds);
+  
     
         const uniqueIds = [...new Set(divisionIds.filter(id => id))]; // Ensure unique IDs
         if (uniqueIds.length === 0) {
@@ -56,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         // Fetch all division records from the Vanir Offices table
         const divisionUrl = `https://api.airtable.com/v0/${airtableBaseId}/Vanir Offices?fields[]=Office Name`; // Ensure correct field name
     
-        console.log(`Fetching division data from: ${divisionUrl}`);
+   
     
         try {
             const response = await fetch(divisionUrl, {
@@ -69,17 +68,17 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
     
             const data = await response.json();
-            console.log("Fetched division records:", data.records); // ✅ Log full data response
+            
     
             const divisionMap = {};
     
             // Map record IDs to their actual Office Name
             data.records.forEach(record => {
-                console.log(`Mapping ID ${record.id} to Office Name: ${record.fields['Office Name']}`);
+               
                 divisionMap[record.id] = record.fields['Office Name']; // Use correct field name
             });
     
-            console.log("Final division mapping:", divisionMap);
+       
             return divisionMap;
         } catch (error) {
             console.error("Failed to fetch division names:", error);
@@ -89,20 +88,20 @@ document.addEventListener('DOMContentLoaded', async function () {
     
     
     async function processRecords() {
-        console.log("Starting to process records...");
+        
         
         const allRecords = await fetchAllData(); // ✅ Ensure it's called once
-        console.log(`Total records fetched: ${allRecords.length}`);
+       
     
         // Extract division IDs
         const divisionIds = allRecords.flatMap(record => 
             Array.isArray(record.fields['Division']) ? record.fields['Division'] : [record.fields['Division']]
         );
     
-        console.log("Extracted division IDs:", divisionIds);
+       
     
         const divisionMap = await fetchDivisionNames(divisionIds);
-        console.log("Division ID to Name Mapping:", divisionMap);
+        
     
         // ✅ Move revenue calculation inside processRecords()
         const revenueByDivision = {};
@@ -110,10 +109,10 @@ document.addEventListener('DOMContentLoaded', async function () {
             let divisionId = Array.isArray(record.fields['Division']) ? record.fields['Division'][0] : record.fields['Division'];
             let divisionName = divisionMap[divisionId] || "Unknown Division";
     
-            console.log(`Processing record: ${record.id}, Division ID: ${divisionId}, Mapped Name: ${divisionName}`);
+        
     
             const bidValue = parseFloat(record.fields['Bid Value']) || 0;
-            console.log(`Bid Value for ${divisionName}: $${bidValue}`);
+            
     
             if (divisionName && divisionName !== "Test Division") {
                 if (!revenueByDivision[divisionName]) {
@@ -123,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
     
-        console.log("Final Revenue by Division Data:", revenueByDivision);
+        
         
         // ✅ Only call `createBarChart` after mapping is done
         createBarChart(revenueByDivision);
@@ -139,9 +138,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
     }
 
-    console.log("Starting record processing...");
+    
 await processRecords();
-console.log("Processing complete.");
+
 
     
     
@@ -150,7 +149,7 @@ console.log("Processing complete.");
     let debugUrl = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=5`;
 
     async function fetchAllData() {
-        console.log("Starting to fetch all data...");
+       
 
         let allRecords = [];
         let offset = null;
@@ -165,20 +164,20 @@ console.log("Processing complete.");
             });
 
             allRecords = allRecords.concat(filteredRecords);
-            console.log(`Filtered and fetched ${filteredRecords.length} records. Total so far: ${allRecords.length}`);
+           
             offset = data.offset;
 
             document.getElementById('record-countC6').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
 
-        console.log(`All data fetched successfully. Total records after filtering: ${allRecords.length}`);
+        
         return allRecords;
     }
 
 
 
     function createBarChart(revenueByDivision) {
-        console.log("Creating bar chart...");
+        
     
         const sortedData = Object.entries(revenueByDivision)
             .filter(([division, revenue]) => division !== "Nashville") // Exclude Nashville
@@ -187,8 +186,7 @@ console.log("Processing complete.");
         const divisionNames = sortedData.map(entry => entry[0]); // ✅ Use mapped names
         const revenueValues = sortedData.map(entry => entry[1]); // Extract revenue values
     
-        console.log("Final X-axis Divisions:", divisionNames);
-        console.log("Final Y-axis Revenue Values:", revenueValues);
+        
     
         const ctx = document.getElementById('6monthsChart').getContext('2d');
     

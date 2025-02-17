@@ -82,7 +82,6 @@ function processFMData(records) {
 
     records.forEach(record => {
         // Log all fields for each record
-        console.log("Record Fields:", record.fields);
 
         const fieldManager = record.fields['FM'] || 'Unknown';
         if (!data[fieldManager]) {

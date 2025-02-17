@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
     setTimeout(() => {
-        console.log("Document loaded, initializing app...");
         initializez();
     }, 500);
 });
@@ -9,7 +8,6 @@ let residentialWinRates = {};
 let commercialWinRates = {};
 
 async function initializez() {
-    console.log("Initializing application...");
     displayLoadingMessages2("Loading data, please wait...");
 
     const airtableApiKey = 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238';
@@ -50,10 +48,8 @@ async function initializez() {
     // Display chart with sorted data
     displayWinRatesAsBarChart2(residentialWinRates, 'winRateChart');
 
-    console.log("Application initialized successfully.");
     hideLoadingMessages2();
 }
-console.log("Win Rates Object:", residentialWinRates);
 
 
 function populateDropdown9(users, dropdownId) {
@@ -62,7 +58,6 @@ function populateDropdown9(users, dropdownId) {
         console.error(`Dropdown with ID '${dropdownId}' not found.`);
         return;
     } else {
-        console.log(`Dropdown with ID '${dropdownId}' found.`);
     }
     
 
@@ -115,7 +110,6 @@ async function fetchAirtableDatas2(apiKey, baseId, tableName) {
                 offset ? `&offset=${offset}` : ''
             }`;
 
-            console.log("Generated URL:", url); // Debug the URL
 
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${apiKey}` },
@@ -128,7 +122,6 @@ async function fetchAirtableDatas2(apiKey, baseId, tableName) {
             }
 
             const data = await response.json();
-            console.log("Fetched Records:", data.records); // Log fetched records
             allRecords = allRecords.concat(data.records);
 
             offset = data.offset; // Continue fetching if there are more records
@@ -163,7 +156,6 @@ function calculateWinRates2(records) {
     records.forEach(record => {
         // Directly access the ACM field value
         const submittedBy = record.fields['SubmitedBY'] || 'Empty';
-        console.log("Record ACM Value:", submittedBy); // Debugging ACM values
 
         if (!data[submittedBy]) {
             data[submittedBy] = { winCount: 0, lossCount: 0, totalCount: 0 };
@@ -180,7 +172,6 @@ function calculateWinRates2(records) {
         data[submittedBy].totalCount += 1;
     });
 
-    console.log("Wins and Losses by ACM:", data);
 
     const winRates = {};
     for (const submittedBy in data) {
