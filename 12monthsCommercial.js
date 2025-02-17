@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableApiKey = 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238';
     const airtableBaseId = 'appK9gZS77OmsIK50';
     const airtableTableName = 'tblQo2148s04gVPq1';
+    let chartInstance = null; 
 
     let projectType = "Commercial".trim();
     let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=AND({Project Type}='${projectType}',{Outcome}='Win')`;
@@ -43,6 +44,109 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     }
 
+    async function fetchDivisionNames(divisionIds) {
+        console.log("Fetching division names for IDs:", divisionIds);
+    
+        const uniqueIds = [...new Set(divisionIds.filter(id => id))]; // Ensure unique IDs
+        if (uniqueIds.length === 0) {
+            console.warn("No unique division IDs found. Returning empty map.");
+            return {};
+        }
+    
+        // Fetch all division records from the Vanir Offices table
+        const divisionUrl = `https://api.airtable.com/v0/${airtableBaseId}/Vanir Offices?fields[]=Office Name`; // Ensure correct field name
+    
+        console.log(`Fetching division data from: ${divisionUrl}`);
+    
+        try {
+            const response = await fetch(divisionUrl, {
+                headers: { Authorization: `Bearer ${airtableApiKey}` }
+            });
+    
+            if (!response.ok) {
+                console.error(`Error fetching division names: ${response.status} ${response.statusText}`);
+                throw new Error(`Error fetching division names: ${response.statusText}`);
+            }
+    
+            const data = await response.json();
+            console.log("Fetched division records:", data.records); // ✅ Log full data response
+    
+            const divisionMap = {};
+    
+            // Map record IDs to their actual Office Name
+            data.records.forEach(record => {
+                console.log(`Mapping ID ${record.id} to Office Name: ${record.fields['Office Name']}`);
+                divisionMap[record.id] = record.fields['Office Name']; // Use correct field name
+            });
+    
+            console.log("Final division mapping:", divisionMap);
+            return divisionMap;
+        } catch (error) {
+            console.error("Failed to fetch division names:", error);
+            return {};
+        }
+    }
+    
+    
+    async function processRecords() {
+        console.log("Starting to process records...");
+        
+        const allRecords = await fetchAllData(); // ✅ Ensure it's called once
+        console.log(`Total records fetched: ${allRecords.length}`);
+    
+        // Extract division IDs
+        const divisionIds = allRecords.flatMap(record => 
+            Array.isArray(record.fields['Division']) ? record.fields['Division'] : [record.fields['Division']]
+        );
+    
+        console.log("Extracted division IDs:", divisionIds);
+    
+        const divisionMap = await fetchDivisionNames(divisionIds);
+        console.log("Division ID to Name Mapping:", divisionMap);
+    
+        // ✅ Move revenue calculation inside processRecords()
+        const revenueByDivision = {};
+        allRecords.forEach(record => {
+            let divisionId = Array.isArray(record.fields['Division']) ? record.fields['Division'][0] : record.fields['Division'];
+            let divisionName = divisionMap[divisionId] || "Unknown Division";
+    
+            console.log(`Processing record: ${record.id}, Division ID: ${divisionId}, Mapped Name: ${divisionName}`);
+    
+            const bidValue = parseFloat(record.fields['Bid Value']) || 0;
+            console.log(`Bid Value for ${divisionName}: $${bidValue}`);
+    
+            if (divisionName && divisionName !== "Test Division") {
+                if (!revenueByDivision[divisionName]) {
+                    revenueByDivision[divisionName] = 0;
+                }
+                revenueByDivision[divisionName] += bidValue;
+            }
+        });
+    
+        console.log("Final Revenue by Division Data:", revenueByDivision);
+        
+        // ✅ Only call `createBarChart` after mapping is done
+        createBarChart(revenueByDivision);
+    
+        // ✅ Move export button activation inside processRecords()
+        exportButton.disabled = false;
+        exportButton.textContent = "Export to CSV";
+        exportButton.style.backgroundColor = ""; 
+        exportButton.style.cursor = "pointer"; 
+    
+        exportButton.addEventListener('click', () => {
+            downloadCSV(allRecords);
+        });
+    }
+
+    console.log("Starting record processing...");
+await processRecords();
+console.log("Processing complete.");
+
+    
+    
+    
+
     let debugUrl = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=5`;
 
     async function fetchAllData() {
@@ -71,25 +175,35 @@ document.addEventListener('DOMContentLoaded', async function () {
         return allRecords;
     }
 
+
+
     function createBarChart(revenueByDivision) {
         console.log("Creating bar chart...");
-
-        const filteredData = Object.entries(revenueByDivision)
-            .filter(([division, revenue]) => division !== "Nashville");
-
-        const sortedData = filteredData.sort((a, b) => a[1] - b[1]);
-        const sortedDivisions = sortedData.map(entry => entry[0]);
-        const revenueNumbers = sortedData.map(entry => entry[1]);
-
+    
+        const sortedData = Object.entries(revenueByDivision)
+            .filter(([division, revenue]) => division !== "Nashville") // Exclude Nashville
+            .sort((a, b) => a[1] - b[1]); // Sort by revenue values
+    
+        const divisionNames = sortedData.map(entry => entry[0]); // ✅ Use mapped names
+        const revenueValues = sortedData.map(entry => entry[1]); // Extract revenue values
+    
+        console.log("Final X-axis Divisions:", divisionNames);
+        console.log("Final Y-axis Revenue Values:", revenueValues);
+    
         const ctx = document.getElementById('12monthsChart').getContext('2d');
-
-        new Chart(ctx, {
+    
+        // ✅ Destroy previous chart before creating a new one
+        if (chartInstance !== null) {
+            chartInstance.destroy();
+        }
+    
+        chartInstance = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: sortedDivisions,
+                labels: divisionNames, // ✅ Always use mapped names
                 datasets: [{
                     label: 'Projected Revenue',
-                    data: revenueNumbers,
+                    data: revenueValues,
                     backgroundColor: 'rgba(139, 0, 0, 0.6)',
                     borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 2,
@@ -122,6 +236,11 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
     }
+    
+    
+
+    
+    
 
     function downloadCSV(records) {
         console.log("Generating CSV...");
@@ -148,13 +267,12 @@ document.addEventListener('DOMContentLoaded', async function () {
         document.body.removeChild(link);
     }
 
-    const allRecords = await fetchAllData();
 
     const revenueByDivision = {};
     allRecords.forEach(record => {
-        const division = record.fields['Division'];
+        const division = Array.isArray(record.fields['Division']) ? record.fields['Division'][0] : record.fields['Division'];
         const bidValue = parseFloat(record.fields['Bid Value']) || 0;
-
+    
         if (division && division !== "Test Division") {
             if (!revenueByDivision[division]) {
                 revenueByDivision[division] = 0;
@@ -162,6 +280,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             revenueByDivision[division] += bidValue; 
         }
     });
+    
 
     createBarChart(revenueByDivision);
 
