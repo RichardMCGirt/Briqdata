@@ -1,10 +1,9 @@
 document.addEventListener('DOMContentLoaded', function () {
-    console.log("Document loaded and DOM fully constructed.");
     initializet();
+
 });
 
 async function initializet() {
-    console.log("Initializing application...");
     displayLoadingMessages2("Loading data, please wait...");
 
     const airtableApiKey = 'pat1Eu3iQYHDmLSWr.ecfb8470f9c2b8409a0017e65f5b8cf626208e4df1a06905a41019cb38a8534b';
@@ -14,15 +13,12 @@ async function initializet() {
 
     const filterFormula = `AND(LEN({PM}) > 0, IS_BEFORE(DATEADD(TODAY(), -7, 'days'), {NYC_Adjusted_Date}))`;
 
-    console.log("Fetching records from the first table with filter:", filterFormula);
+   
     
     // Fetch records from both tables
     const residentialRecords = await fetchAirtableDatas4(airtableApiKey, airtableBaseId, airtableTableName, filterFormula);
-    console.log(`Total records fetched from the first table (${airtableTableName}):`, residentialRecords.length);
-    console.log("Sample records from the first table:", residentialRecords.slice(0, 5));
-
-    console.log("Fetching records from the second table with filter: AND({Position} = 'Commercial Project Manager', {Status} = 'Active')");
-
+   
+   
     const secondaryRecords = await fetchAirtableDatas4(
         airtableApiKey, 
         airtableBaseId, 
@@ -30,24 +26,21 @@ async function initializet() {
         `AND({Position} = "Commercial Project Manager", {Status} = "Active")`
     );
 
-    console.log(`Total records fetched from the second table (${airtableTableName2}):`, secondaryRecords.length);
-    console.log("Sample records from the second table:", secondaryRecords.slice(0, 5));
-
+   
     // Aggregate and sort data
-    console.log("Calculating total records by PM from the first table and merging from second table...");
     let residentialWinRates = calculateTotalRecordsByPM(residentialRecords, secondaryRecords);
-    console.log("Final aggregated data after merging and sorting:", residentialWinRates);
+   
 
     // Populate dropdown with sorted PM names
     const sortedUsers = Object.keys(residentialWinRates);
-    console.log("Sorted PM names for dropdown:", sortedUsers);
+   
     populateDropdown4(sortedUsers, 'user-filter3');
 
     // Display chart with aggregated data
-    console.log("Displaying Win Rates as Bar Chart...");
+    
     displayWinRatesAsBarChart4(residentialWinRates, 'FDL');
 
-    console.log("Application initialized successfully.");
+   
     hideLoadingMessages2();
 }
 
@@ -83,7 +76,6 @@ function calculateTotalRecordsByPM(records, secondaryRecords) {
 
         // 🚀 Limit Brandon Sisk to a max of 5
         if (pm === "Brandon Sisk" && data[pm].totalCount >= 5) {
-            console.log("Skipping extra Brandon Sisk record:", record.fields);
             return; // Stop counting after 5
         }
 
@@ -93,7 +85,6 @@ function calculateTotalRecordsByPM(records, secondaryRecords) {
     // Merge missing PMs from the second table
     const mergedData = mergeMissingNames(data, secondaryRecords);
 
-    console.log("Final Count for Brandon Sisk (Capped at 5):", mergedData["Brandon Sisk"]);
 
     return Object.entries(mergedData)
         .sort(([nameA, a], [nameB, b]) => a.totalCount - b.totalCount || nameA.localeCompare(nameB))

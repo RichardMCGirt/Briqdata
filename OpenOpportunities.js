@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function () {
-    console.log("Document loaded and DOM fully constructed.");
     
     // Directly call the initialization function to start fetching data immediately
     initializez2();
@@ -8,7 +7,6 @@ let residentialWinRates3 = {};
 let commercialWinRates3 = {};
 
 async function initializez2() {
-    console.log("Initializing application...");
     displayLoadingMessages7("Loading data, please wait...");
 
     const airtableApiKey = 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238';
@@ -22,7 +20,6 @@ async function initializez2() {
         airtableTableName,
         filterFormula
     );
-    console.log(`Total records fetched: ${residentialRecords.length}`);
 
     residentialWinRates3 = calculateWinRates7(residentialRecords);
 
@@ -42,7 +39,6 @@ async function initializez2() {
     // Display chart with sorted data
     displayWinRatesAsBarChart7(residentialWinRates3, 'winRateChart6');
 
-    console.log("Application initialized successfully.");
     hideLoadingMessages3();
 }
 
@@ -105,7 +101,6 @@ async function fetchAirtableDatas7(apiKey, baseId, tableName) {
                 offset ? `&offset=${offset}` : ''
             }`;
 
-            console.log("Generated URL:", url); // Debug the URL
 
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${apiKey}` },
@@ -118,7 +113,6 @@ async function fetchAirtableDatas7(apiKey, baseId, tableName) {
             }
 
             const data = await response.json();
-            console.log("Fetched Records:", data.records); // Log fetched records
             allRecords = allRecords.concat(data.records);
 
             offset = data.offset; // Continue fetching if there are more records
@@ -168,7 +162,6 @@ function calculateWinRates7(records) {
         data[submittedBy].totalCount += 1;
     });
 
-    console.log("None Outcomes Count by AC:", data);
 
     const noneRates = {};
     for (const submittedBy in data) {

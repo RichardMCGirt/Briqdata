@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
 
             const data = await response.json();
-            console.log(`Fetched ${data.records.length} records from Airtable.`);
             return data;
         } catch (error) {
             console.error('Error fetching data from Airtable:', error.message);
@@ -36,7 +35,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     async function fetchAllData() {
-        console.log("Starting to fetch all data...");
 
         let allRecords = [];
         let offset = null;
@@ -48,13 +46,11 @@ document.addEventListener('DOMContentLoaded', async function () {
             document.getElementById('record-count2').textContent = `Records fetched: ${allRecords.length}`;
         } while (offset);
 
-        console.log(`All data fetched successfully. Total records: ${allRecords.length}`);
         return allRecords;
     }
 
     // Function to get unique branches and populate the dropdown
     function populateDropdown(records) {
-        console.log("Populating dropdown with unique branches...");
     
         const uniqueBranches = new Set();
         
@@ -72,7 +68,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 option.textContent = branch;
                 locationDropdown.appendChild(option);
                 
-                console.log(`Added branch to dropdown: ${branch}`);
+               
             }
         });
     
@@ -95,12 +91,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     function filterRecordsByLocation(records, location) {
-        console.log(`Filtering records for location: ${location}`);
+       
         const filteredRecords = records.filter(record => {
             let branch = record.fields['Branch'] === "Greenville,SC" ? "Greenville" : record.fields['Branch'];
             return branch === location;
         });
-        console.log(`Found ${filteredRecords.length} records for location: ${location}`);
+        
         return filteredRecords;
     }
 
@@ -112,7 +108,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     function createBarChart(records, location) {
-        console.log(`Creating bar chart for location: ${location}`);
+       
 
         if (records.length === 0) {
             console.warn("No data available to create the chart.");
@@ -197,11 +193,11 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
 
-        console.log("Bar chart created successfully in ascending order.");
+        
     }
 
     function exportToCSV(records) {
-        console.log("Exporting data to CSV...");
+       
 
         // Define the CSV headers
         const headers = ['Branch', 'Date Created', 'Actual $ Credit Amount'];
@@ -242,7 +238,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     locationDropdown.addEventListener('change', function () {
         const selectedLocation = locationDropdown.value;
-        console.log(`Dropdown selection changed. Selected location: ${selectedLocation}`);
+        
 
         if (selectedLocation) {
             const filteredRecords = filterRecordsByLocation(allRecords, selectedLocation);

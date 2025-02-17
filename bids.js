@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', async function () {
-    console.log("Document loaded and DOM fully constructed.");
 
     const airtableApiKey = 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238';
     const airtableBaseId = 'appK9gZS77OmsIK50';
@@ -31,7 +30,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     async function fetchAllData() {
-        console.log("Starting to fetch all data...");
     
         let allRecords = [];
         let offset = null;
@@ -39,7 +37,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         do {
             const data = await fetchData(offset);
             allRecords = allRecords.concat(data.records);
-            console.log(`Fetched ${data.records.length} records. Total so far: ${allRecords.length}`);
             offset = data.offset;
 
             document.getElementById('record-count3').textContent = `Records fetched: ${allRecords.length}`;
@@ -51,12 +48,10 @@ document.addEventListener('DOMContentLoaded', async function () {
             return dateReceived.getFullYear() === currentYear;
         });
 
-        console.log(`Filtered records for the current year. Total records: ${currentYearRecords.length}`);
         return currentYearRecords;
     }
 
     function createBarChart(records) {
-        console.log("Creating bar chart...");
     
         const bidCounts = {};
         records.forEach(record => {
@@ -115,7 +110,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Generate and download the CSV
     function downloadCSV(records) {
-        console.log("Generating CSV...");
 
         const headers = ['Branch', 'Bid Count'];
         const rows = records.map(record => [
