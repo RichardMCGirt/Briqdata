@@ -50,7 +50,7 @@ function aggregateBySubmittedBy(records) {
     const data = {};
 
     records.forEach(record => {
-        const submittedBy = record.fields['Submitted By'] ? record.fields['Submitted By'].trim() : 'Unknown';
+        const submittedBy = record.fields['Submitter'] ? record.fields['Submitter'].trim() : 'Unknown';
 
         if (!data[submittedBy]) {
             data[submittedBy] = { totalCount: 0 };
@@ -99,7 +99,6 @@ function populateDropdown10(users, dropdownId, userActivityCounts) {
 }
 
 
-// Display Bar Chart
 function displayActivityCountsAsBarChart(data, canvasId) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) {
@@ -114,7 +113,7 @@ function displayActivityCountsAsBarChart(data, canvasId) {
     }
 
     // Filter out "Unknown" values and sort data by total count (ascending order)
-    const validData = Object.entries(data)
+    let validData = Object.entries(data)
         .filter(([key, value]) => key !== "Unknown" && value.totalCount !== undefined)
         .sort((a, b) => a[1].totalCount - b[1].totalCount); // Ascending order
 
@@ -123,6 +122,21 @@ function displayActivityCountsAsBarChart(data, canvasId) {
         ctx.font = "16px Arial";
         ctx.textAlign = "center";
         ctx.fillText("No data available for the selected user.", canvas.width / 2, canvas.height / 2);
+        return;
+    }
+
+    // Find the minimum value
+    const minValue = validData[0][1].totalCount;
+
+    // Remove only the first column if multiple have the same min value
+    validData = validData.filter(([_, value]) => value.totalCount !== minValue);
+
+    // Ensure at least one column remains
+    if (validData.length === 0) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = "16px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("No data available after filtering.", canvas.width / 2, canvas.height / 2);
         return;
     }
 
@@ -148,6 +162,7 @@ function displayActivityCountsAsBarChart(data, canvasId) {
         },
     });
 }
+
 
 
 // Main Initialization Function
