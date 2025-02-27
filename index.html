@@ -215,8 +215,68 @@
    <script src ="InPersonMeetings.js"></script>  
    <script src ="dailylogsbyfm.js"></script>
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERP Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .widget {
+      margin: 20px;
+      padding: 20px;
+      border: 1px solid #ccc;
+    }
+    iframe {
+      width: 100%;
+      height: 500px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>ERP Dashboard</h1>
+  
+  
+  <div class="widget">
+    <label for="erpUrl">Enter ERP URL:</label>
+    <input type="text" id="erpUrl" placeholder="Paste the ERP URL here" style="width: 100%; padding: 10px; margin-top: 10px;" />
+    <button onclick="updateErpIframe()">Update ERP Dashboard</button>
+  </div>
+  
+  
+  <div class="widget">
+    <iframe id="erpIframe" src="" width="100%" height="500px" frameborder="0"></iframe>
+  </div>
 
+  <script>
+    
+    function updateErpIframe() {
+      const url = document.getElementById('erpUrl').value.trim(); 
+      const iframe = document.getElementById('erpIframe'); 
 
+      if (url) {
+        iframe.src = url; 
+        localStorage.setItem('erpUrl', url);  
+      } else {
+        alert("Please enter a valid URL.");
+      }
+    }
+
+    window.onload = function() {
+      const savedUrl = localStorage.getItem('erpUrl');
+      if (savedUrl) {
+        document.getElementById('erpUrl').value = savedUrl;
+        document.getElementById('erpIframe').src = savedUrl;
+      }
+    };
+  </script>
+
+</body>
+</html>
 
 
 </body>
