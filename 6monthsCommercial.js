@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', async function () {
-
-    // Declare constants BEFORE using them
+ // Declare constants BEFORE using them
     const airtableApiKey = 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238';
     const airtableBaseId = 'appK9gZS77OmsIK50';
     const airtableTableName = 'tblQo2148s04gVPq1';
@@ -54,9 +53,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     
         // Fetch all division records from the Vanir Offices table
         const divisionUrl = `https://api.airtable.com/v0/${airtableBaseId}/Vanir Offices?fields[]=Office Name`; // Ensure correct field name
-    
-   
-    
+
         try {
             const response = await fetch(divisionUrl, {
                 headers: { Authorization: `Bearer ${airtableApiKey}` }
@@ -122,8 +119,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
     
-        
-        
         // ✅ Only call `createBarChart` after mapping is done
         createBarChart(revenueByDivision);
     
@@ -138,13 +133,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
     }
 
-    
 await processRecords();
-
-
-    
-    
-    
 
     let debugUrl = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=5`;
 
@@ -234,11 +223,6 @@ await processRecords();
             }
         });
     }
-    
-    
-
-    
-    
 
     function downloadCSV(records) {
         console.log("Generating CSV...");

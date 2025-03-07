@@ -65,12 +65,10 @@ function displayLoadingMessages2(message) {
 function calculateTotalRecordsByPM(records, secondaryRecords) {
     const data = {};
 
-    console.log("Processing primary records...");
 
     records.forEach(record => {
         let pm = record.fields['PM'] ? capitalizeName(record.fields['PM'].trim()) : 'Unknown';
 
-        console.log(`Processing PM: ${pm}`); // DEBUGGING
 
         if (!data[pm]) {
             data[pm] = { totalCount: 0 };
@@ -82,7 +80,6 @@ function calculateTotalRecordsByPM(records, secondaryRecords) {
     // Merge missing PMs from the second table
     const mergedData = mergeMissingNames(data, secondaryRecords);
 
-    console.log("Final PM list after merging missing names:", mergedData);
 
     return Object.entries(mergedData)
         .sort(([nameA, a], [nameB, b]) => a.totalCount - b.totalCount || nameA.localeCompare(nameB))
