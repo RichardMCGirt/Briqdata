@@ -5,6 +5,7 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
     const reader = new FileReader();
     reader.onload = function(e) {
         const csvData = e.target.result;
+        localStorage.setItem('csvData', csvData); // Store data in local storage
         Papa.parse(csvData, {
             complete: function(results) {
                 displayTable(results.data);
@@ -34,3 +35,15 @@ function displayTable(data) {
         table.appendChild(tr);
     });
 }
+
+// Load stored CSV data on page load
+window.onload = function() {
+    const storedCsvData = localStorage.getItem('csvData');
+    if (storedCsvData) {
+        Papa.parse(storedCsvData, {
+            complete: function(results) {
+                displayTable(results.data);
+            }
+        });
+    }
+};
