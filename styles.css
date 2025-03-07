@@ -374,9 +374,32 @@ th, td {
     text-align: left;
     white-space: nowrap;
 }
+th{
+    background-color: black !important;
+    color: white !important;
+    font-size: 16px;
+}
 th {
     background-color: #f4f4f4;
     position: sticky;
     top: 0;
     z-index: 2;
 }
+
+.even-row {
+    background-color: #f2f2f2; /* Light gray */
+}
+
+.odd-row {
+    background-color: #ffffff; /* White */
+}
+
+.thick-border-top {
+    border-top: 3px solid black !important;
+}
+
+.bold-text {
+    font-weight: bold;
+}
+
+
