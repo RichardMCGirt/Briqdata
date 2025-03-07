@@ -1,10 +1,8 @@
 document.addEventListener('DOMContentLoaded', function () {
-    console.log("Document loaded and DOM fully constructed.");
     initializeFMReturns();
 });
 
 async function initializeFMReturns() {
-    console.log("Initializing FM Returns...");
 
     displayLoadingMessages("Loading FM Returns, please wait...", "fetch-progress2");
 
@@ -19,7 +17,6 @@ async function initializeFMReturns() {
 
     const fmRecords = await fetchAirtableDatas(airtableApiKey, airtableBaseId, airtableTableName, filterFormula);
 
-    console.log(`FM Returns fetched: ${fmRecords.length}`);
 
     const fmData = processFMData(fmRecords);
 
@@ -29,7 +26,6 @@ async function initializeFMReturns() {
     // Display FM returns chart
     displayFMReturnsAsBarChart(fmData, 'FMR');
 
-    console.log("FM Returns initialization completed.");
     hideLoadingMessages("fetch-progress2");
 }
 
@@ -47,7 +43,6 @@ async function fetchAirtableDatas(apiKey, baseId, tableName) {
                 offset ? `&offset=${offset}` : ''
             }`;
 
-            console.log("Generated URL:", url);
 
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${apiKey}` },

@@ -9,7 +9,6 @@ const filterFormula = `AND(
 
 
 
-console.log("Fetching records from Airtable with filter:", filterFormula);
 
 // Fetch Airtable Data
 async function fetchAirtableData(apiKey, baseId, tableName, formula) {

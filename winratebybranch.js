@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function () {
-    console.log("Document loaded and DOM fully constructed.");
     
     // Directly call the initialization function to start fetching data immediately
     initializep();
@@ -7,7 +6,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 async function initializep() {
     try {
-        console.log("Initializing application...");
         displayLoadingMessage("Loading data, please wait...");
 
         // Airtable configuration
@@ -40,7 +38,6 @@ async function initializep() {
         displayWinRatesInGrid(commercialWinRates, 'commercialGrid', "Commercial");
         displayWinRatesInGrid(residentialWinRates, 'nonCommercialGrid', "Residential");
 
-        console.log("Application initialized successfully.");
     } catch (error) {
         console.error("Error during initialization:", error);
     } finally {
@@ -48,7 +45,6 @@ async function initializep() {
         hideLoadingMessage();
     }
 }
-
 
 async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
     let allRecords = [];
@@ -60,7 +56,6 @@ async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
 
     do {
         const url = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodeURIComponent(filterFormula)}${offset ? `&offset=${offset}` : ''}`;
-        console.log('Fetching data from URL:', url);
 
         const response = await fetch(url, {
             headers: { Authorization: `Bearer ${apiKey}` }
@@ -79,7 +74,6 @@ async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
         }
     } while (offset);
 
-    console.log("All records fetched:", allRecords);
     return allRecords;
 }
 
@@ -114,7 +108,6 @@ function calculateWinRate(records) {
         data[division].totalCount += 1;
     });
 
-    console.log("Wins and Losses by Branch:", data);
 
     const winRates = {};
     for (const division in data) {
@@ -132,105 +125,50 @@ function calculateWinRate(records) {
 
 
 function displayWinRatesInGrid(data, gridId, title) {
-    console.log(`Attempting to populate grid: ${gridId} with title: ${title}`);
-    console.log("Data to display:", data);
-
-    // Locate the grid container
     const gridContainer = document.getElementById(gridId);
+
     if (!gridContainer) {
-        console.error(`Grid container with ID '${gridId}' not found.`);
         return;
-    } else {
-        console.log(`Grid container found:`, gridContainer);
     }
 
+    // Ensure the grid is visible
+    gridContainer.style.display = 'grid';
+    gridContainer.style.visibility = 'visible';
+    gridContainer.style.opacity = '1';
+
     // Clear existing content
-    console.log(`Clearing existing content in grid: ${gridId}`);
     gridContainer.innerHTML = '';
 
-    // Check for empty data
     if (Object.keys(data).length === 0) {
         console.warn(`No data found for grid: ${gridId}`);
         gridContainer.textContent = `No ${title.toLowerCase()} data available for the current year.`;
         return;
-    } else {
-        console.log(`Data found for grid: ${gridId}, proceeding to populate.`);
     }
 
-    // Populate the grid
     const sortedData = Object.entries(data).sort((a, b) => a[0].localeCompare(b[0]));
-    console.log(`Sorted data for grid: ${gridId}:`, sortedData);
 
-    sortedData.forEach(([branch, winRateData], index) => {
-        console.log(`Processing branch [${index + 1}]: ${branch}`, winRateData);
-
-        // Create container for branch
+    sortedData.forEach(([branch, winRateData]) => {
         const branchDiv = document.createElement('div');
         branchDiv.className = 'branch-win-rate';
 
-        // Add branch name
         const branchName = document.createElement('h3');
         branchName.textContent = branch;
         branchDiv.appendChild(branchName);
 
-        // Add win rate fraction
         const winFraction = document.createElement('p');
         winFraction.textContent = `Win Rate: ${winRateData.fraction}`;
         branchDiv.appendChild(winFraction);
 
-        // Add win rate percentage
         const winPercentage = document.createElement('p');
         winPercentage.textContent = `${winRateData.winRatePercentage.toFixed(1)}%`;
         branchDiv.appendChild(winPercentage);
 
-        // Append branch div to grid container
-        console.log(`Appending data for branch: ${branch} to grid: ${gridId}`);
         gridContainer.appendChild(branchDiv);
     });
 
+
+
     // Set the display style for the grid container
     gridContainer.style.display = 'grid';
-    console.log(`Grid ${gridId} populated successfully.`);
 }
 
-
-
-// Function to export win rates to CSV
-function exportToCSV(data, fileName) {
-    const csvRows = [];
-    const header = ['Branch', 'Win Count', 'Total Count', 'Win Rate', 'Fraction'];
-    csvRows.push(header.join(',')); // Add header row
-
-    // Add data rows
-    Object.entries(data).forEach(([branch, winRateData]) => {
-        const row = [
-            branch,
-            winRateData.winCount,
-            winRateData.totalCount,
-            winRateData.winRatePercentage.toFixed(1) + '%',
-            `${winRateData.winCount} / ${winRateData.totalCount}`
-        ];
-        csvRows.push(row.join(',')); // Join each column value with a comma
-    });
-
-    // Convert array of rows into a single CSV string
-    const csvContent = csvRows.join('\n');
-
-    // Create a Blob and trigger the download
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName; // Set the file name
-    link.click(); // Simulate a click to trigger the download
-    URL.revokeObjectURL(url); // Clean up the URL object
-}
-
-// Adding the export button click event to export data
-document.getElementById('export-button').addEventListener('click', function() {
-    console.log("Export to CSV button clicked.");
-
-    // Export commercial and residential win rates as separate CSV files
-    exportToCSV(commercialWinRates, 'commercial_win_rates.csv');
-    exportToCSV(residentialWinRates, 'residential_win_rates.csv');
-});

@@ -4,7 +4,6 @@
 
     // Control dropdown visibility based on toggle
     function toggleDropdownVisibility(show) {
-        console.log(`Toggling dropdown visibility: ${show ? 'show' : 'hide'}`);
         document.getElementById('branch-dropdown2').style.display = show ? 'block' : 'none';
     }
     toggleDropdownVisibility(false); // Initially hide dropdown
@@ -19,15 +18,12 @@
     }
     
     document.getElementById('fetch-ftp-report-btn').addEventListener('click', async function () {
-        console.log("Fetch button clicked. Initiating CSV fetch...");
         showLoadingIndicator(true);
     
         try {
             const response = await fetch('./SalesRegisterSummaryReport-1730994522-1793612095.csv');
             const text = await response.text();
-            console.log("CSV content loaded. Parsing CSV...");
             citySales = parseCSV(text);
-            console.log("CSV parsed successfully. Aggregated city sales:", citySales);
             updateUI('Raleigh');
             toggleDropdownVisibility(!document.getElementById('show-all-toggle').checked);
             document.getElementById("toggle-container").style.display = "block";
@@ -69,7 +65,6 @@
     
     // Helper function to split a CSV row by commas, respecting quoted values
     function splitCSVRow(row) {
-        console.log("Splitting CSV row:", row);
         const result = [];
         let current = '';
         let inQuotes = false;
@@ -87,7 +82,6 @@
             }
         }
         result.push(current.trim());
-        console.log("Split result:", result);
         return result;
     }
 
@@ -156,24 +150,20 @@
     // Toggle to show all cities or single city chart
     document.getElementById('show-all-toggle').addEventListener('change', function () {
         const showAll = this.checked;
-        console.log(`Show all cities toggle changed: ${showAll}`);
         if (showAll) {
             displayAllCitiesChart();
         } else {
             const selectedCity = document.getElementById('branch-dropdown2').value || 'Raleigh';
-            console.log(`Displaying selected city chart: ${selectedCity}`);
             updateUI(selectedCity);
         }
     });
 
     // Display bar chart for all cities
     function displayAllCitiesChart() {
-        console.log("Displaying chart for all active cities");
         const ctx = document.getElementById('salesChart2').getContext('2d');
         document.getElementById('salesChart2').style.display = 'block';
 
         if (window.myChart) {
-            console.log("Destroying previous chart instance");
             window.myChart.destroy();
         }
 
@@ -182,7 +172,6 @@
             .sort((a, b) => a[1] - b[1])
             .map(([city]) => city);
 
-        console.log("Active cities with sales:", activeCities);
         window.myChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -213,40 +202,13 @@
     function displayFormattedTotal(city) {
         const totalSales = citySales[city] || 0;
         const formattedTotal = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalSales);
-        console.log(`Displaying total sales for ${city}: ${formattedTotal}`);
         document.getElementById('total-sales-display').textContent = `Total Sales for ${city}: ${formattedTotal}`;
     }
 
     // Event listener for dropdown selection
     document.getElementById('branch-dropdown2').addEventListener('change', function () {
         const selectedCity = this.value;
-        console.log(`Dropdown selection changed: ${selectedCity}`);
         updateUI(selectedCity);
-    });
-
-    // Export to CSV function
-    function exportToCSV(citySales) {
-        const csvRows = [];
-        const header = ['City', 'Total Sales ($)'];
-        csvRows.push(header.join(','));
-
-        for (const [city, sales] of Object.entries(citySales)) {
-            csvRows.push([city, sales.toFixed(2)].join(','));
-        }
-
-        const csvContent = csvRows.join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'city_sales_report.csv';
-        link.click();
-    }
-
-    // Export button click listener
-    exportButton.addEventListener('click', function () {
-        console.log("Export button clicked.");
-        exportToCSV(citySales);
     });
 
 })();

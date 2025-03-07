@@ -92,7 +92,6 @@ function calculateTotalRecordsByPM(records, secondaryRecords) {
 function mergeMissingNames(existingData, secondaryRecords) {
     const updatedData = { ...existingData };
 
-    console.log("Checking secondary records for missing names...");
 
     secondaryRecords.forEach(record => {
         const name = record.fields['Full Name'] ? capitalizeName(record.fields['Full Name'].trim()) : 'Unknown';
@@ -100,11 +99,9 @@ function mergeMissingNames(existingData, secondaryRecords) {
 
         if (!updatedData[name]) {
             updatedData[name] = { totalCount: 0 };
-            console.log(`Added missing name from secondary table: ${name}`);
         }
     });
 
-    console.log("Updated Data after merging secondary records:", updatedData);
 
     return updatedData;
 }
@@ -125,14 +122,10 @@ async function fetchAirtableDatas4(apiKey, baseId, tableName, formula) {
         let offset;
         const encodedFormula = encodeURIComponent(formula);
 
-        console.log("Starting Airtable fetch...");
-        console.log("Base ID:", baseId);
-        console.log("Table Name:", tableName);
-        console.log("Encoded Formula:", encodedFormula);
+      
 
         do {
             const url = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodedFormula}${offset ? `&offset=${offset}` : ''}`;
-            console.log("Fetching URL:", url);
 
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${apiKey}` },
@@ -145,7 +138,6 @@ async function fetchAirtableDatas4(apiKey, baseId, tableName, formula) {
             }
 
             const data = await response.json();
-            console.log("Fetched Records Count:", data.records.length);
 
             // Convert Date to NYC Time after fetching
             data.records.forEach(record => {
@@ -158,15 +150,12 @@ async function fetchAirtableDatas4(apiKey, baseId, tableName, formula) {
             });
 
             allRecords = allRecords.concat(data.records);
-            console.log("Total Records Fetched So Far:", allRecords.length);
 
             offset = data.offset;
             if (offset) {
-                console.log("Next Offset:", offset);
             }
         } while (offset);
 
-        console.log("Final Total Records:", allRecords.length);
         return allRecords;
     } catch (error) {
         console.error("Error fetching data:", error);

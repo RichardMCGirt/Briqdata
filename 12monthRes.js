@@ -212,61 +212,9 @@ await processRecords();
                 }
             }
         });
-    }
-    
-    
-
-    
-    
-
-    function downloadCSV(records) {
-        console.log("Generating CSV...");
-        const headers = ['Division', 'Bid Value', 'Anticipated End Date'];
-        const rows = records.map(record => [
-            record.fields['Division'],
-            record.fields['Bid Value'],
-            record.fields['Anticipated End Date']
-        ]);
-
-        const csvContent = [
-            headers.join(','),
-            ...rows.map(row => row.map(item => `"${item || ''}"`).join(','))
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `12monthCommercial.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
+    } 
 
 
-    const revenueByDivision = {};
-    allRecords.forEach(record => {
-        const division = Array.isArray(record.fields['Division']) ? record.fields['Division'][0] : record.fields['Division'];
-        const bidValue = parseFloat(record.fields['Bid Value']) || 0;
-    
-        if (division && division !== "Test Division") {
-            if (!revenueByDivision[division]) {
-                revenueByDivision[division] = 0;
-            }
-            revenueByDivision[division] += bidValue; 
-        }
-    });
-    
-
-    createBarChart(revenueByDivision);
-
-    exportButton.disabled = false;
-    exportButton.textContent = "Export to CSV";
-    exportButton.style.backgroundColor = ""; 
-    exportButton.style.cursor = "pointer"; 
-
-    exportButton.addEventListener('click', () => {
-        downloadCSV(allRecords);
-    });
+  
+   
 });

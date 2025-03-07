@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         const currentYear = new Date().getFullYear();
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=YEAR({Created})=${currentYear}`;
         if (offset) url += `&offset=${offset}`;
-        console.log(`Fetching data from URL: ${url}`);
 
         try {
             const response = await fetch(url, {
@@ -21,7 +20,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
 
             const data = await response.json();
-            console.log(`Number of records fetched: ${data.records.length}`);
             return data;
         } catch (error) {
             console.error('Error fetching data from Airtable:', error.message);
@@ -108,41 +106,11 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
     }
 
-    // Generate and download the CSV
-    function downloadCSV(records) {
-
-        const headers = ['Branch', 'Bid Count'];
-        const rows = records.map(record => [
-            record.fields['Branch'],
-            record.fields['Bid Count'] || 0
-        ]);
-
-        const csvContent = [
-            headers.join(','),
-            ...rows.map(row => row.map(item => `"${item || ''}"`).join(','))
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Bids_Submited_per_Branch${new Date().getFullYear()}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
+  
 
     // Fetch data, create chart, and set up the export button
     const allRecords = await fetchAllData();
     createBarChart(allRecords);
 
-    exportButton.disabled = false;
-    exportButton.textContent = "Export to CSV";
-    exportButton.style.backgroundColor = ""; 
-    exportButton.style.cursor = "pointer"; 
-
-    exportButton.addEventListener('click', () => {
-        downloadCSV(allRecords);
-    });
+   
 });

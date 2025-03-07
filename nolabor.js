@@ -1,23 +1,17 @@
 document.getElementById('fileInput').addEventListener('change', function(event) {
-    console.log("File input changed.");
     const file = event.target.files[0];
     if (!file) {
-        console.log("No file selected.");
         return;
     }
 
-    console.log(`File selected: ${file.name}`);
 
     const reader = new FileReader();
     reader.onload = function(e) {
-        console.log("File read successfully.");
         const csvData = e.target.result;
         localStorage.setItem('csvData', csvData); // Store data in local storage
-        console.log("CSV data stored in localStorage.");
 
         Papa.parse(csvData, {
             complete: function(results) {
-                console.log("CSV parsing complete.", results);
                 displayTable(results.data);
             },
             error: function(error) {
@@ -34,10 +28,8 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
 });
 
 function displayTable(data) {
-    console.log("Displaying table data:", data);
 
     if (data.length === 0) {
-        console.log("No data to display.");
         return;
     }
 
@@ -54,7 +46,6 @@ function displayTable(data) {
         });
     });
 
-    console.log("Columns to hide:", Array.from(columnsToHide));
 
     let visibleRowIndex = 0; // Track the index of displayed rows (excluding hidden ones)
     let columnHeaders = []; // Store headers for reference in TD formatting
@@ -62,13 +53,11 @@ function displayTable(data) {
     data.forEach((row, rowIndex) => {
         // Skip empty rows
         if (row.every(cell => cell === "" || cell === null || cell === undefined)) {
-            console.log(`Skipping empty row at index ${rowIndex}.`);
             return;
         }
 
         // Skip rows that contain "Sales Report by Location"
         if (row.includes("Sales Report by Location")) {
-            console.log(`Skipping row ${rowIndex} as it contains "Sales Report by Location".`);
             return;
         }
 
@@ -84,7 +73,6 @@ function displayTable(data) {
         // Add a thicker top border to the row containing "Total"
         if (row.some(cell => typeof cell === "string" && cell.toLowerCase().includes("total"))) {
             tr.classList.add("thick-border-top");
-            console.log(`Added thick border to row ${rowIndex} containing "Total".`);
         }
 
         row.forEach((cell, colIndex) => {
@@ -119,15 +107,12 @@ function displayTable(data) {
 
                     if (["Charleston", "Charlotte", "Columbia", "Greensboro", "Greenville", "Myrtle Beach", "Raleigh", "Wilmington"].includes(cell.trim())) {
                         cellElement.classList.add("bold-text");
-                        console.log(`Bold applied to: ${cell}`);
                     }
 
                     tr.appendChild(cellElement);
                 } else {
-                    console.log(`Hiding text "${cell}" at row ${rowIndex}, column ${colIndex}`);
                 }
             } else {
-                console.log(`Hiding column ${colIndex} for row ${rowIndex} as it contains 'labor'.`);
             }
         });
 
@@ -135,7 +120,6 @@ function displayTable(data) {
         visibleRowIndex++; // Increment only for displayed rows
     });
 
-    console.log("Table rendering complete.");
 }
 
 
@@ -144,14 +128,11 @@ function displayTable(data) {
 
 // Load stored CSV data on page load
 window.onload = function() {
-    console.log("Checking for stored CSV data in localStorage...");
     const storedCsvData = localStorage.getItem('csvData');
 
     if (storedCsvData) {
-        console.log("Stored CSV data found, parsing...");
         Papa.parse(storedCsvData, {
             complete: function(results) {
-                console.log("Stored CSV parsing complete.", results);
                 displayTable(results.data);
             },
             error: function(error) {
@@ -159,6 +140,5 @@ window.onload = function() {
             }
         });
     } else {
-        console.log("No stored CSV data found.");
     }
 };
