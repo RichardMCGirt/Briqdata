@@ -6,11 +6,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableTableName = 'tblQo2148s04gVPq1';
     let chartInstance = null; 
 
-    let projectType = "Commercial".trim();
-    let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&filterByFormula=AND({Project Type}='${projectType}',{Outcome}='Win')`;
-
     const exportButton = document.getElementById('export-button');
-    const currentYear = new Date().getFullYear();
 
     // Initially disable the export button and update its text and style
     exportButton.disabled = true;
@@ -126,12 +122,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 await processRecords();
 
-    
-    
-    
-
-    let debugUrl = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=5`;
-
     async function fetchAllData() {
 
         let allRecords = [];
@@ -214,59 +204,6 @@ await processRecords();
         });
     }
     
-    
-
-    
-    
-
-    function downloadCSV(records) {
-        console.log("Generating CSV...");
-        const headers = ['Division', 'Bid Value', 'Anticipated End Date'];
-        const rows = records.map(record => [
-            record.fields['Division'],
-            record.fields['Bid Value'],
-            record.fields['Anticipated End Date']
-        ]);
-
-        const csvContent = [
-            headers.join(','),
-            ...rows.map(row => row.map(item => `"${item || ''}"`).join(','))
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `12monthCommercial.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-
-
-    const revenueByDivision = {};
-    allRecords.forEach(record => {
-        const division = Array.isArray(record.fields['Division']) ? record.fields['Division'][0] : record.fields['Division'];
-        const bidValue = parseFloat(record.fields['Bid Value']) || 0;
-    
-        if (division && division !== "Test Division") {
-            if (!revenueByDivision[division]) {
-                revenueByDivision[division] = 0;
-            }
-            revenueByDivision[division] += bidValue; 
-        }
-    });
-    
-
     createBarChart(revenueByDivision);
 
-    exportButton.disabled = false;
-    exportButton.textContent = "Export to CSV";
-    exportButton.style.backgroundColor = ""; 
-    exportButton.style.cursor = "pointer"; 
-
-    exportButton.addEventListener('click', () => {
-        downloadCSV(allRecords);
-    });
-});
+  });
