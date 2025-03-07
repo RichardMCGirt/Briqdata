@@ -77,7 +77,6 @@ function calculateTotalRecordsByPM(records, secondaryRecords) {
         }
 
         data[pm].totalCount += 1;
-        console.log(`Updated count for ${pm}: ${data[pm].totalCount}`);
     });
 
     // Merge missing PMs from the second table
@@ -101,7 +100,6 @@ function mergeMissingNames(existingData, secondaryRecords) {
     secondaryRecords.forEach(record => {
         const name = record.fields['Full Name'] ? capitalizeName(record.fields['Full Name'].trim()) : 'Unknown';
 
-        console.log(`Checking Secondary Table Name: ${name}`); // DEBUGGING
 
         if (!updatedData[name]) {
             updatedData[name] = { totalCount: 0 };
@@ -158,8 +156,7 @@ async function fetchAirtableDatas4(apiKey, baseId, tableName, formula) {
                     const utcDate = new Date(record.fields['Date Record Created']);
                     record.fields['NYC_Time'] = utcDate.toLocaleString("en-US", { timeZone: "America/New_York" });
 
-                    console.log("Original UTC Date:", utcDate.toISOString());
-                    console.log("Converted NYC Time:", record.fields['NYC_Time']);
+                
                 }
             });
 

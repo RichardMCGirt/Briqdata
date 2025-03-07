@@ -351,3 +351,32 @@ h1 {
         margin-bottom: 20px; /* Add spacing between items */
     }
 }
+
+
+.container {
+    width: 90%;
+    margin: auto;
+    text-align: center;
+}
+.table-container {
+    overflow-x: auto;
+    max-height: 400px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    table-layout: auto;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    white-space: nowrap;
+}
+th {
+    background-color: #f4f4f4;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
