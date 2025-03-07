@@ -11,7 +11,7 @@ async function initializet() {
     const airtableTableName = 'tblVrmq2waEpElxt4'; // First table
     const airtableTableName2 = 'tblMm1V1Y5vL2lGS5'; // Second table
 
-    const filterFormula = `AND(LEN({PM}) > 0, IS_AFTER({Date Record Created}, DATEADD(TODAY(), -8, 'days')))`;
+    const filterFormula = `AND(LEN({PM}) > 0, IS_AFTER({Date Record Created}, DATEADD(TODAY(), -7, 'days')))`;
 
    
     
