@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', async function () {
-    console.log("Document loaded and DOM fully constructed.");
 
     const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
     const airtableBaseId = 'appeNSp44fJ8QYeY5';
@@ -7,7 +6,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     const exportButton = document.getElementById('export-button');
     const locationDropdown = document.getElementById('locationDropdown');
 
-    console.log("Initialized variables and elements.");
 
     exportButton.textContent = "Fetching data...";
     exportButton.style.backgroundColor = "#ccc";

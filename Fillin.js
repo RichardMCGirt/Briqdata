@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', async function () {
-    console.log("Document loaded and DOM fully constructed.");
 
     const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
     const airtableBaseId = 'appeNSp44fJ8QYeY5';
@@ -35,7 +34,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     async function fetchAllData() {
-        console.log("Starting to fetch all data...");
         let allRecords = [];
         let offset = null;
     
@@ -69,7 +67,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     
 
     function populateDropdown(records) {
-        console.log("Populating dropdown with unique branches...");
         const uniqueBranches = [...new Set(records.map(record => record.fields['VanirOffice']).filter(Boolean))];
 
         uniqueBranches.forEach(branch => {
@@ -82,10 +79,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         // Default to "Raleigh" if it exists in the data
         if (uniqueBranches.includes("Raleigh")) {
             dropdown.value = "Raleigh";
-            console.log("Defaulting to Raleigh in the dropdown.");
         }
 
-        console.log("Dropdown populated successfully.");
     }
 
     function calculateTotalCostForBranch(records, branch) {
@@ -97,7 +92,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     function createBarChart(records, branch) {
-        console.log(`Creating bar chart for branch: ${branch}`);
 
         const branchRecords = records.filter(record => record.fields['VanirOffice'] === branch);
         const branchMonthlySums = {};
@@ -184,83 +178,15 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
 
-        console.log("Bar chart created successfully.");
     }
 
-    // Function to export the data to CSV
-    function exportToCSV(records) {
-        console.log("Exporting data to CSV...");
-        
-        // Define the CSV headers
-        const headers = ['VanirOffice', '', 'Month and Year', 'Monthly Total'];
-        const branchMonthlySums = {};
-    
-        // Process records to calculate sums and format dates
-        records.forEach(record => {
-            const branch = record.fields['VanirOffice'] || '';
-            const cost = parseFloat(record.fields['Total Cost of Fill In']) || 0;
-            const dateCreated = record.fields['Date Created'] || '';
-    
-            const date = new Date(dateCreated);
-            if (isNaN(date.getTime())) {
-                console.warn(`Invalid or missing date encountered: ${dateCreated}`);
-                return;
-            }
-    
-            const monthName = date.toLocaleString('default', { month: 'long' });
-            const year = date.getFullYear();
-            const monthYear = `${monthName} ${year}`;
-    
-            if (!branchMonthlySums[branch]) {
-                branchMonthlySums[branch] = {};
-            }
-            if (!branchMonthlySums[branch][monthYear]) {
-                branchMonthlySums[branch][monthYear] = 0;
-            }
-    
-            branchMonthlySums[branch][monthYear] += cost;
-        });
-    
-        const rows = [];
-    
-        // Populate rows with branch, month, and monthly totals
-        for (const branch in branchMonthlySums) {
-            for (const monthYear in branchMonthlySums[branch]) {
-                rows.push([
-                    branch,
-                    '', // No individual "Total Cost of Fill In" for monthly totals
-                    monthYear,
-                    branchMonthlySums[branch][monthYear].toFixed(2)
-                ]);
-            }
-        }
-    
-        const csvContent = [
-            headers.join(','), // Join headers with commas
-            ...rows.map(row => row.map(item => `"${item.replace(/"/g, '""') || ''}"`).join(',')) // Escape quotes in fields
-        ].join('\n');
-    
-        // Create a downloadable CSV file
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-    
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Fillins_by_Branch.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
+   
     
     // Fetch data and populate dropdown
     const allRecords = await fetchAllData();
     populateDropdown(allRecords);
 
-    // Enable the export button
-    exportButton.disabled = false;
-    exportButton.textContent = "Export to CSV";
-    exportButton.style.backgroundColor = ""; 
-    exportButton.style.cursor = "pointer";
+   
 
     // Default chart and total cost display for "Raleigh"
     const defaultBranch = "Raleigh";
@@ -272,7 +198,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     dropdown.addEventListener('change', function () {
         const selectedBranch = dropdown.value;
-        console.log(`Branch selected: ${selectedBranch}`);
         
         // Calculate and display total cost for the selected branch
         const totalCost = calculateTotalCostForBranch(allRecords, selectedBranch);
@@ -282,8 +207,4 @@ document.addEventListener('DOMContentLoaded', async function () {
         createBarChart(allRecords, selectedBranch);
     });
 
-    // Add event listener for export button
-    exportButton.addEventListener('click', function () {
-        exportToCSV(allRecords);
-    });
 });

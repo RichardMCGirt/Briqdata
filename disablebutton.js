@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let allRecords = []; // Array to store all fetched records
     let currentOffset = ''; // Initial offset is empty
 
-    console.log("Page loaded. Disabling export button while data is being fetched.");
 
     // Disable export button initially with important style override
     exportButton.disabled = true;
@@ -16,12 +15,10 @@ document.addEventListener('DOMContentLoaded', function() {
         exportButton.disabled = false;
         exportButton.textContent = "Export to CSV";
         exportButton.style.cssText = ""; // Restore button to its original style
-        console.log("Data fetch complete. Export button enabled.");
     }
 
     // Example fetch function for data fetching
     async function fetchData(url, recordCountElement, offset = '') {
-        console.log(`Fetching data from URL: ${url} with offset: ${offset}`);
         try {
             const response = await fetch(`${url}${offset ? `&offset=${offset}` : ''}`, {
                 headers: {
@@ -32,7 +29,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 allRecords = allRecords.concat(data.records); // Append fetched records to the allRecords array
                 document.getElementById(recordCountElement).textContent = `Records fetched: ${allRecords.length}`;
-                console.log(`Fetched ${data.records.length} records. Total records: ${allRecords.length}.`);
 
                 if (data.offset) {
                     // If there's more data to fetch, call fetchData again with the new offset
@@ -58,5 +54,4 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize data fetching with the base URL and parameters
     fetchData(`https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=${pageSize}`, 'record-count', currentOffset);
 
-    console.log("Data fetching initiated.");
 });

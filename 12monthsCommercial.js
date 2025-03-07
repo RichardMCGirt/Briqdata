@@ -204,6 +204,5 @@ await processRecords();
         });
     }
     
-    createBarChart(revenueByDivision);
 
   });

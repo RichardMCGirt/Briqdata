@@ -25,7 +25,6 @@ window.onload = function() {
         }, 3000);
     } else {
         // If logged in, proceed with loading the content normally
-        console.log("User is logged in.");
 
         // Show the content after checking login status
         document.body.style.display = 'block';
