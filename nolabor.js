@@ -1,9 +1,27 @@
+// Function to fetch and parse CSV from GitHub
+function loadDefaultCSV() {
+    fetch('https://raw.githubusercontent.com/RichardMCGirt/Briqdata/refs/heads/main/SalesReportbyLocation-1741350882-1396346555.csv')
+        .then(response => response.text())
+        .then(csvData => {
+            localStorage.setItem('csvData', csvData); // Store data in local storage
+            Papa.parse(csvData, {
+                complete: function(results) {
+                    displayTable(results.data);
+                },
+                error: function(error) {
+                    console.error("Error parsing default CSV:", error);
+                }
+            });
+        })
+        .catch(error => console.error("Error loading default CSV:", error));
+}
+
+// Event listener for user-uploaded CSV files
 document.getElementById('fileInput').addEventListener('change', function(event) {
     const file = event.target.files[0];
     if (!file) {
         return;
     }
-
 
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -15,7 +33,7 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
                 displayTable(results.data);
             },
             error: function(error) {
-                console.error("Error parsing CSV:", error);
+                console.error("Error parsing uploaded CSV:", error);
             }
         });
     };
@@ -27,26 +45,27 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
     reader.readAsText(file);
 });
 
+// Function to display CSV data in a table
 function displayTable(data) {
-    if (data.length <= 1) { // Ensure there's more than just a header row
+    if (data.length <= 1) {
         return;
     }
 
     const table = document.getElementById('csvTable');
     table.innerHTML = '';
 
-    const dateContainer = document.getElementById('dateContainer'); 
-    dateContainer.innerHTML = '<h4>Extracted Date</h4>'; // Reset date section
-    dateContainer.style.display = "none"; // Hide initially
+    const dateContainer = document.getElementById('dateContainer');
+    dateContainer.innerHTML = '<h4>Extracted Date</h4>';
+    dateContainer.style.display = "none";
 
-    let dateFound = false; // Flag to check if at least one date is found
-    let extractedDates = []; // Store found dates
+    let dateFound = false;
+    let extractedDates = [];
 
-    console.log("Full CSV Data:", data); // Debug: Log entire CSV data
+    console.log("Full CSV Data:", data);
 
     // Determine columns to hide by checking for "labor" in any row
     const columnsToHide = new Set();
-    data.forEach((row, rowIndex) => {
+    data.forEach((row) => {
         row.forEach((cell, colIndex) => {
             if (typeof cell === "string" && cell.toLowerCase().includes("labor")) {
                 columnsToHide.add(colIndex);
@@ -77,7 +96,7 @@ function displayTable(data) {
             dateEntry.textContent = date;
             dateContainer.appendChild(dateEntry);
         });
-        dateContainer.style.display = "block"; // Show only if dates exist
+        dateContainer.style.display = "block";
         console.log(`✅ Extracted Dates:`, extractedDates);
     } else {
         let noDateMsg = document.createElement('p');
@@ -87,43 +106,36 @@ function displayTable(data) {
         console.warn("⚠️ No dates found in the CSV.");
     }
 
-    let visibleRowIndex = 0; // Track the index of displayed rows (excluding hidden ones)
-    let columnHeaders = []; // Store headers for reference in TD formatting
+    let visibleRowIndex = 0;
+    let columnHeaders = [];
 
-    data.slice(1).forEach((row, rowIndex) => { // Skips the first row
-        // Skip empty rows
+    data.slice(1).forEach((row, rowIndex) => {
         if (row.every(cell => cell === "" || cell === null || cell === undefined)) {
             return;
         }
 
-        console.log(`Row ${rowIndex + 1}:`, row); // Debug: Log each row
+        console.log(`Row ${rowIndex + 1}:`, row);
 
         const tr = document.createElement('tr');
-
-        // Apply odd/even row styles
         tr.classList.add(visibleRowIndex % 2 === 0 ? "even-row" : "odd-row");
 
-        // Add a thicker top border to the row containing "Total"
         if (row.some(cell => typeof cell === "string" && cell.toLowerCase().includes("total"))) {
             tr.classList.add("thick-border-top");
         }
 
         row.forEach((cell, colIndex) => {
             if (typeof cell === "string") {
-                cell = cell.trim(); // Trim spaces
+                cell = cell.trim();
             }
 
-            if (!columnsToHide.has(colIndex)) { // Hide dynamically detected "labor" columns
+            if (!columnsToHide.has(colIndex)) {
                 let cellElement;
 
-                // Store headers on the second row (since first row is hidden)
                 if (rowIndex === 1) {
                     cellElement = document.createElement('th');
-                    columnHeaders[colIndex] = cell; // Store headers for later reference
+                    columnHeaders[colIndex] = cell;
                 } else {
                     cellElement = document.createElement('td');
-
-                    // Apply formatting rules based on header
                     let header = columnHeaders[colIndex] || "";
 
                     if (header) {
@@ -135,13 +147,12 @@ function displayTable(data) {
                         } else if (header.toLowerCase() !== "location") {
                             let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
                             if (!isNaN(num)) {
-                                cell = `$${Math.round(num).toLocaleString()}`; // Rounds to nearest dollar
+                                cell = `$${Math.round(num).toLocaleString()}`;
                             }
                         }
                     }
                 }
 
-                // Hide specific text values except date columns
                 if (
                     cell !== "Sales Report by Location" &&
                     !(rowIndex === 0 && colIndex === 2) &&
@@ -159,23 +170,11 @@ function displayTable(data) {
         });
 
         table.appendChild(tr);
-        visibleRowIndex++; // Increment only for displayed rows
+        visibleRowIndex++;
     });
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-// Load stored CSV data on page load
+// Load stored CSV data or the default hardcoded CSV on page load
 window.onload = function() {
     const storedCsvData = localStorage.getItem('csvData');
 
@@ -189,5 +188,6 @@ window.onload = function() {
             }
         });
     } else {
+        loadDefaultCSV(); // Load hardcoded CSV if no stored data exists
     }
 };
