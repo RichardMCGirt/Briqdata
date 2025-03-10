@@ -1,6 +1,6 @@
 // Function to fetch and parse CSV from GitHub
 function loadDefaultCSV() {
-    fetch('https://raw.githubusercontent.com/RichardMCGirt/Briqdata/refs/heads/main/SalesReportbyLocation-1741350882-1396346555.csv')
+    fetch('https://raw.githubusercontent.com/RichardMCGirt/Briqdata/refs/heads/main/SalesReportbyLocation-1741617005-33109267.csv')
         .then(response => response.text())
         .then(csvData => {
             localStorage.setItem('csvData', csvData); // Store data in local storage
