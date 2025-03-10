@@ -28,47 +28,80 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
 });
 
 function displayTable(data) {
-
-    if (data.length === 0) {
+    if (data.length <= 1) { // Ensure there's more than just a header row
         return;
     }
 
     const table = document.getElementById('csvTable');
     table.innerHTML = '';
 
+    const dateContainer = document.getElementById('dateContainer'); 
+    dateContainer.innerHTML = '<h4>Extracted Date</h4>'; // Reset date section
+    dateContainer.style.display = "none"; // Hide initially
+
+    let dateFound = false; // Flag to check if at least one date is found
+    let extractedDates = []; // Store found dates
+
+    console.log("Full CSV Data:", data); // Debug: Log entire CSV data
+
     // Determine columns to hide by checking for "labor" in any row
     const columnsToHide = new Set();
-    data.forEach((row) => {
+    data.forEach((row, rowIndex) => {
         row.forEach((cell, colIndex) => {
             if (typeof cell === "string" && cell.toLowerCase().includes("labor")) {
                 columnsToHide.add(colIndex);
             }
+
+            // Extract Dates BEFORE filtering hidden rows
+            if (typeof cell === "string") {
+                cell = cell.trim();
+                let isDate = cell.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+                if (isDate) {
+                    dateFound = true;
+                    let [_, month, day, year] = isDate;
+                    let monthNames = [
+                        "January", "February", "March", "April", "May", "June",
+                        "July", "August", "September", "October", "November", "December"
+                    ];
+                    let formattedDate = `${monthNames[parseInt(month, 10) - 1]} ${parseInt(day, 10)}, ${year}`;
+                    extractedDates.push(formattedDate);
+                }
+            }
         });
     });
 
+    // Display extracted dates if found
+    if (dateFound) {
+        extractedDates.forEach(date => {
+            let dateEntry = document.createElement('p');
+            dateEntry.textContent = date;
+            dateContainer.appendChild(dateEntry);
+        });
+        dateContainer.style.display = "block"; // Show only if dates exist
+        console.log(`✅ Extracted Dates:`, extractedDates);
+    } else {
+        let noDateMsg = document.createElement('p');
+        noDateMsg.textContent = "No dates found in the CSV.";
+        noDateMsg.style.color = "red";
+        dateContainer.appendChild(noDateMsg);
+        console.warn("⚠️ No dates found in the CSV.");
+    }
 
     let visibleRowIndex = 0; // Track the index of displayed rows (excluding hidden ones)
     let columnHeaders = []; // Store headers for reference in TD formatting
 
-    data.forEach((row, rowIndex) => {
+    data.slice(1).forEach((row, rowIndex) => { // Skips the first row
         // Skip empty rows
         if (row.every(cell => cell === "" || cell === null || cell === undefined)) {
             return;
         }
 
-        // Skip rows that contain "Sales Report by Location"
-        if (row.includes("Sales Report by Location")) {
-            return;
-        }
+        console.log(`Row ${rowIndex + 1}:`, row); // Debug: Log each row
 
         const tr = document.createElement('tr');
 
         // Apply odd/even row styles
-        if (visibleRowIndex % 2 === 0) {
-            tr.classList.add("even-row");
-        } else {
-            tr.classList.add("odd-row");
-        }
+        tr.classList.add(visibleRowIndex % 2 === 0 ? "even-row" : "odd-row");
 
         // Add a thicker top border to the row containing "Total"
         if (row.some(cell => typeof cell === "string" && cell.toLowerCase().includes("total"))) {
@@ -76,11 +109,15 @@ function displayTable(data) {
         }
 
         row.forEach((cell, colIndex) => {
+            if (typeof cell === "string") {
+                cell = cell.trim(); // Trim spaces
+            }
+
             if (!columnsToHide.has(colIndex)) { // Hide dynamically detected "labor" columns
                 let cellElement;
 
-                // Store headers on the first data row
-                if (rowIndex === 2) {
+                // Store headers on the second row (since first row is hidden)
+                if (rowIndex === 1) {
                     cellElement = document.createElement('th');
                     columnHeaders[colIndex] = cell; // Store headers for later reference
                 } else {
@@ -89,15 +126,22 @@ function displayTable(data) {
                     // Apply formatting rules based on header
                     let header = columnHeaders[colIndex] || "";
 
-                    if (header && !header.includes("%") && header.toLowerCase() !== "location") {
-                        let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
-                        if (!isNaN(num)) {
-                            cell = `$${num.toLocaleString()}`;
+                    if (header) {
+                        if (header.includes("%")) {
+                            let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
+                            if (!isNaN(num)) {
+                                cell = `${num.toFixed(2)}%`;
+                            }
+                        } else if (header.toLowerCase() !== "location") {
+                            let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
+                            if (!isNaN(num)) {
+                                cell = `$${Math.round(num).toLocaleString()}`; // Rounds to nearest dollar
+                            }
                         }
                     }
                 }
 
-                // Hide specific text value
+                // Hide specific text values except date columns
                 if (
                     cell !== "Sales Report by Location" &&
                     !(rowIndex === 0 && colIndex === 2) &&
@@ -110,17 +154,22 @@ function displayTable(data) {
                     }
 
                     tr.appendChild(cellElement);
-                } else {
                 }
-            } else {
             }
         });
 
         table.appendChild(tr);
         visibleRowIndex++; // Increment only for displayed rows
     });
-
 }
+
+
+
+
+
+
+
+
 
 
 

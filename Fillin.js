@@ -8,12 +8,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const totalCostDisplay = document.getElementById('total-cost-display');
     let chartInstance = null;
 
-    // Initially disable the export button
-    exportButton.disabled = true;
-    exportButton.textContent = "Fetching data...";
-    exportButton.style.backgroundColor = "#ccc";
-    exportButton.style.cursor = "not-allowed";
-
+   
     async function fetchData(offset = null) {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100`;
         if (offset) url += `&offset=${offset}`;
