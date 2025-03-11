@@ -171,8 +171,8 @@ await processRecords();
                 datasets: [{
                     label: 'Projected Revenue',
                     data: revenueValues,
-                    backgroundColor: 'rgba(139, 0, 0, 0.6)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(161, 9, 4, 0.8)',
+                    borderColor: 'rgba(161, 9, 4, 0.8)',
                     borderWidth: 2,
                     barThickness: 50
                 }]
