@@ -30,10 +30,7 @@ transition: transform 0.3s ease, box-shadow 0.3s ease;
 perspective: 1000px;
 }
 
-.chart-section:hover {
-    transform: scale(1.1) rotateX(0deg) rotateY(0deg);
-    box-shadow: 10px 15px 20px rgba(0, 0, 0, 0.3);
-}
+
 
 hr {
     border: none;
