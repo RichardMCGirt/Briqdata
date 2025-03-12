@@ -24,12 +24,11 @@
                 </a>
             </li>
             <li>
-                <a href="#" class="locked-link">
-                    <i class="fas fa-lock"></i> Sales
+                <div class="locked-container">
+                    <a href="#" class="locked-link" onclick="togglePrompt(event)">sales</a>
                     <div class="password-prompt">
-                        <label>Enter Password:</label>
-                        <input type="password" id="password-input">
-                        <button onclick="checkPassword()">Submit</button>
+                        <input type="password" id="password-input" placeholder="Enter password" oninput="validatePassword()">
+                        <button id="submit-btn" onclick="checkPassword()" disabled>Submit</button>
                     </div>
                 </a>
             </li>

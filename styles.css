@@ -39,66 +39,64 @@ hr {
     margin: 20px 0;
 }
 
-.locked-link {
-    text-decoration: none;
-    color: #0056b3;
-    font-weight: bold;
-    font-size: 18px;
-    padding: 10px 20px;
-    border: 2px solid #0056b3;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    transition: all 0.3s;
+.locked-container {
     position: relative;
-}
-
-.locked-link:hover {
-    background-color: #0056b3;
-    color: white;
-}
-
-.locked-link:hover .password-prompt {
-    display: block;
+    display: inline-block; /* Keeps the prompt directly under the link */
 }
 
 .password-prompt {
     display: none;
     position: absolute;
-    top: 50px;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 100%; /* Places it right below the link */
+    left: 0;
     background: white;
-    border: 1px solid #0056b3;
+    border: 2px solid #0056b3;
     padding: 10px;
     border-radius: 5px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
-    z-index: 10;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+    width: 220px;
+    margin-top: 5px; /* Adds space between link and password box */
+}
+
+.locked-link {
+    text-decoration: none; 
+    color: #0056b3; 
+    font-weight: bold; 
+    font-size: 18px; 
+    padding: 10px 20px; 
+    border: 2px solid #0056b3; 
+    border-radius: 5px; 
+    transition: all 0.3s;
+    display: inline-block;
 }
 
 .password-prompt input {
-    width: 100px;
+    width: 100%;
+    margin-bottom: 5px;
     padding: 5px;
-    margin-top: 5px;
     border: 1px solid #ccc;
     border-radius: 3px;
 }
 
 .password-prompt button {
-    background: #0056b3;
+    width: 100%;
+    padding: 5px;
+    background-color: #0056b3;
     color: white;
     border: none;
-    padding: 5px 10px;
     border-radius: 3px;
     cursor: pointer;
-    margin-top: 5px;
+    font-size: 16px;
 }
 
-.password-prompt button:hover {
-    background: #003d80;
+.password-prompt button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
 }
 
+.password-prompt button:hover:not(:disabled) {
+    background-color: #003d80;
+}
 
 .scrollable-container {
     max-height: 620px; /* Adjust the height as needed */
