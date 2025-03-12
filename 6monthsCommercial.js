@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         do {
             const data = await fetchData(offset);
             const filteredRecords = data.records.filter(record => {
-                const anticipatedEndDate = new Date(record.fields['Anticipated End Date']);
+                const anticipatedEndDate = new Date(record.fields['Anticipated Start Date']);
                 return anticipatedEndDate >= today && anticipatedEndDate <= sixMonthsLater;
             });
 

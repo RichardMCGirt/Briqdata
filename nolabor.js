@@ -176,18 +176,52 @@ function displayTable(data) {
 
 // Load stored CSV data or the default hardcoded CSV on page load
 window.onload = function() {
-    const storedCsvData = localStorage.getItem('csvData');
+    let attempts = 3; // Limit the number of attempts
 
-    if (storedCsvData) {
-        Papa.parse(storedCsvData, {
-            complete: function(results) {
-                displayTable(results.data);
-            },
-            error: function(error) {
-                console.error("Error parsing stored CSV data:", error);
+    function askForPassword() {
+        let userPassword = prompt("Enter the password to access the page:");
+
+        if (userPassword === "sales") {
+            // Correct password, proceed to load CSV
+            console.log("✅ Access granted.");
+            const storedCsvData = localStorage.getItem('csvData');
+
+            if (storedCsvData) {
+                Papa.parse(storedCsvData, {
+                    complete: function(results) {
+                        displayTable(results.data);
+                    },
+                    error: function(error) {
+                        console.error("Error parsing stored CSV data:", error);
+                    }
+                });
+            } else {
+                loadDefaultCSV();
             }
-        });
-    } else {
-        loadDefaultCSV(); // Load hardcoded CSV if no stored data exists
+        } else {
+            attempts--;
+
+            if (attempts > 0) {
+                alert(`❌ Incorrect password. You have ${attempts} attempt(s) left.`);
+                askForPassword();
+            } else {
+                alert("🚫 Access denied.");
+                showRedirectButton();
+            }
+        }
     }
+
+    function showRedirectButton() {
+        const button = document.createElement("button");
+        button.textContent = "Go Back to Home";
+        button.style.cssText = "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 10px 20px; font-size: 16px; cursor: pointer;";
+        button.onclick = function() {
+            window.location.href = "index.html";
+        };
+        document.body.innerHTML = ""; // Clear the screen
+        document.body.appendChild(button);
+    }
+
+    askForPassword();
 };
+
