@@ -8,7 +8,7 @@ function togglePrompt(event) {
 
 function validatePassword() {
     const password = document.getElementById("password-input").value;
-    const correctPassword = "Vanirsales"; // Change this to your actual password
+    const correctPassword = "Vanir2025!!"; // Change this to your actual password
     const submitBtn = document.getElementById("submit-btn");
 
     // Enable the button only if the correct password is entered
@@ -17,7 +17,7 @@ function validatePassword() {
 
 function checkPassword() {
     const password = document.getElementById("password-input").value;
-    const correctPassword = "Vanirsales"; 
+    const correctPassword = "Vanir2025!!"; 
 
     if (password === correctPassword) {
         window.location.href = "/nolabor.html";
