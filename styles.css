@@ -42,7 +42,9 @@ hr {
 .locked-container {
     position: relative;
     display: inline-block; /* Keeps the prompt directly under the link */
+    z-index: 9999; /* Ensures it always appears on top */
 }
+
 
 .password-prompt {
     display: none;

@@ -8,7 +8,7 @@ function togglePrompt(event) {
 
 function validatePassword() {
     const password = document.getElementById("password-input").value;
-    const correctPassword = "Vanir2025!!"; // Change this to your actual password
+    const correctPassword = "Vanir2025!!"; 
     const submitBtn = document.getElementById("submit-btn");
 
     // Enable the button only if the correct password is entered
@@ -20,7 +20,7 @@ function checkPassword() {
     const correctPassword = "Vanir2025!!"; 
 
     if (password === correctPassword) {
-        window.location.href = "/nolabor.html";
+        window.location.href = "/sales.html";
     } else {
         alert("Incorrect password!");
     }
