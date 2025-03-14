@@ -3,8 +3,9 @@ const fs = require('fs');
 const path = require('path');
 
 async function loginAndDownloadCSV(username, password) {
-    const downloadPath = process.cwd();  // Save files to repo root
-
+    const downloadPath = process.env.GITHUB_ACTIONS
+    ? path.join(os.homedir(), "work", "Briqdata", "Briqdata", "downloads")  // Use workspace directory
+    : path.join(os.homedir(), "Downloads");  // Default for local machines
     // Ensure the download directory exists
     if (!fs.existsSync(downloadPath)) {
         fs.mkdirSync(downloadPath, { recursive: true });

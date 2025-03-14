@@ -28,23 +28,24 @@ jobs:
           sudo apt-get install -y \
             libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libgbm1 \
             libxcomposite1 libxrandr2 libxdamage1 libxkbcommon0 libpango-1.0-0 libgtk-3-0 \
-            libasound2t64  # ✅ Replacing libasound2 with libasound2t64
+            libasound2t64
           npm install
 
       - name: Install Puppeteer Chrome
-        run: npx puppeteer browsers install chrome  # ✅ Installs Chrome for Puppeteer
+        run: npx puppeteer browsers install chrome
 
-      - name: Debug Environment Variables
-        run: env | sort
+      - name: Create Downloads Directory
+        run: mkdir -p ~/work/Briqdata/Briqdata/downloads  # ✅ Ensure directory exists
 
       - name: Run Puppeteer Script to Download CSV
         run: node downloadsalescsv.js || (echo "❌ Puppeteer script failed!" && exit 1)
 
       - name: Check if CSV File Exists
         run: |
-          CSV_FILE=$(ls ~/Downloads | grep "richard_mcgirt_vanirinstalledsales_com" | tail -n 1)
+          CSV_DIR=~/work/Briqdata/Briqdata/downloads  # ✅ Corrected path
+          CSV_FILE=$(ls $CSV_DIR | grep "richard_mcgirt_vanirinstalledsales_com" | tail -n 1)
           if [[ -z "$CSV_FILE" ]]; then
-            echo "❌ No CSV file found. Exiting."
+            echo "❌ No CSV file found in $CSV_DIR. Exiting."
             exit 1
           else
             echo "✅ CSV file found: $CSV_FILE"
@@ -53,8 +54,9 @@ jobs:
 
       - name: Move CSV File to Repository
         run: |
-          CSV_FILE=$(ls ~/Downloads | grep "richard_mcgirt_vanirinstalledsales_com" | tail -n 1)
-          mv ~/Downloads/"$CSV_FILE" ./
+          CSV_DIR=~/work/Briqdata/Briqdata/downloads
+          CSV_FILE=$(ls $CSV_DIR | grep "richard_mcgirt_vanirinstalledsales_com" | tail -n 1)
+          mv "$CSV_DIR/$CSV_FILE" ./
           echo "✅ Moved $CSV_FILE to repo"
         shell: bash
 
