@@ -1,11 +1,14 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
+const os = require("os");  // ✅ Import the os module
 
 async function loginAndDownloadCSV(username, password) {
-    const downloadPath = process.env.GITHUB_ACTIONS
-    ? path.join(os.homedir(), "work", "Briqdata", "Briqdata", "downloads")  // Use workspace directory
+    const downloadsPath = process.env.GITHUB_ACTIONS
+    ? path.join(os.homedir(), "work", "Briqdata", "Briqdata", "downloads")  // ✅ Fix: Use correct workspace directory
     : path.join(os.homedir(), "Downloads");  // Default for local machines
+  
+  console.log("📂 Using downloads path:", downloadsPath);
     // Ensure the download directory exists
     if (!fs.existsSync(downloadPath)) {
         fs.mkdirSync(downloadPath, { recursive: true });
