@@ -4,31 +4,32 @@ const path = require('path');
 const os = require("os");  // ✅ Import the os module
 
 async function loginAndDownloadCSV(username, password) {
+    // ✅ Define the correct downloads path
     const downloadsPath = process.env.GITHUB_ACTIONS
-    ? path.join(os.homedir(), "work", "Briqdata", "Briqdata", "downloads")  // ✅ Fix: Use correct workspace directory
-    : path.join(os.homedir(), "Downloads");  // Default for local machines
+        ? path.join(os.homedir(), "work", "Briqdata", "Briqdata", "downloads")  // ✅ GitHub Actions workspace
+        : path.join(os.homedir(), "Downloads");  // ✅ Default for local machines
   
-  console.log("📂 Using downloads path:", downloadsPath);
-    // Ensure the download directory exists
-    if (!fs.existsSync(downloadsPath)) {
-        fs.mkdirSync(downloadsPath, { recursive: true });  // ✅ Ensure directory exists
-    }
-    
+    console.log("📂 Using downloads path:", downloadsPath);
 
-    // Launch Puppeteer and enforce download path
+    // ✅ Ensure the download directory exists
+    if (!fs.existsSync(downloadsPath)) {
+        fs.mkdirSync(downloadsPath, { recursive: true });  
+        console.log("📂 Created downloads directory:", downloadsPath);
+    }
+
+    // ✅ Launch Puppeteer
     const browser = await puppeteer.launch({
-        headless: "new", // Use "true" or "new" for improved compatibility
+        headless: "new", 
         args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
-      
+    });
 
     const page = await browser.newPage();
 
-    // Set Puppeteer to allow file downloads
+    // ✅ Set Puppeteer to allow file downloads
     const client = await page.target().createCDPSession();
     await client.send('Page.setDownloadBehavior', {
         behavior: 'allow',
-        downloadPath: downloadPath
+        downloadPath: downloadsPath  // ✅ FIXED: Use the correct variable
     });
 
     try {
@@ -52,7 +53,7 @@ async function loginAndDownloadCSV(username, password) {
 
         console.log("✅ Login successful!");
 
-        // Navigate to the custom report page
+        // ✅ Navigate to the report page
         const reportUrl = 'https://vanirlive.omnna-lbm.live/index.php?module=Customreport&action=CustomreportAjax&file=Customreportview&parenttab=Analytics&entityId=3729087';
         console.log("📊 Navigating to custom report page...");
         await page.goto(reportUrl, { waitUntil: 'networkidle2' });
@@ -60,15 +61,14 @@ async function loginAndDownloadCSV(username, password) {
         console.log("✅ Custom report page loaded!");
 
         console.log("📑 Waiting for the report dropdown...");
-        await page.waitForSelector('select#ddlSavedTemplate', { timeout: 30000 }); // Wait up to 30s
+        await page.waitForSelector('select#ddlSavedTemplate', { timeout: 30000 }); 
         
         console.log("📑 Selecting 'All Sales Report'...");
-        await page.select('#ddlSavedTemplate', '249'); // Select the report
+        await page.select('#ddlSavedTemplate', '249'); 
         
         console.log("✅ Successfully selected 'All Sales Report'!");
         
-
-        // Wait to simulate human interaction
+        // ✅ Wait to simulate human interaction
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         console.log("🔘 Clicking 'Generate Now' button...");
@@ -84,13 +84,13 @@ async function loginAndDownloadCSV(username, password) {
 
         console.log("📂 CSV Export initiated! Waiting for download...");
 
-        // **Wait until the file appears**
+        // ✅ Wait until the file appears
         let fileFound = false;
         const timeout = 30000;  // Max wait time: 30 seconds
         const checkInterval = 2000;  // Check every 2 seconds
 
         for (let elapsed = 0; elapsed < timeout; elapsed += checkInterval) {
-            const downloadedFiles = fs.readdirSync(downloadPath);
+            const downloadedFiles = fs.readdirSync(downloadsPath);  // ✅ FIXED: Use downloadsPath
             const csvFile = downloadedFiles.find(file => file.includes("richard_mcgirt_vanirinstalledsales_com") && file.endsWith(".csv"));
 
             if (csvFile) {
