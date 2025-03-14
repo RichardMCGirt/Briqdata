@@ -38,7 +38,7 @@ jobs:
         run: mkdir -p ~/work/Briqdata/Briqdata/downloads  # ✅ Ensure directory exists
 
       - name: Run Puppeteer Script to Download CSV
-        run: node downloadsalescsv.js || (echo "❌ Puppeteer script failed!" && exit 1)
+        run: node run_daily_tasks.js || (echo "❌ Puppeteer script failed!" && exit 1)
 
       - name: Check if CSV File Exists
         run: |
