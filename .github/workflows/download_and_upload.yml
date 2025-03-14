@@ -40,7 +40,7 @@ jobs:
       - name: Run Puppeteer Script to Download CSV
         run: node run_daily_tasks.js || (echo "❌ Puppeteer script failed!" && exit 1)
 
-          - name: Debug: List Downloaded Files
+      - name: Debug: List Downloaded Files  # ✅ FIXED INDENTATION
         run: ls -l ~/work/Briqdata/Briqdata/downloads  # ✅ Show files downloaded
 
       - name: Check if CSV File Exists
@@ -54,7 +54,6 @@ jobs:
             echo "✅ CSV file found: $CSV_FILE"
           fi
         shell: bash
-
 
       - name: Move CSV File to Repository
         run: |
