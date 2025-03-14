@@ -4,33 +4,39 @@ const path = require('path');
 const os = require("os");  // ✅ Import the os module
 
 async function loginAndDownloadCSV(username, password) {
-    // ✅ Define the correct downloads path
     const downloadsPath = process.env.GITHUB_ACTIONS
-        ? path.join(os.homedir(), "work", "Briqdata", "Briqdata", "downloads")  // ✅ GitHub Actions workspace
-        : path.join(os.homedir(), "Downloads");  // ✅ Default for local machines
-  
-    console.log("📂 Using downloads path:", downloadsPath);
+    ? path.join(os.homedir(), "work", "Briqdata", "Briqdata", "downloads")  // GitHub Actions workspace
+    : path.join(os.homedir(), "Downloads");  // Default for local machines
 
-    // ✅ Ensure the download directory exists
+console.log("📂 Puppeteer download path set to:", downloadsPath);
+
+
     if (!fs.existsSync(downloadsPath)) {
         fs.mkdirSync(downloadsPath, { recursive: true });  
         console.log("📂 Created downloads directory:", downloadsPath);
     }
 
-    // ✅ Launch Puppeteer
     const browser = await puppeteer.launch({
-        headless: "new", 
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        headless: false,  // ✅ Change to false for debugging (set back to true later)
+        args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",  // ✅ Prevents crashes
+            "--disable-gpu",
+            "--window-size=1920,1080"
+        ]
     });
+    
 
     const page = await browser.newPage();
 
-    // ✅ Set Puppeteer to allow file downloads
+    // ✅ Set Puppeteer to allow downloads
     const client = await page.target().createCDPSession();
-    await client.send('Page.setDownloadBehavior', {
-        behavior: 'allow',
-        downloadPath: downloadsPath  // ✅ FIXED: Use the correct variable
+    await page._client().send("Page.setDownloadBehavior", {
+        behavior: "allow",
+        downloadPath: downloadsPath  // ✅ Ensure Puppeteer knows where to save files
     });
+    
 
     try {
         console.log("🚀 Opening browser and navigating to login page...");
@@ -53,7 +59,6 @@ async function loginAndDownloadCSV(username, password) {
 
         console.log("✅ Login successful!");
 
-        // ✅ Navigate to the report page
         const reportUrl = 'https://vanirlive.omnna-lbm.live/index.php?module=Customreport&action=CustomreportAjax&file=Customreportview&parenttab=Analytics&entityId=3729087';
         console.log("📊 Navigating to custom report page...");
         await page.goto(reportUrl, { waitUntil: 'networkidle2' });
@@ -67,30 +72,36 @@ async function loginAndDownloadCSV(username, password) {
         await page.select('#ddlSavedTemplate', '249'); 
         
         console.log("✅ Successfully selected 'All Sales Report'!");
-        
-        // ✅ Wait to simulate human interaction
-        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        await page.waitForTimeout(2000);
 
         console.log("🔘 Clicking 'Generate Now' button...");
         await page.waitForSelector('input[name="generatenw"][type="submit"]', { timeout: 10000 });
         await page.click('input[name="generatenw"][type="submit"]');
 
         console.log("⌛ Waiting for report generation...");
-        await new Promise(resolve => setTimeout(resolve, 4000));
+        await page.waitForTimeout(4000);
 
         console.log("⬇️ Clicking 'Export To CSV'...");
-        await page.waitForSelector('#btnExport', { timeout: 10000 });
-        await page.click('#btnExport');
+await page.waitForSelector('#btnExport', { timeout: 10000 });
+await page.click('#btnExport');
 
-        console.log("📂 CSV Export initiated! Waiting for download...");
+console.log("⌛ Waiting extra time for the download...");
+await page.waitForTimeout(20000);  // ✅ Increase wait time for the download to complete
 
-        // ✅ Wait until the file appears
+
+        console.log("📂 Checking download folder for CSV file...");
         let fileFound = false;
-        const timeout = 30000;  // Max wait time: 30 seconds
-        const checkInterval = 2000;  // Check every 2 seconds
+        const timeout = 30000;  
+        const checkInterval = 2000;  
 
         for (let elapsed = 0; elapsed < timeout; elapsed += checkInterval) {
-            const downloadedFiles = fs.readdirSync(downloadsPath);  // ✅ FIXED: Use downloadsPath
+            console.log("📂 Checking download folder for CSV file...");
+            await page.waitForTimeout(5000);  // ✅ Give time for file to start appearing
+            
+            const downloadedFiles = fs.readdirSync(downloadsPath);
+            console.log("📝 Debug: Files in download folder AFTER clicking Export:", downloadedFiles);
+            
             const csvFile = downloadedFiles.find(file => file.includes("richard_mcgirt_vanirinstalledsales_com") && file.endsWith(".csv"));
 
             if (csvFile) {
@@ -100,7 +111,7 @@ async function loginAndDownloadCSV(username, password) {
             }
 
             console.log("⏳ Waiting for CSV file...");
-            await new Promise(resolve => setTimeout(resolve, checkInterval));
+            await page.waitForTimeout(checkInterval);
         }
 
         if (!fileFound) {
@@ -115,7 +126,6 @@ async function loginAndDownloadCSV(username, password) {
     }
 }
 
-// 🔑 Replace with valid credentials
 const username = 'richard.mcgirt';
 const password = '84625';
 
