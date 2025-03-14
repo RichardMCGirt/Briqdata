@@ -10,9 +10,10 @@ async function loginAndDownloadCSV(username, password) {
   
   console.log("📂 Using downloads path:", downloadsPath);
     // Ensure the download directory exists
-    if (!fs.existsSync(downloadPath)) {
-        fs.mkdirSync(downloadPath, { recursive: true });
+    if (!fs.existsSync(downloadsPath)) {
+        fs.mkdirSync(downloadsPath, { recursive: true });  // ✅ Ensure directory exists
     }
+    
 
     // Launch Puppeteer and enforce download path
     const browser = await puppeteer.launch({
