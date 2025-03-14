@@ -8,14 +8,15 @@ on:
 jobs:
   run-puppeteer:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3  # ✅ Use the latest stable version
 
       - name: Setup Node.js
-        uses: actions/setup-node@v20
+        uses: actions/setup-node@v3  # ✅ Use a stable version
         with:
-          node-version: 20
+          node-version: '20'  # ✅ Explicitly specify Node.js version as a string
 
       - name: Install Dependencies
         run: |
@@ -26,13 +27,33 @@ jobs:
       - name: Run Puppeteer Script to Download CSV
         run: node downloadsalescsv.js
 
-      - name: Run Automation Script for Git Upload
-        run: node automatenolabor.js
-
-      - name: Push CSV to GitHub
+      - name: Check if CSV File Exists
         run: |
-          git config --global user.email "you@example.com"
+          CSV_FILE=$(ls ~/Downloads | grep "richard_mcgirt_vanirinstalledsales_com" | tail -n 1)
+          if [[ -z "$CSV_FILE" ]]; then
+            echo "❌ No CSV file found. Exiting."
+            exit 1
+          else
+            echo "✅ CSV file found: $CSV_FILE"
+          fi
+        shell: bash
+
+      - name: Move CSV File to Repository
+        run: |
+          CSV_FILE=$(ls ~/Downloads | grep "richard_mcgirt_vanirinstalledsales_com" | tail -n 1)
+          mv ~/Downloads/"$CSV_FILE" ./
+          echo "✅ Moved $CSV_FILE to repo"
+        shell: bash
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "richard.mcgirt@vanirinstalledsales.com"
           git config --global user.name "GitHub Action Bot"
-          git push
+
+      - name: Commit and Push CSV
+        run: |
+          git add .
+          git commit -m "Automated upload: $(date +'%Y-%m-%d')"
+          git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/RichardMCGirt/Briqdata.git main
         env:
-          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
