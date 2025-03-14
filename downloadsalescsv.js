@@ -12,12 +12,10 @@ async function loginAndDownloadCSV(username, password) {
 
     // Launch Puppeteer and enforce download path
     const browser = await puppeteer.launch({
-        headless: false,  // Set to false for debugging, change to true for automation
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox'
-        ]
-    });
+        headless: "new", // Use "true" or "new" for improved compatibility
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
+      
 
     const page = await browser.newPage();
 

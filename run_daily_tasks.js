@@ -4,7 +4,7 @@ const path = require('path');
 const os = require('os');
 
 // Define paths
-const downloadsPath = path.join(os.homedir(), 'Downloads');
+const downloadsPath = process.env.HOME + "/Downloads"; // Ensure correct path
 const targetDir = "/Users/richardmcgirt/Desktop/Briqdata";  // Repository directory
 const csvFilenamePattern = "richard_mcgirt_vanirinstalledsales_com";  // Identify the file
 
