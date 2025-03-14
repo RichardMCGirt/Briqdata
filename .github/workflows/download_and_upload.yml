@@ -1,0 +1,38 @@
+name: Download and Upload CSV
+
+on:
+  schedule:
+    - cron: "0 10 * * *"  # Runs daily at 6 AM Eastern Time
+  workflow_dispatch:  # Allows manual execution
+
+jobs:
+  run-puppeteer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v20
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libgbm1 libasound2
+          npm install
+
+      - name: Run Puppeteer Script to Download CSV
+        run: node downloadsalescsv.js
+
+      - name: Run Automation Script for Git Upload
+        run: node automatenolabor.js
+
+      - name: Push CSV to GitHub
+        run: |
+          git config --global user.email "you@example.com"
+          git config --global user.name "GitHub Action Bot"
+          git push
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}

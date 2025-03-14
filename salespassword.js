@@ -25,3 +25,11 @@ function checkPassword() {
         alert("Incorrect password!");
     }
 }
+
+// Listen for "Enter" key press inside the password input field
+document.getElementById("password-input").addEventListener("keypress", function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault(); // Prevent form submission if inside a form
+        checkPassword();
+    }
+});

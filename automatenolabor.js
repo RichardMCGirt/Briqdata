@@ -1,29 +1,28 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 
 (async () => {
     console.log("🚀 Starting automated Git commit & push...");
 
     // Define paths
-    const downloadsPath = path.join(os.homedir(), 'Downloads');
-    const targetDir = "/Users/richardmcgirt/Desktop/Briqdata";  // Repository directory
+    const repoRoot = process.cwd(); // Root of the GitHub repository
+    const targetDir = repoRoot; // In GitHub Actions, we use the repo root
 
-    // Function to get the most recent CSV file in the Downloads folder
+    // Function to get the most recent CSV file in the repo
     function getLatestDownload() {
-        const files = fs.readdirSync(downloadsPath)
+        const files = fs.readdirSync(targetDir)
             .filter(file => file.includes("richard_mcgirt_vanirinstalledsales_com") && file.endsWith(".csv"))
             .map(file => ({
                 name: file,
-                time: fs.statSync(path.join(downloadsPath, file)).mtime.getTime()
+                time: fs.statSync(path.join(targetDir, file)).mtime.getTime()
             }))
-            .sort((a, b) => b.time - a.time); // Sort by most recent file
+            .sort((a, b) => b.time - a.time); // Sort by most recent
 
-        return files.length ? path.join(downloadsPath, files[0].name) : null;
+        return files.length ? path.join(targetDir, files[0].name) : null;
     }
 
-    // Get the latest downloaded file
+    // Get the latest CSV file
     const filePath = getLatestDownload();
     if (!filePath) {
         console.error("❌ No recent CSV download found. Exiting...");
@@ -44,31 +43,19 @@ const os = require('os');
             }
         });
 
-        // 📥 Step 2: Copy new file into the repository
-        console.log("📥 Copying latest file into repository...");
-        execSync(`cp "${filePath}" "${targetDir}/"`, { stdio: 'inherit' });
+        // 📥 Step 2: Move the new file to repo root (already in place)
+        console.log("📥 Keeping latest file in repository...");
 
         // 🔄 Step 3: Add new file to Git
         console.log("🔄 Adding new CSV file to Git...");
-        execSync(`cd "${targetDir}" && git add .`, { stdio: 'inherit' });
+        execSync(`git add .`, { stdio: 'inherit' });
 
         // ✍️ Step 4: Commit changes
         console.log("✍️ Committing changes...");
-        execSync(`cd "${targetDir}" && git commit -m "Automated upload: ${path.basename(filePath)}"`, { stdio: 'inherit' });
+        execSync(`git commit -m "Automated upload: ${path.basename(filePath)}"`, { stdio: 'inherit' });
 
-        // 🔐 GitHub credentials
-        const GITHUB_USERNAME = "RichardMCGirt";
-        const GITHUB_PAT = process.env.GITHUB_PAT;  // ✅ Use environment variable
-
-        if (!GITHUB_PAT) {
-            console.error("❌ ERROR: GitHub token is missing. Set the GITHUB_PAT environment variable.");
-            process.exit(1);
-        }
-
-        // 🚀 Step 5: Push changes to GitHub
-        const pushCommand = `git push https://${GITHUB_USERNAME}:${GITHUB_PAT}@github.com/RichardMCGirt/Briqdata.git main`;
         console.log("🚀 Pushing changes to GitHub...");
-        execSync(`cd "${targetDir}" && ${pushCommand}`, { stdio: 'inherit' });
+        execSync(`git push`, { stdio: 'inherit' });
 
         console.log("✅ File uploaded successfully via Git!");
     } catch (error) {
