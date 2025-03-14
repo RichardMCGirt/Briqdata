@@ -1,20 +1,64 @@
-// Function to fetch and parse CSV from GitHub
-function loadDefaultCSV() {
-    fetch('https://raw.githubusercontent.com/RichardMCGirt/Briqdata/refs/heads/main/SalesReportbyLocation-1741951934-609492101.csv')
-        .then(response => response.text())
-        .then(csvData => {
-            localStorage.setItem('csvData', csvData); // Store data in local storage
-            Papa.parse(csvData, {
-                complete: function(results) {
-                    displayTable(results.data);
-                },
-                error: function(error) {
-                    console.error("Error parsing default CSV:", error);
-                }
-            });
-        })
-        .catch(error => console.error("Error loading default CSV:", error));
+// Function to fetch the latest CSV file dynamically from GitHub
+async function loadDefaultCSV() {
+    const repoOwner = "RichardMCGirt";
+    const repoName = "Briqdata";
+    const branch = "main"; // Adjust if using a different branch
+    const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/`;
+
+    try {
+        console.log("🔍 Fetching latest CSV from GitHub...");
+
+        // Fetch repository contents
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+            throw new Error(`GitHub API error: ${response.statusText}`);
+        }
+
+        const files = await response.json();
+
+        // Filter CSV files that match "SalesReportbyLocation"
+        const csvFiles = files.filter(file => file.name.includes("SalesReportbyLocation") && file.name.endsWith(".csv"));
+
+        if (csvFiles.length === 0) {
+            console.warn("⚠️ No CSV files found in repository.");
+            return;
+        }
+
+        // Sort by last modified date (descending order)
+        csvFiles.sort((a, b) => new Date(b.last_modified) - new Date(a.last_modified));
+
+        // Get the latest file
+        const latestFile = csvFiles[0];
+        const latestFileUrl = latestFile.download_url;
+
+        console.log(`✅ Latest CSV found: ${latestFile.name}`);
+
+        // Fetch the latest CSV file
+        const csvResponse = await fetch(latestFileUrl);
+        if (!csvResponse.ok) {
+            throw new Error(`Error loading latest CSV file: ${csvResponse.statusText}`);
+        }
+
+        const csvData = await csvResponse.text();
+
+        // Store in local storage
+        localStorage.setItem('csvData', csvData);
+
+        // Parse and display CSV
+        Papa.parse(csvData, {
+            complete: function(results) {
+                displayTable(results.data);
+            },
+            error: function(error) {
+                console.error("Error parsing CSV:", error);
+            }
+        });
+
+    } catch (error) {
+        console.error("❌ Error loading latest CSV:", error);
+    }
 }
+
 
 // Event listener for user-uploaded CSV files
 document.getElementById('fileInput').addEventListener('change', function(event) {
@@ -175,7 +219,7 @@ function displayTable(data) {
 }
 
 // Load stored CSV data or the default hardcoded CSV on page load
-window.onload = function() {
+window.onload = async function() {
     const storedCsvData = localStorage.getItem('csvData');
 
     if (storedCsvData) {
@@ -188,6 +232,6 @@ window.onload = function() {
             }
         });
     } else {
-        loadDefaultCSV(); // Load hardcoded CSV if no stored data exists
+        await loadDefaultCSV();
     }
 };

@@ -6,19 +6,38 @@ const os = require('os');
 (async () => {
     console.log("🚀 Starting automated Git commit & push...");
 
-    // Define file paths
+    // Define paths
     const downloadsPath = path.join(os.homedir(), 'Downloads');
     const targetDir = "/Users/richardmcgirt/Desktop/Briqdata";  // Repository directory
-    const filePath = path.join(downloadsPath, 'richard_mcgirt_vanirinstalledsales_com_March 03, 2025_csv (2).csv');
 
-    console.log(`📂 File path resolved: ${filePath}`);
+    // Function to get the most recent CSV file in the Downloads folder
+    function getLatestDownload() {
+        const files = fs.readdirSync(downloadsPath)
+            .filter(file => file.includes("richard_mcgirt_vanirinstalledsales_com") && file.endsWith(".csv"))
+            .map(file => ({
+                name: file,
+                time: fs.statSync(path.join(downloadsPath, file)).mtime.getTime()
+            }))
+            .sort((a, b) => b.time - a.time); // Sort by most recent file
+
+        return files.length ? path.join(downloadsPath, files[0].name) : null;
+    }
+
+    // Get the latest downloaded file
+    const filePath = getLatestDownload();
+    if (!filePath) {
+        console.error("❌ No recent CSV download found. Exiting...");
+        process.exit(1);
+    } else {
+        console.log(`✅ Most recent CSV file found: ${filePath}`);
+    }
 
     try {
-        // 🔥 Step 1: Delete old files containing "SalesReportbyLocation"
-        console.log("🗑️ Deleting old files containing 'SalesReportbyLocation'...");
+        // 🔥 Step 1: Delete old files containing "vanirinstalledsales"
+        console.log("🗑️ Deleting old files in repository...");
         const files = fs.readdirSync(targetDir);
         files.forEach(file => {
-            if (file.includes('SalesReportbyLocation')) {
+            if (file.includes('vanirinstalledsales')) {
                 const fileToDelete = path.join(targetDir, file);
                 fs.unlinkSync(fileToDelete);
                 console.log(`🗑️ Deleted: ${fileToDelete}`);
@@ -26,16 +45,16 @@ const os = require('os');
         });
 
         // 📥 Step 2: Copy new file into the repository
-        console.log("📥 Copying file into repository...");
+        console.log("📥 Copying latest file into repository...");
         execSync(`cp "${filePath}" "${targetDir}/"`, { stdio: 'inherit' });
 
-        // 🔄 Step 3: Add file to Git
-        console.log("🔄 Adding file to Git...");
+        // 🔄 Step 3: Add new file to Git
+        console.log("🔄 Adding new CSV file to Git...");
         execSync(`cd "${targetDir}" && git add .`, { stdio: 'inherit' });
 
         // ✍️ Step 4: Commit changes
         console.log("✍️ Committing changes...");
-        execSync(`cd "${targetDir}" && git commit -m "Automated upload via script"`, { stdio: 'inherit' });
+        execSync(`cd "${targetDir}" && git commit -m "Automated upload: ${path.basename(filePath)}"`, { stdio: 'inherit' });
 
         // 🔐 GitHub credentials
         const GITHUB_USERNAME = "RichardMCGirt";
