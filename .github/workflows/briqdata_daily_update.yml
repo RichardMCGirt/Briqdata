@@ -42,13 +42,14 @@ jobs:
           BRIQ_PASSWORD: ${{ secrets.BRIQ_PASSWORD }}
         run: node downloadsalescsv.js
 
-      - name: 🔄 Commit & Push Changes
+      -      - name: 🔄 Commit & Push Changes
         env:
-          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}  # Ensure correct token is used
+          GH_PAT: ${{ secrets.GH_PAT }}  # ✅ Use the correct PAT
         run: |
           git config --global user.email "your-email@example.com"
           git config --global user.name "RichardMCGirt"
-          git remote set-url origin https://x-access-token:${GITHUB_PAT}@github.com/RichardMCGirt/Briqdata.git
+          git remote set-url origin https://x-access-token:${GH_PAT}@github.com/RichardMCGirt/Briqdata.git
           git add .
           git commit -m "Automated upload of latest sales CSV" || echo "No changes to commit"
           git push origin main
+
