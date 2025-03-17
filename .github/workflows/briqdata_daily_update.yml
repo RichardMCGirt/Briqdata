@@ -1,4 +1,4 @@
-name: Automate Briqdata CSV Upload
+name: Automate sales CSV Upload
 
 on:
   schedule:
@@ -29,7 +29,7 @@ jobs:
         run: echo "Environment variables set"
 
       - name: 🚀 Run Puppeteer Script
-        run: node script.js  # Change this to your actual script file name
+        run: node downloadsalescsv.js.js  # Change this to your actual script file name
 
       - name: 🔄 Commit & Push Changes
         run: |
