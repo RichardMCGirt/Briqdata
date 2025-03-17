@@ -1,4 +1,4 @@
-name: Automate Briqdata CSV Upload
+name: Automate Sales CSV Upload
 
 on:
   schedule:
@@ -18,11 +18,19 @@ jobs:
         with:
           node-version: 18
 
-      - name: 📦 Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libatk1.0-0 libatk-bridge2.0-0 libcups2 libxkbcommon-x11-0 libgbm-dev
-          npm install
+
+          - name: 🛠 Install Google Chrome
+  run: |
+    sudo apt-get update
+    sudo apt-get install -y google-chrome-stable
+
+
+    - name: 📦 Install Dependencies
+  run: |
+    sudo apt-get update
+    sudo apt-get install -y libatk1.0-0 libatk-bridge2.0-0 libcups2 libxkbcommon-x11-0 libgbm-dev
+    npm install puppeteer
+
 
       - name: 🔑 Set Up Environment Variables
         env:

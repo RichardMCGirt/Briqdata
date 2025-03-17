@@ -10,14 +10,16 @@ async function loginAndDownloadCSV(username, password) {
     console.log("📂 Puppeteer download path set to:", rootPath);
 
     const browser = await puppeteer.launch({
-        headless: 'new',
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        headless: 'new',  // ✅ Ensures Puppeteer runs in CI/CD
+        executablePath: '/usr/bin/google-chrome',  // ✅ Explicitly sets Chrome path
+        args: ["--no-sandbox", "--disable-setuid-sandbox"]
     });
-    console.log("✅ Puppeteer launched successfully");
+
+    const page = await browser.newPage();
+    console.log("✅ Browser launched successfully!");
     
     
 
-    const page = await browser.newPage();
     const client = await page.target().createCDPSession();
     await client.send("Page.setDownloadBehavior", {
         behavior: "allow",
