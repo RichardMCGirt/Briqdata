@@ -73,21 +73,21 @@ console.log("📂 Puppeteer download path set to:", downloadsPath);
         
         console.log("✅ Successfully selected 'All Sales Report'!");
 
-        await page.waitForTimeout(2000);
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
         console.log("🔘 Clicking 'Generate Now' button...");
         await page.waitForSelector('input[name="generatenw"][type="submit"]', { timeout: 10000 });
         await page.click('input[name="generatenw"][type="submit"]');
 
         console.log("⌛ Waiting for report generation...");
-        await page.waitForTimeout(4000);
+await new Promise(resolve => setTimeout(resolve, 3000));
 
         console.log("⬇️ Clicking 'Export To CSV'...");
-await page.waitForSelector('#btnExport', { timeout: 10000 });
+await page.waitForSelector('#btnExport', { timeout: 25000 });
 await page.click('#btnExport');
 
 console.log("⌛ Waiting extra time for the download...");
-await page.waitForTimeout(20000);  // ✅ Increase wait time for the download to complete
+await new Promise(resolve => setTimeout(resolve, 25000));
 
 
         console.log("📂 Checking download folder for CSV file...");
@@ -97,21 +97,44 @@ await page.waitForTimeout(20000);  // ✅ Increase wait time for the download to
 
         for (let elapsed = 0; elapsed < timeout; elapsed += checkInterval) {
             console.log("📂 Checking download folder for CSV file...");
-            await page.waitForTimeout(5000);  // ✅ Give time for file to start appearing
+            await new Promise(resolve => setTimeout(resolve, 5000));
             
-            const downloadedFiles = fs.readdirSync(downloadsPath);
-            console.log("📝 Debug: Files in download folder AFTER clicking Export:", downloadedFiles);
+            console.log("📂 Checking download folder for CSV file...");
+            const downloadedFiles = fs.readdirSync(downloadsPath);  // ✅ Ensure `downloadedFiles` is assigned
+            console.log("📝 Debug: Files in download folder:", downloadedFiles);
             
-            const csvFile = downloadedFiles.find(file => file.includes("richard_mcgirt_vanirinstalledsales_com") && file.endsWith(".csv"));
-
-            if (csvFile) {
+            console.log("📝 Debug: Checking for CSV files...");
+            let csvFiles = downloadedFiles.filter(file => file.endsWith(".csv"));
+            
+            if (csvFiles.length === 0) {
+                console.error("❌ No CSV files found!");
+            } else {
+                console.log("🔍 Found CSV files:", csvFiles);
+            
+                const latestCsvFile = csvFiles.sort((a, b) => 
+                    fs.statSync(path.join(downloadsPath, b)).mtimeMs - 
+                    fs.statSync(path.join(downloadsPath, a)).mtimeMs
+                )[0];
+            
+                console.log("✅ Using latest CSV file:", latestCsvFile);
+            }
+            
+              
+            
+            if (csvFiles.length > 0) {
+                const csvFile = csvFiles.sort((a, b) => 
+                    fs.statSync(path.join(downloadsPath, b)).mtimeMs - 
+                    fs.statSync(path.join(downloadsPath, a)).mtimeMs
+                )[0];
+            
                 console.log(`✅ CSV Downloaded: ${csvFile}`);
                 fileFound = true;
                 break;
             }
+            
 
             console.log("⏳ Waiting for CSV file...");
-            await page.waitForTimeout(checkInterval);
+            await new Promise(resolve => setTimeout(resolve, checkInterval));
         }
 
         if (!fileFound) {
