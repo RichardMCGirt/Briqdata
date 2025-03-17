@@ -1,4 +1,5 @@
 const { execSync } = require('child_process');
+const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -26,91 +27,135 @@ if (!fs.existsSync(downloadsPath)) {
     console.log("📂 Created downloads directory.");
 }
 
-// ✅ Debug: List all files in the download folder before running Puppeteer
-try {
-    const downloadedFiles = fs.readdirSync(downloadsPath);
-    console.log("📝 Debug: Files in download folder BEFORE Puppeteer run:", downloadedFiles);
-} catch (err) {
-    console.error("❌ Error reading download folder:", err);
-}
-
-// ✅ Step 1: Run Puppeteer script
-console.log("🚀 Running Puppeteer script to generate CSV...");
-execSync("node downloadsalescsv.js", { stdio: 'inherit' });
-
-console.log("⏳ Waiting for CSV to be available...");
-let csvFile;
-let retries = 30; // Retry for approx. 5 minutes
-
-// ✅ Function to check for the downloaded CSV file
+// ✅ Function to fetch the latest CSV file
 function getLatestCSV() {
     try {
-        const files = fs.readdirSync(downloadsPath)
-            .filter(file => file.includes(csvFilenamePattern) && file.endsWith(".csv"))
-            .sort((a, b) => fs.statSync(path.join(downloadsPath, b)).mtime - fs.statSync(path.join(downloadsPath, a)).mtime); // Sort by latest modified
-        return files.length ? files[0] : null;
+        const csvFilePath = path.join(downloadsPath, "sales_report.csv");
+        
+        if (fs.existsSync(csvFilePath)) {
+            console.log(`✅ Found CSV file: sales_report.csv`);
+            return "sales_report.csv";
+        } else {
+            console.log("⏳ CSV file not found yet...");
+            return null;
+        }
     } catch (error) {
-        console.error("❌ Error reading CSV files:", error);
+        console.error("❌ Error checking for CSV file:", error);
         return null;
     }
 }
 
-// ✅ Retry mechanism to wait for the file to appear
-while (retries > 0) {
-    csvFile = getLatestCSV();
-    if (csvFile) {
-        console.log(`✅ CSV file found: ${csvFile}`);
-        break;
+
+// ✅ Puppeteer script to login and download CSV
+async function loginAndDownloadCSV(username, password) {
+    console.log("🚀 Launching Puppeteer...");
+    const browser = await puppeteer.launch({
+        headless: false,
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
+    });
+
+    const page = await browser.newPage();
+    const client = await page.target().createCDPSession();
+    await client.send("Page.setDownloadBehavior", {
+        behavior: "allow",
+        downloadPath: downloadsPath,
+        eventsEnabled: true,
+    });
+
+    try {
+        console.log("🔑 Navigating to login page...");
+        await page.goto("https://vanirlive.omnna-lbm.live/index.php?action=Login&module=Users", { waitUntil: "networkidle2" });
+
+        console.log("⌛ Logging in...");
+        await page.type('input[name="user_name"]', username, { delay: 50 });
+        await page.type('input[name="user_password"]', password, { delay: 50 });
+        await Promise.all([
+            page.click('input[type="submit"]'),
+            page.waitForNavigation({ waitUntil: "networkidle2" }),
+        ]);
+
+        console.log("✅ Logged in successfully!");
+
+        // ✅ Navigate to report page
+        const reportUrl = "https://vanirlive.omnna-lbm.live/index.php?module=Customreport&action=CustomreportAjax&file=Customreportview&parenttab=Analytics&entityId=3729087";
+        await page.goto(reportUrl, { waitUntil: "networkidle2" });
+
+        console.log("📊 Selecting 'All Sales Report'...");
+        await page.waitForSelector("select#ddlSavedTemplate", { timeout: 30000 });
+        await page.select("#ddlSavedTemplate", "249");
+
+        console.log("🔘 Clicking 'Generate Now'...");
+        await page.waitForSelector('input[name="generatenw"][type="submit"]', { timeout: 10000 });
+        await page.click('input[name="generatenw"][type="submit"]');
+
+        // ✅ Wait for report data to load
+        console.log("⌛ Waiting for report to load...");
+        await page.waitForFunction(() => {
+            const reportTable = document.querySelector("#pdfContent");
+            return reportTable && reportTable.innerText.length > 500;
+        }, { timeout: 60000 });
+
+        console.log("✅ Report loaded! Clicking 'Export To CSV'...");
+        await page.waitForSelector("#btnExport", { timeout: 25000 });
+
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        await page.evaluate(() => document.querySelector("#btnExport").click());
+
+        console.log("✅ Export initiated!");
+
+    
+
+        // ✅ Move CSV to repo folder
+        const downloadedFilePath = path.join(downloadsPath, csvFile);
+        const targetFilePath = path.join(targetDir, csvFile);
+        fs.renameSync(downloadedFilePath, targetFilePath);
+        console.log(`📂 Moved CSV to: ${targetFilePath}`);
+
+    } catch (error) {
+        console.error("❌ Error in Puppeteer process:", error);
+    } finally {
+        console.log("🛑 Closing browser...");
+        await browser.close();
     }
-    console.log(`⏳ Still waiting for CSV file... Retries left: ${retries}`);
-    execSync("sleep 10"); // Wait 10 seconds before retrying
-    retries--;
 }
 
-// ✅ Exit if CSV file was not found
-if (!csvFile) {
-    console.error("❌ CSV file not found in Downloads folder. Exiting...");
-    process.exit(1);
-}
+// ✅ Automate Git commit & push
+async function commitAndPushToGit() {
+    try {
+        console.log("🚀 Starting automated Git commit & push...");
 
-// ✅ Step 2: Move the downloaded file to the Git repository
-const downloadedFilePath = path.join(downloadsPath, csvFile);
-const targetFilePath = path.join(targetDir, csvFile);
+        // ✅ Add new file to Git
+        console.log("🔄 Adding changes to Git...");
+        execSync(`cd "${targetDir}" && git add .`, { stdio: 'inherit' });
 
-console.log(`📥 Moving ${csvFile} to repository...`);
-try {
-    fs.renameSync(downloadedFilePath, targetFilePath);
-    console.log(`✅ Successfully moved CSV to ${targetFilePath}`);
-} catch (error) {
-    console.error("❌ Error moving CSV file:", error);
-    process.exit(1);
-}
+        // ✅ Commit changes
+        console.log("✍️ Committing changes...");
+        execSync(`cd "${targetDir}" && git commit -m "Automated upload of latest sales CSV"`, { stdio: 'inherit' });
 
-// ✅ Step 3: Git Automation
-try {
-    console.log("🔄 Adding new CSV file to Git...");
-    execSync(`cd "${targetDir}" && git add "${csvFile}"`, { stdio: 'inherit' });
+        // ✅ Push to GitHub
+        console.log("🚀 Pushing to GitHub...");
+        const GITHUB_USERNAME = "RichardMCGirt";
+        const GITHUB_PAT = process.env.GITHUB_PAT;
 
-    console.log("✍️ Committing changes...");
-    execSync(`cd "${targetDir}" && git commit -m "Automated upload: ${csvFile}"`, { stdio: 'inherit' });
+        if (!GITHUB_PAT) {
+            throw new Error("GitHub token is missing. Set the GITHUB_PAT environment variable.");
+        }
 
-    // ✅ GitHub credentials
-    const GITHUB_USERNAME = "RichardMCGirt";
-    const GITHUB_PAT = process.env.GITHUB_PAT;  // ✅ Use environment variable for security
+        const pushCommand = `git push https://${GITHUB_USERNAME}:${GITHUB_PAT}@github.com/RichardMCGirt/Briqdata.git main`;
+        execSync(`cd "${targetDir}" && ${pushCommand}`, { stdio: 'inherit' });
 
-    if (!GITHUB_PAT) {
-        console.error("❌ ERROR: GitHub token is missing. Set the GITHUB_PAT environment variable.");
-        process.exit(1);
+        console.log("✅ Successfully pushed to GitHub!");
+
+    } catch (error) {
+        console.error("❌ Git error:", error.message);
     }
-
-    // ✅ Push to GitHub
-    console.log("🚀 Pushing to GitHub...");
-    const pushCommand = `git push https://${GITHUB_USERNAME}:${GITHUB_PAT}@github.com/RichardMCGirt/Briqdata.git main`;
-    execSync(`cd "${targetDir}" && ${pushCommand}`, { stdio: 'inherit' });
-
-    console.log("✅ CSV file uploaded successfully!");
-
-} catch (error) {
-    console.error("❌ Error during Git push:", error.message);
-    process.exit(1);
 }
+
+// ✅ Run everything
+(async () => {
+    const username = "richard.mcgirt";
+    const password = "84625";
+
+    await loginAndDownloadCSV(username, password);
+    await commitAndPushToGit();
+})();
