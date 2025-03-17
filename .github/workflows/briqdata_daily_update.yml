@@ -46,7 +46,7 @@ jobs:
         env:
           GH_PAT: ${{ secrets.GH_PAT }}  # ✅ Use the correct PAT
         run: |
-          git config --global user.email "your-email@example.com"
+          git config --global user.email "richard.mcgirt@vanirinstalledsales.com"
           git config --global user.name "RichardMCGirt"
           git remote set-url origin https://x-access-token:${GH_PAT}@github.com/RichardMCGirt/Briqdata.git
           git add .

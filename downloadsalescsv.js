@@ -48,6 +48,11 @@ async function loginAndDownloadCSV(username, password) {
             page.click('input[type="submit"]'),
             page.waitForNavigation({ waitUntil: "networkidle2" }),
         ]);
+        
+        // Add a delay to ensure login is fully processed
+        await page.waitForTimeout(5000); // 5-second delay
+        console.log("✅ Login processed, proceeding...");
+        
 
         console.log("✅ Login successful!");
 
@@ -59,7 +64,7 @@ async function loginAndDownloadCSV(username, password) {
         console.log("✅ Custom report page loaded!");
 
         console.log("📑 Waiting for the report dropdown...");
-        await page.waitForSelector("select#ddlSavedTemplate", { timeout: 30000 });
+        await page.waitForSelector("select#ddlSavedTemplate", { timeout: 60000 });
 
         console.log("📑 Selecting 'All Sales Report'...");
         await page.select("#ddlSavedTemplate", "249");
