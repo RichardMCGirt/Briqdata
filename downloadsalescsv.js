@@ -10,15 +10,12 @@ async function loginAndDownloadCSV(username, password) {
     console.log("📂 Puppeteer download path set to:", rootPath);
 
     const browser = await puppeteer.launch({
-        headless: false,
-        args: [
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-gpu",
-            "--window-size=1920,1080",
-        ],
+        headless: 'new',
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
+    console.log("✅ Puppeteer launched successfully");
+    
+    
 
     const page = await browser.newPage();
     const client = await page.target().createCDPSession();
