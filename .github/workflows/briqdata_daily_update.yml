@@ -3,7 +3,7 @@ name: Automate Sales CSV Upload
 on:
   schedule:
     - cron: "0 10 * * *"  # Runs daily at 6 AM NYC time
-  workflow_dispatch:
+  workflow_dispatch:  # Allows manual trigger in GitHub Actions
 
 jobs:
   fetch-and-upload-csv:
@@ -18,33 +18,33 @@ jobs:
         with:
           node-version: 18
 
+      - name: 🛠 Install Google Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
 
-          - name: 🛠 Install Google Chrome
-  run: |
-    sudo apt-get update
-    sudo apt-get install -y google-chrome-stable
-
-
-    - name: 📦 Install Dependencies
-  run: |
-    sudo apt-get update
-    sudo apt-get install -y libatk1.0-0 libatk-bridge2.0-0 libcups2 libxkbcommon-x11-0 libgbm-dev
-    npm install puppeteer
-
+      - name: 📦 Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libatk1.0-0 libatk-bridge2.0-0 libcups2 libxkbcommon-x11-0 libgbm-dev
+          npm install puppeteer
 
       - name: 🔑 Set Up Environment Variables
         env:
-          PAT_TOKEN: ${{ secrets.GITHUB_PAT }}  
-          BRIQ_USERNAME: ${{ secrets.BRIQ_USERNAME }}  
-          BRIQ_PASSWORD: ${{ secrets.BRIQ_PASSWORD }}  
+          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}  # Use correct secret name
+          BRIQ_USERNAME: ${{ secrets.BRIQ_USERNAME }}
+          BRIQ_PASSWORD: ${{ secrets.BRIQ_PASSWORD }}
         run: echo "✅ Environment variables loaded"
 
       - name: 🚀 Run Puppeteer Script
+        env:
+          BRIQ_USERNAME: ${{ secrets.BRIQ_USERNAME }}
+          BRIQ_PASSWORD: ${{ secrets.BRIQ_PASSWORD }}
         run: node downloadsalescsv.js
 
       - name: 🔄 Commit & Push Changes
         env:
-          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
+          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}  # Ensure correct token is used
         run: |
           git config --global user.email "your-email@example.com"
           git config --global user.name "RichardMCGirt"
