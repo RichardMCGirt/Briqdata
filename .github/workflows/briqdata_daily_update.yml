@@ -1,4 +1,4 @@
-name: Automate sales CSV Upload
+name: Automate Briqdata CSV Upload
 
 on:
   schedule:
@@ -23,13 +23,13 @@ jobs:
 
       - name: 🔑 Set Up Environment Variables
         env:
-          GITHUB_PAT: ${{ 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 }}  # GitHub token for authentication
-          BRIQ_USERNAME: ${{ richard.mcgirt }}  # Your login username
-          BRIQ_PASSWORD: ${{ 84625 }}  # Your login password
+          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}  
+          BRIQ_USERNAME: ${{ secrets.BRIQ_USERNAME }}  
+          BRIQ_PASSWORD: ${{ secrets.BRIQ_PASSWORD }}  
         run: echo "Environment variables set"
 
       - name: 🚀 Run Puppeteer Script
-        run: node downloadsalescsv.js.js  # Change this to your actual script file name
+        run: node downloadsalescsv.js
 
       - name: 🔄 Commit & Push Changes
         run: |

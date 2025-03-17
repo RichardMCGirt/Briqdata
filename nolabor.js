@@ -3,39 +3,27 @@ async function loadDefaultCSV() {
     const repoOwner = "RichardMCGirt";
     const repoName = "Briqdata";
     const branch = "main"; // Adjust if using a different branch
-    const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/`;
+    const fileName = "sales_report.csv"; // Specify the file name
+    const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${fileName}?ref=${branch}`;
 
     try {
-        console.log("🔍 Fetching latest CSV from GitHub...");
+        console.log("🔍 Fetching sales_report.csv from GitHub...");
 
-        // Fetch repository contents
+        // Fetch file metadata from GitHub API
         const response = await fetch(apiUrl);
         if (!response.ok) {
             throw new Error(`GitHub API error: ${response.statusText}`);
         }
 
-        const files = await response.json();
+        const fileData = await response.json();
+        const fileUrl = fileData.download_url;
 
-        const csvFiles = files.filter(file => file.name.includes("sales_report") && file.name.endsWith(".csv"));
+        console.log(`✅ Found sales_report.csv`);
 
-        if (csvFiles.length === 0) {
-            console.warn("⚠️ No CSV files found in repository.");
-            return;
-        }
-
-        // Sort by last modified date (descending order)
-        csvFiles.sort((a, b) => new Date(b.last_modified) - new Date(a.last_modified));
-
-        // Get the latest file
-        const latestFile = csvFiles[0];
-        const latestFileUrl = latestFile.download_url;
-
-        console.log(`✅ Latest CSV found: ${latestFile.name}`);
-
-        // Fetch the latest CSV file
-        const csvResponse = await fetch(latestFileUrl);
+        // Fetch the CSV file
+        const csvResponse = await fetch(fileUrl);
         if (!csvResponse.ok) {
-            throw new Error(`Error loading latest CSV file: ${csvResponse.statusText}`);
+            throw new Error(`Error loading CSV file: ${csvResponse.statusText}`);
         }
 
         const csvData = await csvResponse.text();
@@ -54,9 +42,10 @@ async function loadDefaultCSV() {
         });
 
     } catch (error) {
-        console.error("❌ Error loading latest CSV:", error);
+        console.error("❌ Error loading sales_report.csv:", error);
     }
 }
+
 
 
 // Event listener for user-uploaded CSV files
