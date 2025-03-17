@@ -42,7 +42,7 @@ jobs:
           BRIQ_PASSWORD: ${{ secrets.BRIQ_PASSWORD }}
         run: node downloadsalescsv.js
 
-          - name: 🔄 Commit & Push Changes
+      - name: 🔄 Commit & Push Changes
         env:
           GH_PAT: ${{ secrets.GH_PAT }}  # ✅ Use the correct PAT
         run: |
