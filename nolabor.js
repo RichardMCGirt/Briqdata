@@ -219,18 +219,6 @@ function displayTable(data) {
 
 // Load stored CSV data or the default hardcoded CSV on page load
 window.onload = async function() {
-    const storedCsvData = localStorage.getItem('csvData');
-
-    if (storedCsvData) {
-        Papa.parse(storedCsvData, {
-            complete: function(results) {
-                displayTable(results.data);
-            },
-            error: function(error) {
-                console.error("Error parsing stored CSV data:", error);
-            }
-        });
-    } else {
-        await loadDefaultCSV();
-    }
+    await loadDefaultCSV(); // Always fetch latest CSV
 };
+

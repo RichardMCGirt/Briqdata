@@ -155,8 +155,9 @@ if (csvFile) {
 }
 
 // ✅ Credentials
-const username = "richard.mcgirt";
-const password = "84625";
+
+const username = process.env.BRIQ_USERNAME;
+const password = process.env.BRIQ_PASSWORD;
 
 // ✅ Execute
 loginAndDownloadCSV(username, password);
