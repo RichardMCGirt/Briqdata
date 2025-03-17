@@ -72,17 +72,17 @@ const pageContent = await page.content();
 console.log("🔍 Page HTML Content:\n", pageContent);
 
 // Attempt to locate the dropdown
-await page.waitForSelector('select#ddlSavedTemplate', { timeout: 60000 });
+await page.waitForSelector('select#ddlSavedTemplate', { timeout: 600000 });
 
         console.log("📑 Selecting 'All Sales Report'...");
         await page.select("#ddlSavedTemplate", "249");
 
         console.log("✅ Successfully selected 'All Sales Report'!");
 
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 20000));
 
         console.log("🔘 Clicking 'Generate Now' button...");
-        await page.waitForSelector('input[name="generatenw"][type="submit"]', { timeout: 10000 });
+        await page.waitForSelector('input[name="generatenw"][type="submit"]', { timeout: 100000 });
         await page.click('input[name="generatenw"][type="submit"]');
 
         console.log("⌛ Waiting for the report table to fully load...");
