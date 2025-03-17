@@ -64,7 +64,15 @@ async function loginAndDownloadCSV(username, password) {
         console.log("✅ Custom report page loaded!");
 
         console.log("📑 Waiting for the report dropdown...");
-        await page.waitForSelector("select#ddlSavedTemplate", { timeout: 60000 });
+// Ensure page is fully loaded before waiting for the dropdown
+await page.waitForNavigation({ waitUntil: "networkidle0" });
+
+// Debugging: Log HTML content to check if the element exists
+const pageContent = await page.content();
+console.log("🔍 Page HTML Content:\n", pageContent);
+
+// Attempt to locate the dropdown
+await page.waitForSelector('select#ddlSavedTemplate', { timeout: 60000 });
 
         console.log("📑 Selecting 'All Sales Report'...");
         await page.select("#ddlSavedTemplate", "249");
