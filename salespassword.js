@@ -1,35 +1,65 @@
 function togglePrompt(event) {
-    event.preventDefault(); // Prevent default link behavior
-    const promptBox = document.querySelector(".password-prompt");
+    event.preventDefault();
 
-    // Toggle display
+    if (sessionStorage.getItem("salesAccess") === "true") {
+        window.location.href = "/sales.html";
+        return;
+    }
+
+    const promptBox = document.querySelector(".password-prompt");
     promptBox.style.display = (promptBox.style.display === "block") ? "none" : "block";
+
+    loadPreviousPasswords(); // Load saved passwords when showing prompt
 }
 
 function validatePassword() {
     const password = document.getElementById("password-input").value;
-    const correctPassword = "Vanir2025!!"; 
-    const submitBtn = document.getElementById("submit-btn");
-
-    // Enable the button only if the correct password is entered
-    submitBtn.disabled = password !== correctPassword;
+    const correctPassword = "Vanir2025!!";
+    document.getElementById("submit-btn").disabled = password !== correctPassword;
 }
 
 function checkPassword() {
     const password = document.getElementById("password-input").value;
-    const correctPassword = "Vanir2025!!"; 
+    const correctPassword = "Vanir2025!!";
 
     if (password === correctPassword) {
+        sessionStorage.setItem("salesAccess", "true");
+        savePassword(password); // Save password for future autofill
         window.location.href = "/sales.html";
     } else {
         alert("Incorrect password!");
     }
 }
 
-// Listen for "Enter" key press inside the password input field
-document.getElementById("password-input").addEventListener("keypress", function(event) {
-    if (event.key === "Enter") {
-        event.preventDefault(); // Prevent form submission if inside a form
-        checkPassword();
+function savePassword(password) {
+    let savedPasswords = JSON.parse(localStorage.getItem("savedPasswords")) || [];
+    if (!savedPasswords.includes(password)) {
+        savedPasswords.push(password);
+        localStorage.setItem("savedPasswords", JSON.stringify(savedPasswords));
+    }
+}
+
+function loadPreviousPasswords() {
+    const savedPasswords = JSON.parse(localStorage.getItem("savedPasswords")) || [];
+    const container = document.getElementById("previous-passwords");
+    container.innerHTML = "";
+
+    savedPasswords.forEach(pass => {
+        const link = document.createElement("a");
+        link.textContent = pass;
+        link.onclick = function () {
+            document.getElementById("password-input").value = pass;
+            validatePassword(); // Check if the selected password is correct
+        };
+        container.appendChild(link);
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    if (window.location.pathname === "/sales.html") {
+        if (sessionStorage.getItem("salesAccess") !== "true") {
+            alert("You need to enter the password to access this page.");
+            window.location.href = "/index.html";
+        }
     }
 });

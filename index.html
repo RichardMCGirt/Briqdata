@@ -26,11 +26,16 @@
             <li>
                 <div class="locked-container">
                     <a href="#" class="locked-link" onclick="togglePrompt(event)">Sales</a>
-                    <div class="password-prompt">
-                        <input type="password" id="password-input" placeholder="Enter password" oninput="validatePassword()">
-                        <button id="submit-btn" onclick="checkPassword()" disabled>Submit</button>
-                    </div>
-                </div> <!-- Correctly closed locked-container -->
+                 
+    <div class="password-prompt">
+        <input type="password" id="password-input" oninput="validatePassword()" placeholder="Enter password">
+        <button id="submit-btn" onclick="checkPassword()" disabled>Submit</button>
+
+        <div class="previous-passwords" id="previous-passwords"></div>
+    </div>
+
+                </div>
+                
             </li>
         </ul>
     </nav>
