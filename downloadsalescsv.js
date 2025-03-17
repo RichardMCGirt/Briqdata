@@ -10,16 +10,17 @@ async function loginAndDownloadCSV(username, password) {
     console.log("📂 Puppeteer download path set to:", rootPath);
 
     const browser = await puppeteer.launch({
-        headless: 'new',  // ✅ Ensures Puppeteer runs in CI/CD
-        executablePath: '/usr/bin/google-chrome',  // ✅ Explicitly sets Chrome path
-        args: ["--no-sandbox", "--disable-setuid-sandbox"]
+        headless: false,
+        args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--window-size=1920,1080",
+        ],
     });
 
     const page = await browser.newPage();
-    console.log("✅ Browser launched successfully!");
-    
-    
-
     const client = await page.target().createCDPSession();
     await client.send("Page.setDownloadBehavior", {
         behavior: "allow",
@@ -48,11 +49,6 @@ async function loginAndDownloadCSV(username, password) {
             page.click('input[type="submit"]'),
             page.waitForNavigation({ waitUntil: "networkidle2" }),
         ]);
-        
-        // Add a delay to ensure login is fully processed
-        await new Promise(resolve => setTimeout(resolve, 5000));  // ✅ Works in all versions
-        console.log("✅ Login processed, proceeding...");
-        
 
         console.log("✅ Login successful!");
 
@@ -64,25 +60,17 @@ async function loginAndDownloadCSV(username, password) {
         console.log("✅ Custom report page loaded!");
 
         console.log("📑 Waiting for the report dropdown...");
-// Ensure page is fully loaded before waiting for the dropdown
-await page.waitForNavigation({ waitUntil: "networkidle0" });
-
-// Debugging: Log HTML content to check if the element exists
-const pageContent = await page.content();
-console.log("🔍 Page HTML Content:\n", pageContent);
-
-// Attempt to locate the dropdown
-await page.waitForSelector('select#ddlSavedTemplate', { timeout: 600000 });
+        await page.waitForSelector("select#ddlSavedTemplate", { timeout: 30000 });
 
         console.log("📑 Selecting 'All Sales Report'...");
         await page.select("#ddlSavedTemplate", "249");
 
         console.log("✅ Successfully selected 'All Sales Report'!");
 
-        await new Promise((resolve) => setTimeout(resolve, 20000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
         console.log("🔘 Clicking 'Generate Now' button...");
-        await page.waitForSelector('input[name="generatenw"][type="submit"]', { timeout: 100000 });
+        await page.waitForSelector('input[name="generatenw"][type="submit"]', { timeout: 10000 });
         await page.click('input[name="generatenw"][type="submit"]');
 
         console.log("⌛ Waiting for the report table to fully load...");
@@ -167,9 +155,8 @@ if (csvFile) {
 }
 
 // ✅ Credentials
-
-const username = process.env.BRIQ_USERNAME;
-const password = process.env.BRIQ_PASSWORD;
+const username = "richard.mcgirt";
+const password = "84625";
 
 // ✅ Execute
 loginAndDownloadCSV(username, password);
