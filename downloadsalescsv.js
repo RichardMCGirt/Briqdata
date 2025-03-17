@@ -50,7 +50,7 @@ async function loginAndDownloadCSV(username, password) {
         ]);
         
         // Add a delay to ensure login is fully processed
-        await page.waitForTimeout(5000); // 5-second delay
+        await new Promise(resolve => setTimeout(resolve, 5000));  // ✅ Works in all versions
         console.log("✅ Login processed, proceeding...");
         
 
