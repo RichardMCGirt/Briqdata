@@ -16,8 +16,7 @@ async function loadDefaultCSV() {
 
         const files = await response.json();
 
-        // Filter CSV files that match "SalesReportbyLocation"
-        const csvFiles = files.filter(file => file.name.includes("SalesReportbyLocation") && file.name.endsWith(".csv"));
+        const csvFiles = files.filter(file => file.name.includes("sales_report") && file.name.endsWith(".csv"));
 
         if (csvFiles.length === 0) {
             console.warn("⚠️ No CSV files found in repository.");

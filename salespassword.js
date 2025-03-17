@@ -32,6 +32,9 @@ function checkPassword() {
 }
 
 function savePassword(password) {
+    const correctPassword = "Vanir2025!!";
+    if (password !== correctPassword) return; // Only save if it matches the correct password
+
     let savedPasswords = JSON.parse(localStorage.getItem("savedPasswords")) || [];
     if (!savedPasswords.includes(password)) {
         savedPasswords.push(password);
@@ -40,18 +43,47 @@ function savePassword(password) {
 }
 
 function loadPreviousPasswords() {
+    const correctPassword = "Vanir2025!!";
     const savedPasswords = JSON.parse(localStorage.getItem("savedPasswords")) || [];
     const container = document.getElementById("previous-passwords");
     container.innerHTML = "";
 
-    savedPasswords.forEach(pass => {
-        const link = document.createElement("a");
-        link.textContent = pass;
-        link.onclick = function () {
-            document.getElementById("password-input").value = pass;
-            validatePassword(); // Check if the selected password is correct
+    savedPasswords.forEach((pass, index) => {
+        if (pass !== correctPassword) return; // Only display if it matches the correct password
+
+        const div = document.createElement("div");
+        div.classList.add("password-item");
+
+        const maskedPass = "#".repeat(pass.length);
+        const passSpan = document.createElement("span");
+        passSpan.textContent = maskedPass;
+        passSpan.dataset.actualPass = pass;
+        passSpan.classList.add("clickable-password");
+        passSpan.style.color = "blue";
+        passSpan.style.textDecoration = "underline";
+        passSpan.style.cursor = "pointer";
+        passSpan.onclick = function () {
+            document.getElementById("password-input").value = passSpan.dataset.actualPass;
+            validatePassword();
         };
-        container.appendChild(link);
+
+        const unhideButton = document.createElement("button");
+        unhideButton.textContent = "Unhide";
+        unhideButton.onclick = function () {
+            if (passSpan.textContent === maskedPass) {
+                passSpan.textContent = passSpan.dataset.actualPass;
+                unhideButton.textContent = "Hide";
+            } else {
+                passSpan.textContent = maskedPass;
+                unhideButton.textContent = "Unhide";
+            }
+        };
+
+       
+
+        div.appendChild(passSpan);
+        div.appendChild(unhideButton);
+        container.appendChild(div);
     });
 }
 
