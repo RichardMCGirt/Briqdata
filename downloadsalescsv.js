@@ -81,66 +81,67 @@ async function loginAndDownloadCSV(username, password) {
 
         console.log("✅ Report table is fully loaded!");
         console.log("⬇️ Clicking 'Export To CSV'...");
-        await page.waitForSelector("#btnExport", { timeout: 25000 });
-        
-        console.log("⏳ Waiting 30 seconds before clicking export...");
-        await new Promise(resolve => setTimeout(resolve, 30000));
-        
-        // ✅ Force-click the button
-        await page.evaluate(() => {
-            let exportButton = document.querySelector("#btnExport");
-            if (exportButton) {
-                exportButton.dispatchEvent(new Event("click", { bubbles: true }));
-            }
-        });
-        
-        console.log("✅ Export button clicked!");
-        
-        // ✅ Ensure Puppeteer allows downloads
-        const client = await page.target().createCDPSession();
-        await client.send("Page.setDownloadBehavior", {
-            behavior: "allow",
-            downloadPath: path.join(os.homedir(), "Downloads"), // Change if needed
-            eventsEnabled: true,
-        });
-        
-        // ✅ Log any detected download URLs
-        page.on("response", async (response) => {
-            const url = response.url();
-            if (url.includes(".csv")) {
-                console.log("📥 CSV download detected from:", url);
-            }
-        });
-        
-        // ✅ Wait for the file to be saved
-        await new Promise(resolve => setTimeout(resolve, 10000));
-        
-        console.log("⌛ Checking if the CSV file exists...");
-        
-        // ✅ Check multiple locations for the CSV
-        const downloadDirs = ["/Users/richardmcgirt", path.join(os.homedir(), "Downloads")];
-        
-        downloadDirs.forEach(dir => {
-            if (fs.existsSync(dir)) {
-                console.log(`📂 Checking files in: ${dir}`);
-                const files = fs.readdirSync(dir).filter(file => file.endsWith(".csv"));
-                if (files.length > 0) {
-                    console.log(`✅ CSV Found in ${dir}: ${files}`);
-                }
-            }
-        });
-        
-        
-        console.log("⌛ Checking if the CSV file exists...");
-        
-        // ✅ Look for the file in the root directory
-        const csvFiles = fs.readdirSync("/Users/richardmcgirt").filter(file => file.endsWith(".csv"));
-        if (csvFiles.length > 0) {
-            console.log(`✅ CSV Downloaded: ${csvFiles}`);
-        } else {
-            console.error("❌ No CSV file detected!");
-        }
-        
+await page.waitForSelector("#btnExport", { timeout: 25000 });
+
+console.log("⏳ Waiting 30 seconds before clicking export...");
+await new Promise(resolve => setTimeout(resolve, 30000));
+
+// ✅ Force-click the button
+await page.evaluate(() => {
+    let exportButton = document.querySelector("#btnExport");
+    if (exportButton) {
+        exportButton.dispatchEvent(new Event("click", { bubbles: true }));
+    }
+});
+
+console.log("✅ Export button clicked!");
+
+// ✅ Ensure Puppeteer allows downloads
+const client = await page.target().createCDPSession();
+await client.send("Page.setDownloadBehavior", {
+    behavior: "allow",
+    downloadPath: path.join(os.homedir(), "Downloads"),
+    eventsEnabled: true,
+});
+
+// ✅ Wait up to 60 seconds for the file
+console.log("⌛ Waiting for CSV to appear in Downloads...");
+const downloadPath = path.join(os.homedir(), "Downloads");
+let csvFile = null;
+const timeout = 60000; // 60 seconds
+
+for (let elapsed = 0; elapsed < timeout; elapsed += 5000) {
+    await new Promise(resolve => setTimeout(resolve, 5000));
+
+    const files = fs.readdirSync(downloadPath).filter(file => file.endsWith(".csv"));
+    if (files.length > 0) {
+        // Get the latest file based on modification time
+        csvFile = files.sort((a, b) =>
+            fs.statSync(path.join(downloadPath, b)).mtimeMs -
+            fs.statSync(path.join(downloadPath, a)).mtimeMs
+        )[0];
+        break;
+    }
+}
+
+if (csvFile) {
+    const originalFilePath = path.join(downloadPath, csvFile);
+    const destinationPath = path.join(os.homedir(), "Desktop", "Briqdata", "sales_report.csv");
+
+    console.log(`✅ CSV Downloaded: ${csvFile}`);
+
+    // ✅ Ensure the target directory exists
+    const targetDir = path.dirname(destinationPath);
+    if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+    }
+
+    // ✅ Move the file
+    fs.renameSync(originalFilePath, destinationPath);
+    console.log(`📂 CSV moved to: ${destinationPath}`);
+} else {
+    console.error("❌ No CSV file detected after 60 seconds!");
+}
 
     } catch (error) {
         console.error("❌ Error during login or download process:", error);
