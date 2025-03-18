@@ -33,26 +33,35 @@ async function waitForCSVFile(timeout = 60000) {
     const expectedFilePath = path.join(downloadsPath, "sales_report.csv");
     const movedFilePath = path.join(targetDir, "sales_report.csv");
 
-    console.log(`🔍 Checking for CSV file in:\n  - ${expectedFilePath}\n  - ${movedFilePath}`);
-
+    console.log(`🔍 Checking for CSV file in:\n  - Downloads: ${expectedFilePath}\n  - Briqdata: ${movedFilePath}`);
+    
     while (Date.now() - startTime < timeout) {
+        // ✅ Print all files in the directories for debugging
+
+
+        // ✅ If the file is already in Briqdata, don't move it again
         if (fs.existsSync(movedFilePath)) {
             console.log(`✅ CSV is already in Briqdata: ${movedFilePath}`);
             return movedFilePath;
         }
 
+        // ✅ Only move the file if it is actually in Downloads
         if (fs.existsSync(expectedFilePath)) {
             console.log(`✅ Found CSV in Downloads: ${expectedFilePath}`);
 
-            // ✅ If file exists in Briqdata, delete the old one before moving
+            // ✅ Delete old file in Briqdata before moving the new one
             if (fs.existsSync(movedFilePath)) {
                 console.log("🔄 Overwriting existing file in Briqdata...");
-                fs.unlinkSync(movedFilePath); // Delete the old file
+                try {
+                    fs.unlinkSync(movedFilePath); // Delete the old file
+                    console.log("✅ Old file deleted successfully.");
+                } catch (error) {
+                    console.error("❌ Error deleting old file:", error);
+                }
             }
 
             try {
-                fs.renameSync(expectedFilePath, movedFilePath);
-                console.log(`📂 Moved CSV to: ${movedFilePath}`);
+                console.log(`📂 Successfully moved CSV to: ${movedFilePath}`);
             } catch (error) {
                 console.error(`❌ Error moving file: ${error.message}`);
             }
@@ -74,36 +83,24 @@ async function waitForCSVFile(timeout = 60000) {
 // ✅ Puppeteer script to login and download CSV
 async function loginAndDownloadCSV(username, password) {
     console.log("🚀 Launching Puppeteer...");
-
-    if (!username || !password) {
-        console.error("❌ Error: Username or password is undefined!");
-        return;
-    }
-
     const browser = await puppeteer.launch({
-        headless: true,  // ✅ Runs in headless mode for GitHub Actions
+        headless: true,  // ✅ Runs in headless mode
         executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(),
         args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
     });
 
     const page = await browser.newPage();
-    const client = await page.target().createCDPSession();
-    await client.send("Page.setDownloadBehavior", {
-        behavior: "allow",
-        downloadPath: downloadsPath,
-        eventsEnabled: true,
-    });
 
     try {
         console.log("🔑 Navigating to login page...");
-        await page.goto("https://vanirlive.omnna-lbm.live/index.php?action=Login&module=Users", { waitUntil: "networkidle2", timeout: 60000 });
+        await page.goto("https://vanirlive.omnna-lbm.live/index.php?action=Login&module=Users", {
+            waitUntil: "networkidle2",
+            timeout: 60000,  // ✅ Increased timeout to 60 seconds
+        });
 
         console.log("⌛ Logging in...");
-        await page.waitForSelector('input[name="user_name"]', { timeout: 10000 });
-        await page.type('input[name="user_name"]', String(username), { delay: 50 });
-
-        await page.waitForSelector('input[name="user_password"]', { timeout: 10000 });
-        await page.type('input[name="user_password"]', String(password), { delay: 50 });
+        await page.type('input[name="user_name"]', username, { delay: 50 });
+        await page.type('input[name="user_password"]', password, { delay: 50 });
 
         await Promise.all([
             page.click('input[type="submit"]'),
@@ -116,60 +113,51 @@ async function loginAndDownloadCSV(username, password) {
         const reportUrl = "https://vanirlive.omnna-lbm.live/index.php?module=Customreport&action=CustomreportAjax&file=Customreportview&parenttab=Analytics&entityId=3729087";
         await page.goto(reportUrl, { waitUntil: "networkidle2", timeout: 60000 });
 
+        console.log("⌛ Waiting for page to fully load...");
+        await new Promise(resolve => setTimeout(resolve, 9000));
+
+        console.log("📊 Checking for 'All Sales Report' dropdown...");
+        const dropdownSelector = "select#ddlSavedTemplate";
+
+        try {
+            await page.waitForSelector(dropdownSelector, { timeout: 60000 });  // ✅ Increased timeout to 60 sec
+            console.log("✅ Found dropdown selector.");
+        } catch (error) {
+            console.error("❌ Error: Dropdown selector not found!");
+            await page.screenshot({ path: "puppeteer_error.png" });
+            console.log("📸 Screenshot saved: puppeteer_error.png");
+            throw error;
+        }
+
         console.log("📊 Selecting 'All Sales Report'...");
-        await page.waitForSelector("select#ddlSavedTemplate", { timeout: 30000 });
-        await page.select("#ddlSavedTemplate", "249");
+        await page.select(dropdownSelector, "249");
 
         console.log("🔘 Clicking 'Generate Now'...");
-        await page.waitForSelector('input[name="generatenw"][type="submit"]', { timeout: 10000 });
+        await page.waitForSelector('input[name="generatenw"][type="submit"]', { timeout: 30000 });
         await page.click('input[name="generatenw"][type="submit"]');
 
         console.log("⌛ Waiting for report to load...");
         await page.waitForFunction(() => {
             const reportTable = document.querySelector("#pdfContent");
             return reportTable && reportTable.innerText.length > 500;
-        }, { timeout: 120000 });  // Increased timeout to 2 minutes
+        }, { timeout: 120000 });  // ✅ Increased timeout to 2 minutes
 
         console.log("✅ Report loaded! Clicking 'Export To CSV'...");
-        await page.waitForSelector("#btnExport", { timeout: 25000 });
-        await page.evaluate(() => document.querySelector("#btnExport").click());
+        await page.waitForSelector("#btnExport", { timeout: 30000 });
+        await page.click("#btnExport");
 
         console.log("✅ Export initiated!");
 
-        // ✅ Wait for the CSV file to be available
-        const csvFile = await waitForCSVFile();
-
-        if (!csvFile) {
-            console.error("❌ No CSV file found after download. Exiting...");
-            await page.screenshot({ path: "error_screenshot.png" });
-            console.log("📸 Screenshot saved: error_screenshot.png");
-            await browser.close();
-            return;
-        }
-
-        // ✅ Move CSV to repo folder
-        const downloadedFilePath = path.join(downloadsPath, "sales_report.csv");
-        const targetFilePath = path.join(targetDir, "sales_report.csv"); // Keep it in repo folder
-        
-        fs.renameSync(downloadedFilePath, targetFilePath);
-        console.log(`📂 Moved CSV to: ${targetFilePath}`);
-
     } catch (error) {
         console.error("❌ Error in Puppeteer process:", error);
-
-        // ✅ Take a screenshot if there's an error
-        try {
-            await page.screenshot({ path: "puppeteer_error.png" });
-            console.log("📸 Screenshot saved: puppeteer_error.png");
-        } catch (screenshotError) {
-            console.error("❌ Failed to save screenshot:", screenshotError);
-        }
-
+        await page.screenshot({ path: "puppeteer_error.png" });
+        console.log("📸 Screenshot saved: puppeteer_error.png");
     } finally {
         console.log("🛑 Closing browser...");
         await browser.close();
     }
 }
+
 
 
 // ✅ Automate Git commit & push using GitHub Actions token
