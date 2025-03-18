@@ -1,5 +1,3 @@
-
-
 const { execSync } = require('child_process');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
@@ -18,8 +16,6 @@ const targetDir = isGitHubActions
     ? path.join(os.homedir(), "work", "Briqdata", "Briqdata")  // ✅ GitHub Repo Path in Actions
     : "/Users/richardmcgirt/Desktop/Briqdata";  // ✅ Local Repo Path
 
-const csvFilenamePattern = "richard_mcgirt_vanirinstalledsales_com";  // Identify the file
-
 console.log(`📂 Using downloads path: ${downloadsPath}`);
 console.log(`📁 Target repository path: ${targetDir}`);
 
@@ -29,30 +25,29 @@ if (!fs.existsSync(downloadsPath)) {
     console.log("📂 Created downloads directory.");
 }
 
-// ✅ Function to fetch the latest CSV file
-function getLatestCSV() {
-    try {
-        const csvFilePath = path.join(downloadsPath, "sales_report.csv");
-        
-        if (fs.existsSync(csvFilePath)) {
-            console.log(`✅ Found CSV file: sales_report.csv`);
-            return "sales_report.csv";
-        } else {
-            console.log("⏳ CSV file not found yet...");
-            return null;
-        }
-    } catch (error) {
-        console.error("❌ Error checking for CSV file:", error);
-        return null;
-    }
-}
+// ✅ Function to wait for CSV download in GitHub Actions
+async function waitForCSVFile(timeout = 60000) {
+    const startTime = Date.now();
+    const csvFilePath = path.join(downloadsPath, "sales_report.csv");
 
+    while (Date.now() - startTime < timeout) {
+        if (fs.existsSync(csvFilePath)) {
+            console.log(`✅ Found CSV file: ${csvFilePath}`);
+            return "sales_report.csv";
+        }
+        console.log("⏳ Waiting for CSV file...");
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds before checking again
+    }
+
+    console.error("❌ No CSV file found after timeout.");
+    return null;
+}
 
 // ✅ Puppeteer script to login and download CSV
 async function loginAndDownloadCSV(username, password) {
     console.log("🚀 Launching Puppeteer...");
     const browser = await puppeteer.launch({
-        headless: false,
+        headless: true,  // ✅ Run in headless mode for GitHub Actions
         args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
     });
 
@@ -90,7 +85,6 @@ async function loginAndDownloadCSV(username, password) {
         await page.waitForSelector('input[name="generatenw"][type="submit"]', { timeout: 10000 });
         await page.click('input[name="generatenw"][type="submit"]');
 
-        // ✅ Wait for report data to load
         console.log("⌛ Waiting for report to load...");
         await page.waitForFunction(() => {
             const reportTable = document.querySelector("#pdfContent");
@@ -99,29 +93,22 @@ async function loginAndDownloadCSV(username, password) {
 
         console.log("✅ Report loaded! Clicking 'Export To CSV'...");
         await page.waitForSelector("#btnExport", { timeout: 25000 });
-
-        await new Promise(resolve => setTimeout(resolve, 5000));
         await page.evaluate(() => document.querySelector("#btnExport").click());
 
         console.log("✅ Export initiated!");
 
-    
+        // ✅ Wait for the CSV file to be available
+        const csvFile = await waitForCSVFile();
 
-      // ✅ Fetch the latest CSV file dynamically
-const csvFile = getLatestCSV();
+        if (!csvFile) {
+            console.error("❌ No CSV file found after download. Exiting...");
+            await browser.close();
+            return;
+        }
 
-if (!csvFile) {
-    console.error("❌ No CSV file found after download. Exiting...");
-    await browser.close();
-    return;
-}
-
-// ✅ Move CSV to repo folder
-const downloadedFilePath = path.join(downloadsPath, csvFile);
-const targetFilePath = path.join(targetDir, csvFile);
-fs.renameSync(downloadedFilePath, targetFilePath);
-console.log(`📂 Moved CSV to: ${targetFilePath}`);
-
+        // ✅ Move CSV to repo folder
+        const downloadedFilePath = path.join(downloadsPath, csvFile);
+        const targetFilePath = path.join(targetDir, csvFile);
         fs.renameSync(downloadedFilePath, targetFilePath);
         console.log(`📂 Moved CSV to: ${targetFilePath}`);
 
@@ -133,13 +120,13 @@ console.log(`📂 Moved CSV to: ${targetFilePath}`);
     }
 }
 
-
-
-
-// ✅ Automate Git commit & push
+// ✅ Automate Git commit & push using GitHub Actions token
 async function commitAndPushToGit() {
     try {
         console.log("🚀 Starting automated Git commit & push...");
+
+        console.log("🔄 Pulling latest changes...");
+        execSync(`cd "${targetDir}" && git pull origin main --rebase`, { stdio: 'inherit' });
 
         console.log("🔄 Adding changes to Git...");
         execSync(`cd "${targetDir}" && git add .`, { stdio: 'inherit' });
@@ -148,14 +135,7 @@ async function commitAndPushToGit() {
         execSync(`cd "${targetDir}" && git commit -m "Automated upload of latest sales CSV"`, { stdio: 'inherit' });
 
         console.log("🚀 Pushing to GitHub...");
-        const GITHUB_USERNAME = "RichardMCGirt";
-        const GITHUB_PAT = process.env.GITHUB_PAT;
-
-        if (!GITHUB_PAT) {
-            throw new Error("GitHub token is missing. Set the GITHUB_PAT environment variable.");
-        }
-
-        const pushCommand = `git push https://${GITHUB_USERNAME}:${GITHUB_PAT}@github.com/RichardMCGirt/Briqdata.git main`;
+        const pushCommand = `git push https://x-access-token:${process.env.GITHUB_TOKEN}@github.com/RichardMCGirt/Briqdata.git main`;
         execSync(`cd "${targetDir}" && ${pushCommand}`, { stdio: 'inherit' });
 
         console.log("✅ Successfully pushed to GitHub!");
@@ -164,12 +144,10 @@ async function commitAndPushToGit() {
     }
 }
 
-
-
 // ✅ Run everything
 (async () => {
-    const username = "richard.mcgirt";
-    const password = "84625";
+    const username = process.env.VANIR_USERNAME;  // Store in GitHub Secrets
+    const password = process.env.VANIR_PASSWORD;  // Store in GitHub Secrets
 
     await loginAndDownloadCSV(username, password);
     await commitAndPushToGit();
