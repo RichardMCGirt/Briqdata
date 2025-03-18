@@ -151,9 +151,19 @@ async function loginAndDownloadCSV(username, password) {
 
     } catch (error) {
         console.error("❌ Error in Puppeteer process:", error);
+    
+        // Take a screenshot to debug the issue
         await page.screenshot({ path: "puppeteer_error.png" });
         console.log("📸 Screenshot saved: puppeteer_error.png");
-    } finally {
+    
+        // Log the full HTML to check page contents
+        const html = await page.content();
+        console.log("📝 Page HTML at failure:", html.substring(0, 1000)); // Print first 1000 characters
+    
+        await browser.close();
+        process.exit(1);
+    }
+     finally {
         console.log("🛑 Closing browser...");
         await browser.close();
     }
