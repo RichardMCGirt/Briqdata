@@ -36,13 +36,26 @@ async function waitForCSVFile(timeout = 60000) {
     console.log(`🔍 Checking for CSV file in:\n  - ${expectedFilePath}\n  - ${movedFilePath}`);
 
     while (Date.now() - startTime < timeout) {
+        if (fs.existsSync(movedFilePath)) {
+            console.log(`✅ CSV is already in Briqdata: ${movedFilePath}`);
+            return movedFilePath;
+        }
+
         if (fs.existsSync(expectedFilePath)) {
             console.log(`✅ Found CSV in Downloads: ${expectedFilePath}`);
-            fs.renameSync(expectedFilePath, movedFilePath);
-            console.log(`📂 Moved CSV to: ${movedFilePath}`);
-            return movedFilePath;
-        } else if (fs.existsSync(movedFilePath)) {
-            console.log(`✅ CSV is already in Briqdata folder: ${movedFilePath}`);
+
+            // ✅ If file exists in Briqdata, delete the old one before moving
+            if (fs.existsSync(movedFilePath)) {
+                console.log("🔄 Overwriting existing file in Briqdata...");
+                fs.unlinkSync(movedFilePath); // Delete the old file
+            }
+
+            try {
+                fs.renameSync(expectedFilePath, movedFilePath);
+                console.log(`📂 Moved CSV to: ${movedFilePath}`);
+            } catch (error) {
+                console.error(`❌ Error moving file: ${error.message}`);
+            }
             return movedFilePath;
         }
 
@@ -53,6 +66,7 @@ async function waitForCSVFile(timeout = 60000) {
     console.error("❌ No CSV file found after timeout.");
     return null;
 }
+
 
 
 
@@ -177,7 +191,7 @@ async function commitAndPushToGit() {
         execSync(`cd "${targetDir}" && git commit -m "Automated upload of latest sales CSV" || echo "No changes to commit"`, { stdio: 'inherit' });
 
         console.log("🚀 Pushing to GitHub...");
-        const pushCommand = `git push https://x-access-token:${process.env.GITHUB_TOKEN}@github.com/RichardMcGirt/Briqdata.git main`;
+        const pushCommand = `git push https://x-access-token:${process.env.GITHUB_PAT}@github.com/RichardMcGirt/Briqdata.git main`;
         execSync(`cd "${targetDir}" && ${pushCommand}`, { stdio: 'inherit' });
 
         console.log("✅ Successfully pushed to GitHub!");
