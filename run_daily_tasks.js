@@ -47,7 +47,8 @@ async function waitForCSVFile(timeout = 60000) {
 async function loginAndDownloadCSV(username, password) {
     console.log("🚀 Launching Puppeteer...");
     const browser = await puppeteer.launch({
-        headless: true,  // ✅ Run in headless mode for GitHub Actions
+        headless: true,  // ✅ Run headless in GitHub Actions
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(),
         args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
     });
 
