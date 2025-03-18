@@ -84,12 +84,23 @@ async function waitForCSVFile(timeout = 60000) {
 async function loginAndDownloadCSV(username, password) {
     console.log("🚀 Launching Puppeteer...");
     const browser = await puppeteer.launch({
-        headless: true,  // ✅ Runs in headless mode
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(),
-        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
+        headless: true,  // Change to false if testing locally
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome',
+        args: [
+            "--no-sandbox", "--disable-setuid-sandbox",
+            "--disable-gpu", "--disable-dev-shm-usage",
+            "--disable-blink-features=AutomationControlled"
+        ]
     });
-
+    
     const page = await browser.newPage();
+    
+    // 🟢 Mimic a real browser session
+    await page.setUserAgent(
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
+    );
+    await page.setViewport({ width: 1280, height: 800 });
+    
 
     try {
         console.log("🔑 Navigating to login page...");
@@ -97,7 +108,9 @@ async function loginAndDownloadCSV(username, password) {
             waitUntil: "load",  // 🟢 Ensures full page load instead of waiting for network idle
             timeout: 120000     // 🟢 Increase timeout to 2 minutes
         });
-        
+        console.log("✅ Page loaded. Checking page content...");
+    const pageContent = await page.content();
+    console.log("📝 Page content snippet: ", pageContent.substring(0, 500)); // Logs first 500 characters
 
         console.log("⌛ Logging in...");
         await page.type('input[name="user_name"]', username, { delay: 50 });
@@ -152,13 +165,14 @@ async function loginAndDownloadCSV(username, password) {
     } catch (error) {
         console.error("❌ Error in Puppeteer process:", error);
     
-        // Take a screenshot to debug the issue
+        // Save full HTML for debugging
+        const html = await page.content();
+        require("fs").writeFileSync("debug_page.html", html);
+        console.log("📂 Saved full HTML to debug_page.html");
+    
+        // Take a screenshot of the page
         await page.screenshot({ path: "puppeteer_error.png" });
         console.log("📸 Screenshot saved: puppeteer_error.png");
-    
-        // Log the full HTML to check page contents
-        const html = await page.content();
-        console.log("📝 Page HTML at failure:", html.substring(0, 1000)); // Print first 1000 characters
     
         await browser.close();
         process.exit(1);

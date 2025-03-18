@@ -20,7 +20,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
+          ln -s /usr/bin/google-chrome-stable /usr/bin/google-chrome
           echo "✅ Chrome Installed"
+
 
       - name: 🚀 Run Puppeteer Script (Briq & Vanir)
         env:
