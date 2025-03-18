@@ -104,17 +104,26 @@ async function loginAndDownloadCSV(username, password) {
 
     try {
         console.log("🔑 Navigating to login page...");
-        await page.goto("https://vanirlive.omnna-lbm.live/index.php?action=Login&module=Users", { 
-            waitUntil: "load",  // 🟢 Ensures full page load instead of waiting for network idle
-            timeout: 120000     // 🟢 Increase timeout to 2 minutes
+        await page.goto("https://vanirlive.omnna-lbm.live/index.php?action=Login&module=Users", {
+            waitUntil: "domcontentloaded",
+            timeout: 820000, // Increased timeout to 2 minutes
         });
+        
         console.log("✅ Page loaded. Checking page content...");
     const pageContent = await page.content();
     console.log("📝 Page content snippet: ", pageContent.substring(0, 500)); // Logs first 500 characters
 
         console.log("⌛ Logging in...");
-        await page.type('input[name="user_name"]', username, { delay: 50 });
-        await page.type('input[name="user_password"]', password, { delay: 50 });
+        if (await page.$('input[name="user_name"]')) {
+            console.log("✅ Login form detected. Proceeding with login...");
+            await page.type('input[name="user_name"]', username, { delay: 50 });
+            await page.type('input[name="user_password"]', password, { delay: 50 });
+        } else {
+            console.log("❌ ERROR: Login form not found. Saving screenshot...");
+            await page.screenshot({ path: "login_error.png" });
+            return;
+        }
+                await page.type('input[name="user_password"]', password, { delay: 50 });
 
         await Promise.all([
             page.click('input[type="submit"]'),
