@@ -93,10 +93,11 @@ async function loginAndDownloadCSV(username, password) {
 
     try {
         console.log("🔑 Navigating to login page...");
-        await page.goto("https://vanirlive.omnna-lbm.live/index.php?action=Login&module=Users", {
-            waitUntil: "networkidle2",
-            timeout: 60000,  // ✅ Increased timeout to 60 seconds
+        await page.goto("https://vanirlive.omnna-lbm.live/index.php?action=Login&module=Users", { 
+            waitUntil: "load",  // 🟢 Ensures full page load instead of waiting for network idle
+            timeout: 120000     // 🟢 Increase timeout to 2 minutes
         });
+        
 
         console.log("⌛ Logging in...");
         await page.type('input[name="user_name"]', username, { delay: 50 });
