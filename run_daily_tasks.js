@@ -9,8 +9,9 @@ const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
 
 // ✅ Define paths correctly for both local and GitHub Actions environments
 const downloadsPath = isGitHubActions 
-    ? path.join("/", "downloads")  // ✅ Root Directory in GitHub Actions
+    ? "/"  // ✅ Save directly in the root directory
     : path.join(os.homedir(), "Downloads");  // ✅ Local Machine
+
 
 
 const targetDir = isGitHubActions
@@ -112,10 +113,12 @@ async function loginAndDownloadCSV(username, password) {
         }
 
         // ✅ Move CSV to repo folder
-        const downloadedFilePath = path.join(downloadsPath, csvFile);
-        const targetFilePath = path.join(targetDir, csvFile);
+        const downloadedFilePath = path.join(downloadsPath, "sales_report.csv");
+        const targetFilePath = path.join(targetDir, "sales_report.csv"); // Keep it in repo folder
+        
         fs.renameSync(downloadedFilePath, targetFilePath);
         console.log(`📂 Moved CSV to: ${targetFilePath}`);
+        
 
     } catch (error) {
         console.error("❌ Error in Puppeteer process:", error);
