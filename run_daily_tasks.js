@@ -115,20 +115,36 @@ console.log(`📂 Moved CSV to: ${targetFilePath}`);
     }
 }
 
+// ✅ Function to fetch the latest CSV file
+function getLatestCSV() {
+    try {
+        const csvFilePath = path.join(downloadsPath, "sales_report.csv");
+        
+        if (fs.existsSync(csvFilePath)) {
+            console.log(`✅ Found CSV file: sales_report.csv`);
+            return "sales_report.csv";
+        } else {
+            console.log("⏳ CSV file not found yet...");
+            return null;
+        }
+    } catch (error) {
+        console.error("❌ Error checking for CSV file:", error);
+        return null;
+    }
+}
+
+
 // ✅ Automate Git commit & push
 async function commitAndPushToGit() {
     try {
         console.log("🚀 Starting automated Git commit & push...");
 
-        // ✅ Add new file to Git
         console.log("🔄 Adding changes to Git...");
         execSync(`cd "${targetDir}" && git add .`, { stdio: 'inherit' });
 
-        // ✅ Commit changes
         console.log("✍️ Committing changes...");
         execSync(`cd "${targetDir}" && git commit -m "Automated upload of latest sales CSV"`, { stdio: 'inherit' });
 
-        // ✅ Push to GitHub
         console.log("🚀 Pushing to GitHub...");
         const GITHUB_USERNAME = "RichardMCGirt";
         const GITHUB_PAT = process.env.GITHUB_PAT;
@@ -141,11 +157,11 @@ async function commitAndPushToGit() {
         execSync(`cd "${targetDir}" && ${pushCommand}`, { stdio: 'inherit' });
 
         console.log("✅ Successfully pushed to GitHub!");
-
     } catch (error) {
         console.error("❌ Git error:", error.message);
     }
 }
+
 
 // ✅ Run everything
 (async () => {
