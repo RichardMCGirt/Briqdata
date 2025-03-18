@@ -20,9 +20,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
-          ln -s /usr/bin/google-chrome-stable /usr/bin/google-chrome
           echo "✅ Chrome Installed"
-
 
       - name: 🚀 Run Puppeteer Script (Briq & Vanir)
         env:
@@ -39,8 +37,8 @@ jobs:
         run: |
           git config --global user.email "richard.mcgirt@vanirinstalledsales.com"
           git config --global user.name "RichardMcGirt"
+          git remote set-url origin https://github.com/RichardMcGirt/Briqdata.git
           git pull origin main
           git add .
           git commit -m "Automated upload of latest sales CSV" || echo "No changes to commit"
-          git push
-
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/RichardMcGirt/Briqdata.git main || echo "No changes to push"
