@@ -28,22 +28,34 @@ if (!fs.existsSync(downloadsPath)) {
 }
 
 // ✅ Function to wait for CSV download
-async function waitForCSVFile(timeout = 120000) {  // Increased timeout to 2 minutes
+async function waitForCSVFile(timeout = 60000) {
     const startTime = Date.now();
-    const csvFilePath = path.join(downloadsPath, "sales_report.csv");
+    const expectedFilePath = path.join(downloadsPath, "sales_report.csv");
+    const movedFilePath = path.join(targetDir, "sales_report.csv");
+
+    console.log(`🔍 Checking for CSV file in:\n  - ${expectedFilePath}\n  - ${movedFilePath}`);
 
     while (Date.now() - startTime < timeout) {
-        if (fs.existsSync(csvFilePath)) {
-            console.log(`✅ Found CSV file: ${csvFilePath}`);
-            return "sales_report.csv";
+        if (fs.existsSync(expectedFilePath)) {
+            console.log(`✅ Found CSV in Downloads: ${expectedFilePath}`);
+            fs.renameSync(expectedFilePath, movedFilePath);
+            console.log(`📂 Moved CSV to: ${movedFilePath}`);
+            return movedFilePath;
+        } else if (fs.existsSync(movedFilePath)) {
+            console.log(`✅ CSV is already in Briqdata folder: ${movedFilePath}`);
+            return movedFilePath;
         }
+
         console.log("⏳ Waiting for CSV file...");
-        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds before checking again
+        await new Promise(resolve => setTimeout(resolve, 3000)); // Check every 3 seconds
     }
 
     console.error("❌ No CSV file found after timeout.");
     return null;
 }
+
+
+
 
 // ✅ Puppeteer script to login and download CSV
 async function loginAndDownloadCSV(username, password) {
