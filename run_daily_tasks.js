@@ -48,6 +48,12 @@ async function waitForCSVFile(timeout = 120000) {  // Increased timeout to 2 min
 // ✅ Puppeteer script to login and download CSV
 async function loginAndDownloadCSV(username, password) {
     console.log("🚀 Launching Puppeteer...");
+
+    if (!username || !password) {
+        console.error("❌ Error: Username or password is undefined!");
+        return;
+    }
+
     const browser = await puppeteer.launch({
         headless: true,  // ✅ Runs in headless mode for GitHub Actions
         executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(),
@@ -67,8 +73,11 @@ async function loginAndDownloadCSV(username, password) {
         await page.goto("https://vanirlive.omnna-lbm.live/index.php?action=Login&module=Users", { waitUntil: "networkidle2", timeout: 60000 });
 
         console.log("⌛ Logging in...");
-        await page.type('input[name="user_name"]', username, { delay: 50 });
-        await page.type('input[name="user_password"]', password, { delay: 50 });
+        await page.waitForSelector('input[name="user_name"]', { timeout: 10000 });
+        await page.type('input[name="user_name"]', String(username), { delay: 50 });
+
+        await page.waitForSelector('input[name="user_password"]', { timeout: 10000 });
+        await page.type('input[name="user_password"]', String(password), { delay: 50 });
 
         await Promise.all([
             page.click('input[type="submit"]'),
@@ -118,15 +127,24 @@ async function loginAndDownloadCSV(username, password) {
         
         fs.renameSync(downloadedFilePath, targetFilePath);
         console.log(`📂 Moved CSV to: ${targetFilePath}`);
-        
 
     } catch (error) {
         console.error("❌ Error in Puppeteer process:", error);
+
+        // ✅ Take a screenshot if there's an error
+        try {
+            await page.screenshot({ path: "puppeteer_error.png" });
+            console.log("📸 Screenshot saved: puppeteer_error.png");
+        } catch (screenshotError) {
+            console.error("❌ Failed to save screenshot:", screenshotError);
+        }
+
     } finally {
         console.log("🛑 Closing browser...");
         await browser.close();
     }
 }
+
 
 // ✅ Automate Git commit & push using GitHub Actions token
 async function commitAndPushToGit() {
