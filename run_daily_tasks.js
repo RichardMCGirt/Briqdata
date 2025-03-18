@@ -105,32 +105,49 @@ async function loginAndDownloadCSV(username, password) {
     try {
         console.log("🔑 Navigating to login page...");
         await page.goto("https://vanirlive.omnna-lbm.live/index.php?action=Login&module=Users", {
-            waitUntil: "domcontentloaded",
-            timeout: 820000, // Increased timeout to 2 minutes
+            waitUntil: "networkidle2",
+            timeout: 90000
         });
         
-        console.log("✅ Page loaded. Checking page content...");
-    const pageContent = await page.content();
-    console.log("📝 Page content snippet: ", pageContent.substring(0, 500)); // Logs first 500 characters
-
-        console.log("⌛ Logging in...");
-        if (await page.$('input[name="user_name"]')) {
-            console.log("✅ Login form detected. Proceeding with login...");
-            await page.type('input[name="user_name"]', username, { delay: 50 });
-            await page.type('input[name="user_password"]', password, { delay: 50 });
-        } else {
-            console.log("❌ ERROR: Login form not found. Saving screenshot...");
-            await page.screenshot({ path: "login_error.png" });
+        // ✅ Ensure login form loads
+        await page.waitForSelector('input[name="user_name"]', { timeout: 30000 });
+        console.log("✅ Login form detected. Proceeding with login...");
+        
+        // ✅ Log entered username and masked password
+        console.log(`👤 Entering Username: ${username}`);
+        console.log(`🔒 Entering Password: ${"*".repeat(password.length)}`); // Mask password
+        
+        // ✅ Fill in login credentials
+        await page.type('input[name="user_name"]', username, { delay: 50 });
+        await page.type('input[name="user_password"]', password, { delay: 50 });
+        
+        console.log("🖱️ Clicking login button...");
+        await page.click('input[type="submit"]');
+        
+        // ✅ Use Enter key as an alternative method
+        await page.keyboard.press('Enter');
+        
+        console.log("⌛ Waiting for navigation...");
+        await Promise.race([
+            page.waitForNavigation({ waitUntil: "networkidle2", timeout: 90000 }),
+            new Promise(resolve => setTimeout(resolve, 5000))
+        ]);
+        
+        // ✅ Verify login success
+        const pageUrl = page.url();
+        console.log(`🔍 Current page URL after login: ${pageUrl}`);
+        
+        if (pageUrl.includes("Login")) {
+            console.log("⚠️ Still on login page! Login may have failed.");
+            await page.screenshot({ path: "puppeteer_error.png" });
+            const pageContent = await page.content();
+            fs.writeFileSync("debug_page.html", pageContent);
             return;
         }
-                await page.type('input[name="user_password"]', password, { delay: 50 });
-
-                await page.click('input[type="submit"]');
-                await new Promise(resolve => setTimeout(resolve, 3000));  // Wait for 3 seconds
-                await page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 90000 });
-                
-
-        console.log("✅ Logged in successfully!");
+        
+        console.log("✅ Login successful!");
+        
+        
 
         // ✅ Navigate to report page
         const reportUrl = "https://vanirlive.omnna-lbm.live/index.php?module=Customreport&action=CustomreportAjax&file=Customreportview&parenttab=Analytics&entityId=3729087";
