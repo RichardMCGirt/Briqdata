@@ -1,8 +1,8 @@
-name: Automate CSV Fetch & Upload
+name: Automate Briq & Vanir CSV Fetch & Upload
 
 on:
   schedule:
-    - cron: '0 9 * * *'  # Runs daily at 2 AM UTC
+    - cron: '0 9 * * *'  # Runs daily at 5 AM NYC time (9 AM UTC)
   workflow_dispatch:  # Allows manual trigger
 
 jobs:
@@ -10,15 +10,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: 📥 Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install dependencies
+      - name: 🛠 Install Dependencies
         run: npm install puppeteer
 
-      - name: Run script
+      - name: 🌍 Install Chrome for Puppeteer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: 🚀 Run Puppeteer Script (Briq & Vanir)
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRIQ_USERNAME: ${{ secrets.BRIQ_USERNAME }}
+          BRIQ_PASSWORD: ${{ secrets.BRIQ_PASSWORD }}
           VANIR_USERNAME: ${{ secrets.VANIR_USERNAME }}
           VANIR_PASSWORD: ${{ secrets.VANIR_PASSWORD }}
         run: node run_daily_tasks.js
+
+      - name: 🔄 Commit & Push Changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.email "richard.mcgirt@vanirinstalledsales.com"
+          git config --global user.name "RichardMcGirt"
+          git remote set-url origin https://github.com/RichardMcGirt/Briqdata.git
+          git pull origin main
+          git add .
+          git commit -m "Automated upload of latest sales CSV" || echo "No changes to commit"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/RichardMcGirt/Briqdata.git main || echo "No changes to push"
