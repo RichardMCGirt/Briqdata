@@ -126,7 +126,7 @@ async function loginAndDownloadCSV(username, password) {
                 await page.type('input[name="user_password"]', password, { delay: 50 });
 
                 await page.click('input[type="submit"]');
-                await page.waitForTimeout(3000); // Small delay to allow transition
+                await new Promise(resolve => setTimeout(resolve, 3000));  // Wait for 3 seconds
                 await page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 90000 });
                 
 
