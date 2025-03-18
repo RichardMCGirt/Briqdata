@@ -9,8 +9,9 @@ const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
 
 // ✅ Define paths correctly for both local and GitHub Actions environments
 const downloadsPath = isGitHubActions 
-    ? path.join(os.homedir(), "work", "Briqdata", "Briqdata", "downloads")  // ✅ GitHub Actions
+    ? path.join("/", "downloads")  // ✅ Root Directory in GitHub Actions
     : path.join(os.homedir(), "Downloads");  // ✅ Local Machine
+
 
 const targetDir = isGitHubActions
     ? path.join(os.homedir(), "work", "Briqdata", "Briqdata")  // ✅ GitHub Repo Path in Actions
@@ -25,8 +26,8 @@ if (!fs.existsSync(downloadsPath)) {
     console.log("📂 Created downloads directory.");
 }
 
-// ✅ Function to wait for CSV download in GitHub Actions
-async function waitForCSVFile(timeout = 60000) {
+// ✅ Function to wait for CSV download
+async function waitForCSVFile(timeout = 120000) {  // Increased timeout to 2 minutes
     const startTime = Date.now();
     const csvFilePath = path.join(downloadsPath, "sales_report.csv");
 
@@ -47,7 +48,7 @@ async function waitForCSVFile(timeout = 60000) {
 async function loginAndDownloadCSV(username, password) {
     console.log("🚀 Launching Puppeteer...");
     const browser = await puppeteer.launch({
-        headless: true,  // ✅ Run headless in GitHub Actions
+        headless: true,  // ✅ Runs in headless mode for GitHub Actions
         executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(),
         args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
     });
@@ -62,21 +63,22 @@ async function loginAndDownloadCSV(username, password) {
 
     try {
         console.log("🔑 Navigating to login page...");
-        await page.goto("https://vanirlive.omnna-lbm.live/index.php?action=Login&module=Users", { waitUntil: "networkidle2" });
+        await page.goto("https://vanirlive.omnna-lbm.live/index.php?action=Login&module=Users", { waitUntil: "networkidle2", timeout: 60000 });
 
         console.log("⌛ Logging in...");
         await page.type('input[name="user_name"]', username, { delay: 50 });
         await page.type('input[name="user_password"]', password, { delay: 50 });
+
         await Promise.all([
             page.click('input[type="submit"]'),
-            page.waitForNavigation({ waitUntil: "networkidle2" }),
+            page.waitForNavigation({ waitUntil: "networkidle2", timeout: 60000 }),
         ]);
 
         console.log("✅ Logged in successfully!");
 
         // ✅ Navigate to report page
         const reportUrl = "https://vanirlive.omnna-lbm.live/index.php?module=Customreport&action=CustomreportAjax&file=Customreportview&parenttab=Analytics&entityId=3729087";
-        await page.goto(reportUrl, { waitUntil: "networkidle2" });
+        await page.goto(reportUrl, { waitUntil: "networkidle2", timeout: 60000 });
 
         console.log("📊 Selecting 'All Sales Report'...");
         await page.waitForSelector("select#ddlSavedTemplate", { timeout: 30000 });
@@ -90,7 +92,7 @@ async function loginAndDownloadCSV(username, password) {
         await page.waitForFunction(() => {
             const reportTable = document.querySelector("#pdfContent");
             return reportTable && reportTable.innerText.length > 500;
-        }, { timeout: 60000 });
+        }, { timeout: 120000 });  // Increased timeout to 2 minutes
 
         console.log("✅ Report loaded! Clicking 'Export To CSV'...");
         await page.waitForSelector("#btnExport", { timeout: 25000 });
@@ -103,6 +105,8 @@ async function loginAndDownloadCSV(username, password) {
 
         if (!csvFile) {
             console.error("❌ No CSV file found after download. Exiting...");
+            await page.screenshot({ path: "error_screenshot.png" });
+            console.log("📸 Screenshot saved: error_screenshot.png");
             await browser.close();
             return;
         }
@@ -126,6 +130,10 @@ async function commitAndPushToGit() {
     try {
         console.log("🚀 Starting automated Git commit & push...");
 
+        console.log("🔄 Configuring Git user...");
+        execSync(`git config --global user.email "richard.mcgirt@vanirinstalledsales.com"`);
+        execSync(`git config --global user.name "RichardMcGirt"`);
+
         console.log("🔄 Pulling latest changes...");
         execSync(`cd "${targetDir}" && git pull origin main --rebase`, { stdio: 'inherit' });
 
@@ -133,10 +141,10 @@ async function commitAndPushToGit() {
         execSync(`cd "${targetDir}" && git add .`, { stdio: 'inherit' });
 
         console.log("✍️ Committing changes...");
-        execSync(`cd "${targetDir}" && git commit -m "Automated upload of latest sales CSV"`, { stdio: 'inherit' });
+        execSync(`cd "${targetDir}" && git commit -m "Automated upload of latest sales CSV" || echo "No changes to commit"`, { stdio: 'inherit' });
 
         console.log("🚀 Pushing to GitHub...");
-        const pushCommand = `git push https://x-access-token:${process.env.GITHUB_TOKEN}@github.com/RichardMCGirt/Briqdata.git main`;
+        const pushCommand = `git push https://x-access-token:${process.env.GITHUB_TOKEN}@github.com/RichardMcGirt/Briqdata.git main`;
         execSync(`cd "${targetDir}" && ${pushCommand}`, { stdio: 'inherit' });
 
         console.log("✅ Successfully pushed to GitHub!");
