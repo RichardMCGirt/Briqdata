@@ -1,3 +1,5 @@
+
+
 const { execSync } = require('child_process');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
@@ -27,7 +29,23 @@ if (!fs.existsSync(downloadsPath)) {
     console.log("📂 Created downloads directory.");
 }
 
-
+// ✅ Function to fetch the latest CSV file
+function getLatestCSV() {
+    try {
+        const csvFilePath = path.join(downloadsPath, "sales_report.csv");
+        
+        if (fs.existsSync(csvFilePath)) {
+            console.log(`✅ Found CSV file: sales_report.csv`);
+            return "sales_report.csv";
+        } else {
+            console.log("⏳ CSV file not found yet...");
+            return null;
+        }
+    } catch (error) {
+        console.error("❌ Error checking for CSV file:", error);
+        return null;
+    }
+}
 
 
 // ✅ Puppeteer script to login and download CSV
@@ -115,23 +133,7 @@ console.log(`📂 Moved CSV to: ${targetFilePath}`);
     }
 }
 
-// ✅ Function to fetch the latest CSV file
-function getLatestCSV() {
-    try {
-        const csvFilePath = path.join(downloadsPath, "sales_report.csv");
-        
-        if (fs.existsSync(csvFilePath)) {
-            console.log(`✅ Found CSV file: sales_report.csv`);
-            return "sales_report.csv";
-        } else {
-            console.log("⏳ CSV file not found yet...");
-            return null;
-        }
-    } catch (error) {
-        console.error("❌ Error checking for CSV file:", error);
-        return null;
-    }
-}
+
 
 
 // ✅ Automate Git commit & push
@@ -161,6 +163,7 @@ async function commitAndPushToGit() {
         console.error("❌ Git error:", error.message);
     }
 }
+
 
 
 // ✅ Run everything
