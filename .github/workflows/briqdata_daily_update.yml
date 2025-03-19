@@ -36,7 +36,7 @@ jobs:
         run: echo "✅ Environment variables loaded"
 
       - name: 🚀 Run Puppeteer Script
-        run: node downloadsalescsv.js
+        run: node run_daily_tasks.js
         env:
           PUPPETEER_EXECUTABLE_PATH: "/usr/bin/google-chrome-stable"
           VANIR_USERNAME: ${{ secrets.VANIR_USERNAME }}
