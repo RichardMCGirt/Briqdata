@@ -220,28 +220,27 @@ try {
 // ✅ Automate Git commit & push using GitHub Actions token
 async function commitAndPushToGit() {
     try {
-        console.log("🚀 Starting automated Git commit & push...");
+        console.log("🚀 Starting Git push...");
 
-        console.log("🔄 Configuring Git user...");
+        // Configure GitHub Actions authentication
+        const repoUrl = `https://x-access-token:${process.env.GITHUB_TOKEN}@github.com/RichardMcGirt/Briqdata.git`;
+
         execSync(`git config --global user.email "richard.mcgirt@vanirinstalledsales.com"`);
         execSync(`git config --global user.name "RichardMcGirt"`);
+        execSync(`git remote set-url origin ${repoUrl}`);
 
-        console.log("🔄 Pulling latest changes...");
-        execSync(`cd "${targetDir}" && git pull origin main --rebase`, { stdio: 'inherit' });
-
-        console.log("🔄 Adding changes to Git...");
-        execSync(`cd "${targetDir}" && git add .`, { stdio: 'inherit' });
+        console.log("🔄 Adding changes...");
+        execSync(`git add .`, { stdio: "inherit" });
 
         console.log("✍️ Committing changes...");
-        execSync(`cd "${targetDir}" && git commit -m "Automated upload of latest sales CSV" || echo "No changes to commit"`, { stdio: 'inherit' });
+        execSync(`git commit -m "Automated upload of latest sales CSV" || echo "No changes to commit"`, { stdio: "inherit" });
 
         console.log("🚀 Pushing to GitHub...");
-        const pushCommand = `git push https://x-access-token:${process.env.GITHUB_PAT}@github.com/RichardMcGirt/Briqdata.git main`;
-        execSync(`cd "${targetDir}" && ${pushCommand}`, { stdio: 'inherit' });
+        execSync(`git push origin main || echo "No changes to push"`, { stdio: "inherit" });
 
         console.log("✅ Successfully pushed to GitHub!");
     } catch (error) {
-        console.error("❌ Git error:", error.message);
+        console.error("❌ Error pushing to GitHub:", error.message);
     }
 }
 
