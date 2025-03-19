@@ -3,9 +3,12 @@ ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 const ninetyDaysAgoStr = ninetyDaysAgo.toISOString().split('T')[0]; // Format as YYYY-MM-DD
 
 const filterFormula = `AND(
-  {Activity} = "In Person",
-  IS_AFTER(CREATED_TIME(), "${ninetyDaysAgoStr}")
+    {Activity} = "In Person",
+    {Created} >= DATEADD(TODAY(), -90, 'days')
 )`;
+
+  
+  
 
 
 
