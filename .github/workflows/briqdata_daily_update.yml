@@ -13,7 +13,7 @@ jobs:
       - name: 🔄 Checkout Repository
         uses: actions/checkout@v3
         with:
-          persist-credentials: false  # Avoid conflicts with token authentication
+          persist-credentials: false  # Prevents issues with GitHub authentication
 
       - name: 🛠 Set Up Node.js & Cache Dependencies
         uses: actions/setup-node@v3
@@ -22,7 +22,7 @@ jobs:
           cache: "npm"
 
       - name: 📦 Install Dependencies
-        run: npm ci  # Faster & ensures clean install
+        run: npm ci
 
       - name: 🛠 Install Google Chrome & Dependencies
         run: |
@@ -30,25 +30,24 @@ jobs:
           sudo apt-get install -y google-chrome-stable libatk1.0-0 libatk-bridge2.0-0 libcups2 libxkbcommon-x11-0 libgbm-dev
 
       - name: 🔑 Set Up Environment Variables
-        run: echo "✅ Environment variables loaded"
         env:
-          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}  
           VANIR_USERNAME: ${{ secrets.VANIR_USERNAME }}
           VANIR_PASSWORD: ${{ secrets.VANIR_PASSWORD }}
+        run: echo "✅ Environment variables loaded"
 
       - name: 🚀 Run Puppeteer Script
         run: node downloadsalescsv.js
         env:
-          PUPPETEER_EXECUTABLE_PATH: "/usr/bin/google-chrome-stable"  # Ensure Puppeteer runs smoothly
+          PUPPETEER_EXECUTABLE_PATH: "/usr/bin/google-chrome-stable"
           VANIR_USERNAME: ${{ secrets.VANIR_USERNAME }}
           VANIR_PASSWORD: ${{ secrets.VANIR_PASSWORD }}
 
       - name: 🔄 Commit & Push Changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.email "richard.mcgirt@vanirinstalledsales.com"
           git config --global user.name "RichardMcGirt"
           git add .
           git commit -m "Automated upload of latest sales CSV" || echo "No changes to commit"
-          git push https://x-access-token:${{ secrets.GITHUB_PAT }}@github.com/RichardMcGirt/Briqdata.git main || echo "No changes to push"
-        env:
-          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/RichardMcGirt/Briqdata.git main || echo "No changes to push"
