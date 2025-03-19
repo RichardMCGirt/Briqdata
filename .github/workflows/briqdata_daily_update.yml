@@ -31,7 +31,7 @@ jobs:
 
       - name: 🔑 Set Up Environment Variables
         env:
-          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}  # Use correct secret name
+          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}  
           BRIQ_USERNAME: ${{ secrets.BRIQ_USERNAME }}
           BRIQ_PASSWORD: ${{ secrets.BRIQ_PASSWORD }}
         run: echo "✅ Environment variables loaded"
@@ -40,7 +40,7 @@ jobs:
         env:
           BRIQ_USERNAME: ${{ secrets.BRIQ_USERNAME }}
           BRIQ_PASSWORD: ${{ secrets.BRIQ_PASSWORD }}
-        run: node run_daily_tasks.js.js
+        run: node run_daily_tasks.js
 
       - name: 🔄 Commit & Push Changes
         env:
