@@ -44,20 +44,18 @@ jobs:
           VANIR_PASSWORD: ${{ secrets.VANIR_PASSWORD }}
 
       - name: 🔄 Commit & Push Changes
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}  # Using the stored GitHub PAT secret
         run: |
           git config --global user.email "richard.mcgirt@vanirinstalledsales.com"
           git config --global user.name "RichardMcGirt"
-
-          # Set the correct authenticated remote URL
-          git remote set-url origin https://x-access-token:${GH_PAT}@github.com/RichardMcGirt/Briqdata.git
 
           echo "🔄 Staging changes..."
           git add .
 
           echo "✍️ Committing changes..."
           git commit -m "Automated upload of latest sales CSV" || echo "⚠️ No changes to commit"
+
+          echo "🚀 Setting authenticated Git remote..."
+          git remote set-url origin https://x-access-token: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N@github.com/RichardMcGirt/Briqdata.git
 
           echo "🚀 Pushing to GitHub..."
           git push origin main || echo "⚠️ No changes to push"
