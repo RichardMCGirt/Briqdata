@@ -158,3 +158,24 @@ const password = "84625";
 
 // ✅ Execute
 loginAndDownloadCSV(username, password);
+
+const { execSync } = require("child_process");
+
+function pushToGitHub() {
+    try {
+        const repoPath = path.join(os.homedir(), "Desktop", "Briqdata");
+        console.log("📂 Changing directory to repo:", repoPath);
+
+        // Run Git commands
+        execSync("git add sales_report.csv", { cwd: repoPath, stdio: "inherit" });
+        execSync('git commit -m "Auto-uploaded sales report"', { cwd: repoPath, stdio: "inherit" });
+        execSync("git push origin main", { cwd: repoPath, stdio: "inherit" });
+
+        console.log("✅ CSV uploaded to GitHub successfully!");
+    } catch (error) {
+        console.error("❌ Error pushing to GitHub:", error);
+    }
+}
+
+// Call function after moving file
+pushToGitHub();
