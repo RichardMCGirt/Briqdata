@@ -10,7 +10,7 @@ async function loginAndDownloadCSV(username, password) {
     console.log("📂 Puppeteer download path set to:", rootPath);
 
     const browser = await puppeteer.launch({
-        headless: false,
+        headless: "new",  // ✅ Ensures it runs without a display
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
@@ -19,6 +19,7 @@ async function loginAndDownloadCSV(username, password) {
             "--window-size=1920,1080",
         ],
     });
+    
 
     const page = await browser.newPage();
     const client = await page.target().createCDPSession();
@@ -163,12 +164,16 @@ const { execSync } = require("child_process");
 
 function pushToGitHub() {
     try {
-        const repoPath = "/home/runner/work/Briqdata/Briqdata"; // ✅ Correct path
+        const repoPath = "/home/runner/work/Briqdata/Briqdata"; // ✅ Correct repo path
         console.log("📂 Changing directory to repo:", repoPath);
+
+        // ✅ Set Git user identity
+        execSync('git config --global user.email "richard.mcgirt@vanirinstalledsales.com"', { cwd: repoPath });
+        execSync('git config --global user.name "RichardMcGirt"', { cwd: repoPath });
 
         // Run Git commands
         execSync("git add sales_report.csv", { cwd: repoPath, stdio: "inherit" });
-        execSync('git commit -m "Auto-uploaded sales report"', { cwd: repoPath, stdio: "inherit" });
+        execSync('git commit -m "Auto-uploaded sales report" || echo "No changes to commit"', { cwd: repoPath, stdio: "inherit" });
         execSync("git push origin main", { cwd: repoPath, stdio: "inherit" });
 
         console.log("✅ CSV uploaded to GitHub successfully!");
@@ -176,6 +181,7 @@ function pushToGitHub() {
         console.error("❌ Error pushing to GitHub:", error);
     }
 }
+
 
 
 // Call function after moving file
