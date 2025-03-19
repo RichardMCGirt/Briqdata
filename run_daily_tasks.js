@@ -216,9 +216,15 @@ async function commitAndPushToGit() {
     try {
         console.log("🚀 Starting Git push...");
 
-        // Use the GitHub PAT for authentication
-        const repoUrl = `https://x-access-token:${process.env.GITHUB_PAT}@github.com/RichardMcGirt/Briqdata.git`;
+        // Ensure the token is available
+        if (!process.env.GITHUB_PAT) {
+            throw new Error("❌ GitHub PAT is missing! Make sure it's set as an environment variable.");
+        }
 
+        // Use the GitHub PAT for authentication
+        const repoUrl = `https://${process.env.GITHUB_PAT}@github.com/RichardMcGirt/Briqdata.git`;
+
+        // Configure Git
         execSync(`git config --global user.email "richard.mcgirt@vanirinstalledsales.com"`);
         execSync(`git config --global user.name "RichardMcGirt"`);
 
@@ -229,10 +235,14 @@ async function commitAndPushToGit() {
         execSync(`git add .`, { stdio: "inherit" });
 
         console.log("✍️ Committing changes...");
-        execSync(`git commit -m "Automated upload of latest sales CSV" || echo "No changes to commit"`, { stdio: "inherit" });
+        try {
+            execSync(`git commit -m "Automated upload of latest sales CSV"`, { stdio: "inherit" });
+        } catch (commitError) {
+            console.log("⚠️ No changes to commit.");
+        }
 
         console.log("🚀 Pushing to GitHub...");
-        execSync(`git push origin main || echo "No changes to push"`, { stdio: "inherit" });
+        execSync(`git push origin main`, { stdio: "inherit" });
 
         console.log("✅ Successfully pushed to GitHub!");
     } catch (error) {
