@@ -21,3 +21,16 @@
  create mode 100644 cron_log.txt
 🚀 Pushing to GitHub...
 ❌ Git error: GitHub token is missing. Set the GITHUB_PAT environment variable.
+📂 Using downloads path: /Users/richardmcgirt/Downloads
+📁 Target repository path: /Users/richardmcgirt/Desktop/Briqdata
+🚀 Launching Puppeteer...
+/Users/richardmcgirt/Desktop/Briqdata/node_modules/puppeteer-core/lib/cjs/puppeteer/node/BrowserLauncher.js:89
+            throw new Error(`Browser was not found at the configured executablePath (${launchArgs.executablePath})`);
+                  ^
+
+Error: Browser was not found at the configured executablePath (/usr/bin/google-chrome)
+    at ChromeLauncher.launch (/Users/richardmcgirt/Desktop/Briqdata/node_modules/puppeteer-core/lib/cjs/puppeteer/node/BrowserLauncher.js:89:19)
+    at async loginAndDownloadCSV (/Users/richardmcgirt/Desktop/Briqdata/run_daily_tasks.js:86:21)
+    at async /Users/richardmcgirt/Desktop/Briqdata/run_daily_tasks.js:247:5
+
+Node.js v18.18.0

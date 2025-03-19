@@ -245,5 +245,16 @@ async function commitAndPushToGit() {
     const password = process.env.VANIR_PASSWORD;  // Store in GitHub Secrets
 
     await loginAndDownloadCSV(username, password);
-    await commitAndPushToGit();
+
+    // ✅ Wait for the CSV file to be fully downloaded
+    const csvFilePath = await waitForCSVFile();
+    
+    if (csvFilePath) {
+        console.log(`✅ CSV file found at ${csvFilePath}. Proceeding with Git commit.`);
+        await commitAndPushToGit();
+    } else {
+        console.error("❌ CSV file was not found, skipping Git commit.");
+        process.exit(1); // Exit with error code
+    }
 })();
+
