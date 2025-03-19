@@ -34,7 +34,7 @@ jobs:
           VANIR_USERNAME: ${{ secrets.VANIR_USERNAME }}
           VANIR_PASSWORD: ${{ secrets.VANIR_PASSWORD }}
           PUPPETEER_EXECUTABLE_PATH: "/usr/bin/google-chrome"
-        run: node run_daily_tasks.js
+        run: downloadsalescsv.js
 
       - name: 🔄 Commit & Push Changes
         env:

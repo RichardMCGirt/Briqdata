@@ -150,8 +150,6 @@ if (csvFile) {
         await browser.close();
     }
 
-    
-    
 }
 
 // ✅ Credentials
