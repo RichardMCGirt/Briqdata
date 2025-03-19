@@ -216,11 +216,13 @@ async function commitAndPushToGit() {
     try {
         console.log("🚀 Starting Git push...");
 
-        // Configure GitHub Actions authentication
-        const repoUrl = `https://x-access-token:${process.env.GITHUB_TOKEN}@github.com/RichardMcGirt/Briqdata.git`;
+        // Use the GitHub PAT for authentication
+        const repoUrl = `https://x-access-token:${process.env.GITHUB_PAT}@github.com/RichardMcGirt/Briqdata.git`;
 
         execSync(`git config --global user.email "richard.mcgirt@vanirinstalledsales.com"`);
         execSync(`git config --global user.name "RichardMcGirt"`);
+
+        // Set authenticated remote URL
         execSync(`git remote set-url origin ${repoUrl}`);
 
         console.log("🔄 Adding changes...");
@@ -237,6 +239,8 @@ async function commitAndPushToGit() {
         console.error("❌ Error pushing to GitHub:", error.message);
     }
 }
+
+
 
 // ✅ Run everything
 (async () => {
