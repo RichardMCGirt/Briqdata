@@ -12,54 +12,43 @@ jobs:
     steps:
       - name: 🔄 Checkout Repository
         uses: actions/checkout@v3
+        with:
+          persist-credentials: false  # Avoid conflicts with token authentication
 
-      - name: 🛠️ Set Up Node.js
+      - name: 🛠 Set Up Node.js & Cache Dependencies
         uses: actions/setup-node@v3
         with:
           node-version: 18
-
-      - name: 🛠 Install Google Chrome
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
+          cache: "npm"
 
       - name: 📦 Install Dependencies
+        run: npm ci  # Faster & ensures clean install
+
+      - name: 🛠 Install Google Chrome & Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libatk1.0-0 libatk-bridge2.0-0 libcups2 libxkbcommon-x11-0 libgbm-dev
-          npm install puppeteer
+          sudo apt-get install -y google-chrome-stable libatk1.0-0 libatk-bridge2.0-0 libcups2 libxkbcommon-x11-0 libgbm-dev
 
       - name: 🔑 Set Up Environment Variables
+        run: echo "✅ Environment variables loaded"
         env:
           GITHUB_PAT: ${{ secrets.GITHUB_PAT }}  
-          BRIQ_USERNAME: ${{ secrets.BRIQ_USERNAME }}
-          BRIQ_PASSWORD: ${{ secrets.BRIQ_PASSWORD }}
-          console.log("Debug: BRIQ_USERNAME =", process.env.BRIQ_USERNAME);
-
-        run: echo "✅ Environment variables loaded"
+          VANIR_USERNAME: ${{ secrets.VANIR_USERNAME }}
+          VANIR_PASSWORD: ${{ secrets.VANIR_PASSWORD }}
 
       - name: 🚀 Run Puppeteer Script
+        run: node downloadsalescsv.js
         env:
-          BRIQ_USERNAME: ${{ secrets.BRIQ_USERNAME }}
-          BRIQ_PASSWORD: ${{ secrets.BRIQ_PASSWORD }}
-        run: |
-          echo "BRIQ_USERNAME is set to: $BRIQ_USERNAME"
-          echo "BRIQ_PASSWORD is set to: [HIDDEN]"
-          node run_daily_tasks.js
-
+          PUPPETEER_EXECUTABLE_PATH: "/usr/bin/google-chrome-stable"  # Ensure Puppeteer runs smoothly
+          VANIR_USERNAME: ${{ secrets.VANIR_USERNAME }}
+          VANIR_PASSWORD: ${{ secrets.VANIR_PASSWORD }}
 
       - name: 🔄 Commit & Push Changes
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.email "richard.mcgirt@vanirinstalledsales.com"
           git config --global user.name "RichardMcGirt"
-          git remote set-url origin https://github.com/RichardMcGirt/Briqdata.git
-          git pull origin main
           git add .
           git commit -m "Automated upload of latest sales CSV" || echo "No changes to commit"
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/RichardMcGirt/Briqdata.git main || echo "No changes to push"
-
-
-
-
+          git push https://x-access-token:${{ secrets.GITHUB_PAT }}@github.com/RichardMcGirt/Briqdata.git main || echo "No changes to push"
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}

@@ -83,15 +83,18 @@ async function waitForCSVFile(timeout = 60000) {
 // ✅ Puppeteer script to login and download CSV
 async function loginAndDownloadCSV(username, password) {
     console.log("🚀 Launching Puppeteer...");
+
     const browser = await puppeteer.launch({
-        headless: true,  // Change to false if testing locally
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome',
+        headless: false, // Opens in a new window instead of running headless
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
         args: [
             "--no-sandbox", "--disable-setuid-sandbox",
             "--disable-gpu", "--disable-dev-shm-usage",
-            "--disable-blink-features=AutomationControlled"
+            "--disable-blink-features=AutomationControlled",
+            "--new-window" // Forces opening in a new window
         ]
     });
+    
     
     const page = await browser.newPage();
     
@@ -122,30 +125,25 @@ async function loginAndDownloadCSV(username, password) {
         await page.type('input[name="user_password"]', password, { delay: 50 });
         
         console.log("🖱️ Clicking login button...");
-        await page.click('input[type="submit"]');
-        
-        // ✅ Use Enter key as an alternative method
-        await page.keyboard.press('Enter');
-        
-        console.log("⌛ Waiting for navigation...");
-        await Promise.race([
-            page.waitForNavigation({ waitUntil: "networkidle2", timeout: 90000 }),
-            new Promise(resolve => setTimeout(resolve, 5000))
+        await Promise.all([
+            page.click('input[type="submit"]'),
+            page.waitForNavigation({ waitUntil: "networkidle2", timeout: 60000 })
         ]);
         
-        // ✅ Verify login success
-        const pageUrl = page.url();
-        console.log(`🔍 Current page URL after login: ${pageUrl}`);
+        // ✅ Verify if login was successful by checking for a logged-in element
+        const loginFailed = await page.evaluate(() => {
+            return document.body.innerText.includes("Invalid username or password") ||
+                   document.body.innerText.includes("Login failed");
+        });
         
-        if (pageUrl.includes("Login")) {
-            console.log("⚠️ Still on login page! Login may have failed.");
-            await page.screenshot({ path: "puppeteer_error.png" });
-            const pageContent = await page.content();
-            fs.writeFileSync("debug_page.html", pageContent);
-            return;
+        if (loginFailed) {
+            console.log("❌ Login failed. Check credentials.");
+            await page.screenshot({ path: "login_failed.png" });
+            process.exit(1);
         }
         
         console.log("✅ Login successful!");
+        
         
         
 
@@ -157,17 +155,25 @@ async function loginAndDownloadCSV(username, password) {
         await new Promise(resolve => setTimeout(resolve, 9000));
 
         console.log("📊 Checking for 'All Sales Report' dropdown...");
-        const dropdownSelector = "select#ddlSavedTemplate";
+const dropdownSelector = "select#ddlSavedTemplate";
 
-        try {
-            await page.waitForSelector(dropdownSelector, { timeout: 60000 });  // ✅ Increased timeout to 60 sec
-            console.log("✅ Found dropdown selector.");
-        } catch (error) {
-            console.error("❌ Error: Dropdown selector not found!");
-            await page.screenshot({ path: "puppeteer_error.png" });
-            console.log("📸 Screenshot saved: puppeteer_error.png");
-            throw error;
-        }
+try {
+    await page.waitForFunction(() => document.body.innerText.includes("All Sales Report"), { timeout: 60000 });
+    console.log("✅ Found dropdown selector.");
+} catch (error) {
+    console.error("❌ Error: Dropdown selector not found!");
+    
+    // Take a screenshot and save the HTML to debug
+    await page.screenshot({ path: "dropdown_error.png" });
+    const pageContent = await page.content();
+    fs.writeFileSync("debug_dropdown.html", pageContent);
+    
+    console.log("📸 Screenshot saved: dropdown_error.png");
+    console.log("📂 Full page HTML saved: debug_dropdown.html");
+    
+    throw error;
+}
+
 
         console.log("📊 Selecting 'All Sales Report'...");
         await page.select(dropdownSelector, "249");
@@ -242,7 +248,10 @@ async function commitAndPushToGit() {
 // ✅ Run everything
 (async () => {
     const username = process.env.VANIR_USERNAME || "";
-    const password = process.env.VANIR_PASSWORD || "";
+     const password = process.env.VANIR_PASSWORD || "";
+    // const username = "richard.mcgirt";
+   // const password = "84625";
+    
     
     if (!username || !password) {
         console.error("❌ Error: VANIR_USERNAME or VANIR_PASSWORD is missing. Check GitHub Secrets.");
