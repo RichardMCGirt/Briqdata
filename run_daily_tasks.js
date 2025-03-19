@@ -85,15 +85,9 @@ async function loginAndDownloadCSV(username, password) {
     console.log("🚀 Launching Puppeteer...");
 
     const browser = await puppeteer.launch({
-        headless: false, // Opens in a new window instead of running headless
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-        args: [
-            "--no-sandbox", "--disable-setuid-sandbox",
-            "--disable-gpu", "--disable-dev-shm-usage",
-            "--disable-blink-features=AutomationControlled",
-            "--new-window" // Forces opening in a new window
-        ]
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
     });
+    
     
     
     const page = await browser.newPage();
