@@ -49,16 +49,17 @@ jobs:
         run: |
           git config --global user.email "richard.mcgirt@vanirinstalledsales.com"
           git config --global user.name "RichardMcGirt"
-          
-          # Ensure the repository is authenticated
+
+          # Set the correct authenticated remote URL
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/RichardMcGirt/Briqdata.git
-          
+
           echo "🔄 Staging changes..."
           git add .
-          
+
           echo "✍️ Committing changes..."
           git commit -m "Automated upload of latest sales CSV" || echo "No changes to commit"
-          
+
           echo "🚀 Pushing to GitHub..."
           git push origin main || echo "No changes to push"
+
 
