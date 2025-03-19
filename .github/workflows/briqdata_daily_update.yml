@@ -39,11 +39,13 @@ jobs:
         run: node run_daily_tasks.js
         env:
           PUPPETEER_EXECUTABLE_PATH: "/usr/bin/google-chrome-stable"
-          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"  # Ensures Puppeteer uses system-installed Chrome
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
           VANIR_USERNAME: ${{ secrets.VANIR_USERNAME }}
           VANIR_PASSWORD: ${{ secrets.VANIR_PASSWORD }}
 
       - name: 🔄 Commit & Push Changes
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}  # Use GitHub Secret for authentication
         run: |
           git config --global user.email "richard.mcgirt@vanirinstalledsales.com"
           git config --global user.name "RichardMcGirt"
@@ -55,8 +57,7 @@ jobs:
           git commit -m "Automated upload of latest sales CSV" || echo "⚠️ No changes to commit"
 
           echo "🚀 Setting authenticated Git remote..."
-          git remote set-url origin https://x-access-token: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N@github.com/RichardMcGirt/Briqdata.git
+          git remote set-url origin https://x-access-token:${GH_PAT}@github.com/RichardMcGirt/Briqdata.git
 
           echo "🚀 Pushing to GitHub..."
           git push origin main || echo "⚠️ No changes to push"
-
