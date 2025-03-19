@@ -34,13 +34,19 @@ jobs:
           GITHUB_PAT: ${{ secrets.GITHUB_PAT }}  
           BRIQ_USERNAME: ${{ secrets.BRIQ_USERNAME }}
           BRIQ_PASSWORD: ${{ secrets.BRIQ_PASSWORD }}
+          console.log("Debug: BRIQ_USERNAME =", process.env.BRIQ_USERNAME);
+
         run: echo "✅ Environment variables loaded"
 
       - name: 🚀 Run Puppeteer Script
         env:
           BRIQ_USERNAME: ${{ secrets.BRIQ_USERNAME }}
           BRIQ_PASSWORD: ${{ secrets.BRIQ_PASSWORD }}
-        run: node run_daily_tasks.js
+        run: |
+          echo "BRIQ_USERNAME is set to: $BRIQ_USERNAME"
+          echo "BRIQ_PASSWORD is set to: [HIDDEN]"
+          node run_daily_tasks.js
+
 
       - name: 🔄 Commit & Push Changes
         env:

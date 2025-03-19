@@ -241,9 +241,14 @@ async function commitAndPushToGit() {
 
 // ✅ Run everything
 (async () => {
-    const username = process.env.VANIR_USERNAME;  // Store in GitHub Secrets
-    const password = process.env.VANIR_PASSWORD;  // Store in GitHub Secrets
-
+    const username = process.env.VANIR_USERNAME || "";
+    const password = process.env.VANIR_PASSWORD || "";
+    
+    if (!username || !password) {
+        console.error("❌ Error: VANIR_USERNAME or VANIR_PASSWORD is missing. Check GitHub Secrets.");
+        process.exit(1);
+    }
+    
     await loginAndDownloadCSV(username, password);
 
     // ✅ Wait for the CSV file to be fully downloaded
