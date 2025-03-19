@@ -163,7 +163,7 @@ const { execSync } = require("child_process");
 
 function pushToGitHub() {
     try {
-        const repoPath = path.join(os.homedir(), "Desktop", "Briqdata");
+        const repoPath = "/home/runner/work/Briqdata/Briqdata"; // ✅ Correct path
         console.log("📂 Changing directory to repo:", repoPath);
 
         // Run Git commands
@@ -176,6 +176,7 @@ function pushToGitHub() {
         console.error("❌ Error pushing to GitHub:", error);
     }
 }
+
 
 // Call function after moving file
 pushToGitHub();
