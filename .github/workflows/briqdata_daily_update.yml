@@ -1,8 +1,8 @@
 name: Automate Sales CSV Upload
 
 on:
-  schedule:
-    - cron: "0 10 * * *"  # Runs daily at 6 AM NYC time
+  # schedule:
+  #  - cron: "0 10 * * *"  # Runs daily at 6 AM NYC time
   workflow_dispatch:  # Allows manual trigger in GitHub Actions
 
 jobs:
