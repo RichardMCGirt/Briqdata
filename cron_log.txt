@@ -34,3 +34,12 @@ Error: Browser was not found at the configured executablePath (/usr/bin/google-c
     at async /Users/richardmcgirt/Desktop/Briqdata/run_daily_tasks.js:247:5
 
 Node.js v18.18.0
+📂 Using downloads path: /Users/richardmcgirt/Downloads
+📁 Target repository path: /Users/richardmcgirt/Desktop/Briqdata
+❌ Error: VANIR_USERNAME or VANIR_PASSWORD is missing. Check GitHub Secrets.
+📂 Using downloads path: /Users/richardmcgirt/Downloads
+📁 Target repository path: /Users/richardmcgirt/Desktop/Briqdata
+❌ Error: VANIR_USERNAME or VANIR_PASSWORD is missing. Check GitHub Secrets.
+📂 Using downloads path: /Users/richardmcgirt/Downloads
+📁 Target repository path: /Users/richardmcgirt/Desktop/Briqdata
+❌ Error: VANIR_USERNAME or VANIR_PASSWORD is missing. Check GitHub Secrets.
