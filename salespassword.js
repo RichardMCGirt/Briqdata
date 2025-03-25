@@ -6,6 +6,16 @@ function togglePrompt(event) {
         return;
     }
 
+    const correctPassword = "Vanir2025!!";
+    const savedPasswords = JSON.parse(localStorage.getItem("savedPasswords")) || [];
+
+    // Try auto-login if correct password is stored
+    if (savedPasswords.includes(correctPassword)) {
+        sessionStorage.setItem("salesAccess", "true");
+        window.location.href = "/sales.html";
+        return;
+    }
+
     const promptBox = document.querySelector(".password-prompt");
     promptBox.style.display = (promptBox.style.display === "block") ? "none" : "block";
 
@@ -78,8 +88,6 @@ function loadPreviousPasswords() {
                 unhideButton.textContent = "Unhide";
             }
         };
-
-       
 
         div.appendChild(passSpan);
         div.appendChild(unhideButton);
