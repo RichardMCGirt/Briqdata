@@ -30,8 +30,19 @@
         <strong>Required File Name:</strong> 
         <span style="color: #0044cc; font-weight: bold;">OpenPOReportbyVendorSalesmanDateCreated.csv</span>
     </div>
-    <div id="dropZone">Drag and drop your CSV file here or <label for="fileInput" style="color: #0044cc; cursor: pointer; text-decoration: underline;">browse</label> to upload.</div>
+
+    <nav>
+        <ul>
+          <li><a href="https://vanirlive.omnna-lbm.live/index.php?module=Customreport&action=Customreportview&return_action=DetailView&parenttab=Analytics" target="_blank">Download Sales Report</a></li>
+        </ul>
+      </nav>
+      <div id="dropZone">
+        Drag and drop your CSV file here or
+        <label for="fileInput" style="color: #0044cc; cursor: pointer; text-decoration: underline;">browse</label>
+        to upload.
+    </div>
     <input type="file" id="fileInput" accept=".csv" style="display: none;" />
+    
         <p id="errorMessage" style="color: red; display: none;"></p>
     <table id="csvTable">
         <thead>

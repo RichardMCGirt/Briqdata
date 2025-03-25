@@ -41,49 +41,18 @@
             <h1>CSV Downloads</h1>
             <ul id="csv-list" style="display: none;"></ul>
 
+            <nav>
+                <ul>
+                  <li><a href="https://vanirlive.omnna-lbm.live/index.php?module=Customreport&action=Customreportview&return_action=DetailView&parenttab=Analytics" target="_blank">Download Sales Report</a></li>
+                </ul>
+              </nav>
+
             <div class="table-container">
                 <table id="csvTable"></table>
             </div> 
     </div>
 
-    <script>
-const GITHUB_REPO = "RichardMCGirt/Briqdata"; // Change to your GitHub repository
-const BRANCH = "main"; // Change if using another branch
-const CSV_PATTERN = "richard_mcgirt_vanirinstalledsales_com_"; // CSV file prefix
 
-async function fetchCSVFromGitHub() {
-    const apiURL = `https://api.github.com/repos/${GITHUB_REPO}/contents?ref=${BRANCH}`; // Fetch from root directory
-
-    try {
-        const response = await fetch(apiURL);
-        if (!response.ok) throw new Error("Failed to fetch CSV files from GitHub.");
-
-        const files = await response.json();
-        const csvList = document.getElementById('csv-list');
-
-        files.forEach(file => {
-            if (file.name.includes(CSV_PATTERN) && file.name.endsWith(".csv")) {
-                // Extract "Month DD, YYYY" format
-                const dateMatch = file.name.match(/[A-Za-z]+\s\d{1,2},\s\d{4}/); 
-                const displayText = dateMatch ? dateMatch[0] : file.name; // Use extracted date or fallback to full name
-
-                const li = document.createElement('li');
-                li.innerHTML = `<a href="${file.download_url}" download>${displayText}</a>`;
-                csvList.appendChild(li);
-            }
-        });
-
-    } catch (error) {
-        console.error("Error fetching CSVs:", error);
-    }
-}
-
-fetchCSVFromGitHub();
-
-
-
-
-    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
   <script src ="nolabor.js"></script> 
