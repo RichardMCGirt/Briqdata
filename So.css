@@ -23,6 +23,34 @@ table {
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
+#dropZone {
+    border: 2px dashed #0044cc;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    background-color: #f9f9f9;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    cursor: pointer;
+    max-width: 500px;
+    margin: 30px auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  #dropZone:hover {
+    background-color: #eef4ff;
+    border-color: #002f99;
+  }
+  
+  #dropZone label {
+    color: #0044cc;
+    cursor: pointer;
+    text-decoration: underline;
+    font-weight: bold;
+  }
+  
+
 th, td {
     padding: 12px;
     border: 1px solid #ddd;
