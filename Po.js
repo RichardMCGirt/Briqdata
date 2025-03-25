@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
     tableHead.style.display = "none";
 
     // ✅ GitHub Raw CSV URL
-    const githubCSVUrl = "https://raw.githubusercontent.com/RichardMCGirt/Briqdata/main/OpenPOReportbyVendorSalesmanDateCreated.csv";
+    const githubCSVUrl = "https://raw.githubusercontent.com/RichardMCGirt/Briqdata/refs/heads/main/OpenPOReportbyVendorSalesmanDateCreated-1742910735-44512876.csv";
 
     // 🔽 Fetch CSV from GitHub on load
     fetch(githubCSVUrl)
