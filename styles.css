@@ -439,8 +439,8 @@ h1 {
 
 .table-container {
     overflow-x: auto;
-    max-height: 600px;
-    width: 90%;
+    max-height: 800px;
+    width: 85%;
     margin: 0 auto; /* Center it horizontally */
     text-align: center; /* Center the text inside */
 }
