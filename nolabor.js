@@ -270,8 +270,12 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
                     if (header.includes("%")) {
                         let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
                         if (!isNaN(num)) cell = `${num.toFixed(2)}%`;
-                    } else if (!header.includes("location") && !header.includes("account")) {
-                        let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
+                    } else if (
+                        !header.includes("location") &&
+                        !header.includes("account") &&
+                        !header.includes("customer")
+                    ) {
+                                            let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
                         if (!isNaN(num)) cell = `$${Math.round(num).toLocaleString()}`;
                     }
                                 
