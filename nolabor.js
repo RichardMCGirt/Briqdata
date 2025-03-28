@@ -265,14 +265,17 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
                 if (typeof cell === "string") cell = cell.trim();
 
                 if (rowIndex !== 1 && columnHeaders[colIndex]) {
-                    const header = columnHeaders[colIndex];
+                    const header = columnHeaders[colIndex].toLowerCase();
+                
                     if (header.includes("%")) {
                         let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
                         if (!isNaN(num)) cell = `${num.toFixed(2)}%`;
-                    } else if (header.toLowerCase() !== "location") {
+                    } else if (!header.includes("location") && !header.includes("account")) {
                         let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
                         if (!isNaN(num)) cell = `$${Math.round(num).toLocaleString()}`;
                     }
+                                
+                                
                 } else if (rowIndex === 1) {
                     columnHeaders[colIndex] = cell;
                 }
