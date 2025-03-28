@@ -30,39 +30,50 @@
             </li>
         </nav>
          <br>
+         <nav>
+            <ul>
+              <li><a href="https://vanirlive.omnna-lbm.live/index.php?action=Login&module=Users" target="_blank">Download Sales Report</a></li>
+            </ul>
+          </nav>
       <div class="container">
 
         <h3 class="grid-header"> Sales Report By Location</h3>
 
         <div id="dateContainerMain"></div> <!-- NEW ID -->
 
-            <input type="file" id="fileInput" accept=".csv">
-
+        <div id="dropZoneMain" class="drop-zone">
+            <p><a href="#" id="uploadLinkMain">Click here</a> or drag a CSV file here to upload</p>
+            <input type="file" id="fileInput" accept=".csv" hidden />
+          </div>
+          
             <h1>CSV Downloads</h1>
             <ul id="csv-list" style="display: none;"></ul>
 
-            <nav>
-                <ul>
-                  <li><a href="https://vanirlive.omnna-lbm.live/index.php?action=Login&module=Users" target="_blank">Download Sales Report</a></li>
-                </ul>
-              </nav>
+          
 
             <div class="table-container">
                 <table id="csvTable"></table>
             </div> 
     </div>
+<br>
 
-    <h1>Sales Comparison by Master Account</h1>
+<div class="container">
+
+    <h3 class="grid-header"> Sales Comparison by Master Account</h3>
+
     <div id="dateContainerMaster"></div> <!-- NEW ID -->
 
-    <input type="file" id="csvFile" accept=".csv" />
-    <button onclick="handleFile()">Upload & Filter</button>
+    <div id="dropZone" class="drop-zone">
+        <p><a href="#" id="uploadLink">Click here</a> or drag a CSV file here to upload and filter</p>
+        <input type="file" id="csvFile" accept=".csv" hidden />
+      </div>
+      <br>
     
     <div class="table-container">
         <table id="csvTableMaster"></table>
     </div>
     
-    
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 

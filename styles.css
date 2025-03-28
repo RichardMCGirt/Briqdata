@@ -436,10 +436,34 @@ h1 {
     margin: auto;
     text-align: center;
 }
+
 .table-container {
     overflow-x: auto;
-    max-height: 400px;
+    max-height: 600px;
+    width: 90%;
+    margin: 0 auto; /* Center it horizontally */
+    text-align: center; /* Center the text inside */
 }
+
+.table-container table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-container table td,
+.table-container table th {
+    padding: 8px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+#dateContainerMaster {
+    width: fit-content;
+    margin: 0 auto;
+    text-align: center;
+  }
+  
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -449,7 +473,7 @@ table {
 th, td {
     border: 1px solid #ddd;
     padding: 8px;
-    text-align: left;
+    text-align: center;
     white-space: nowrap;
     text-align: center;
 }
@@ -481,7 +505,29 @@ th {
   font-weight: bolder;
 }
 
-
+.drop-zone {
+    border: 2px dashed #0056b3;
+    padding: 3px;
+    text-align: center;
+    margin-top: 20px;
+    cursor: pointer;
+    border-radius: 10px;
+    max-width: 30%;
+    color: #0056b3;
+    transition: background-color 0.3s ease;
+    margin-left: auto;
+    margin-right: auto;
+      }
+  .drop-zone.dragover {
+    background-color: #f0f8ff;
+  }
+  .drop-zone a {
+    color: #0056b3;
+    font-weight: bold;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  
 
 .even-row {
     background-color: #f2f2f2; /* Light gray */

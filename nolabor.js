@@ -52,7 +52,7 @@ async function fetchAndFilterGitHubCSV() {
         const results = Papa.parse(text.trim(), { skipEmptyLines: true });
 
         const filtered = filterColumns(results.data);
-        displayTable(filtered, "csvTableMaster");
+        displayTable(filtered, 'csvTableMaster', 'dateContainerMaster');
     } catch (err) {
         console.error("GitHub CSV fetch failed", err);
     }
@@ -112,30 +112,87 @@ async function loadDefaultCSV() {
     }
 }
 
-document.getElementById('fileInput').addEventListener('change', function(event) {
-    const file = event.target.files[0];
-    if (!file) return;
 
+// ==== DROP ZONE FOR MAIN REPORT ====
+const dropZoneMain = document.getElementById("dropZoneMain");
+const fileInputMain = document.getElementById("fileInput");
+const uploadLinkMain = document.getElementById("uploadLinkMain");
+
+uploadLinkMain.addEventListener("click", (e) => {
+    e.preventDefault();
+    fileInputMain.click();
+});
+
+dropZoneMain.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropZoneMain.classList.add("dragover");
+});
+dropZoneMain.addEventListener("dragleave", () => dropZoneMain.classList.remove("dragover"));
+dropZoneMain.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropZoneMain.classList.remove("dragover");
+    const file = e.dataTransfer.files[0];
+    if (file) handleMainCSVFile(file);
+});
+fileInputMain.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) handleMainCSVFile(file);
+});
+
+function handleMainCSVFile(file) {
     const reader = new FileReader();
     reader.onload = function(e) {
         const csvData = e.target.result;
         localStorage.setItem('csvData', csvData);
         Papa.parse(csvData, {
             complete: function(results) {
-                displayTable(results.data);
+                displayTable(results.data, 'csvTable', 'dateContainerMain');
             },
             error: function(error) {
                 console.error("Error parsing uploaded CSV:", error);
             }
         });
     };
-
-    reader.onerror = function(error) {
-        console.error("Error reading file:", error);
-    };
-
     reader.readAsText(file);
+}
+
+// ==== DROP ZONE FOR MASTER ACCOUNT ====
+const dropZone = document.getElementById("dropZone");
+const fileInput = document.getElementById("csvFile");
+const uploadLink = document.getElementById("uploadLink");
+
+uploadLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    fileInput.click();
 });
+
+dropZone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropZone.classList.add("dragover");
+});
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+dropZone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropZone.classList.remove("dragover");
+    const file = e.dataTransfer.files[0];
+    if (file) handleMasterCSVFile(file);
+});
+fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) handleMasterCSVFile(file);
+});
+
+function handleMasterCSVFile(file) {
+    Papa.parse(file, {
+        complete: function(results) {
+            const filtered = filterColumns(results.data);
+            displayTable(filtered, 'csvTableMaster', 'dateContainerMaster');
+        },
+        error: function(error) {
+            console.error("CSV parsing error:", error);
+        }
+    });
+}
 
 function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContainerMain') {
     if (data.length <= 1) return;
