@@ -14,43 +14,41 @@ async function initializep() {
     try {
         displayLoadingMessage("Loading data, please wait...");
 
-        // Airtable configuration
         const airtableApiKey = 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238';
         const airtableBaseId = 'appK9gZS77OmsIK50';
         const airtableTableName = 'tblQo2148s04gVPq1';
         const currentYear = new Date().getFullYear();
 
-        // Fetch both commercial and residential records
+        const commercialFilter = `AND(
+            YEAR({Last Time Outcome Modified}) = ${currentYear},
+            OR({Outcome} = 'Win', {Outcome} = 'Loss'),
+            {Project Type} = 'Commercial'
+        )`;
+
+        const residentialFilter = `AND(
+            YEAR({Last Time Outcome Modified}) = ${currentYear},
+            OR({Outcome} = 'Win', {Outcome} = 'Loss'),
+            {Project Type} != 'Commercial'
+        )`;
+
         const [commercialRecords, residentialRecords] = await Promise.all([
-            fetchAirtableData(
-                airtableApiKey,
-                airtableBaseId,
-                airtableTableName,
-                `AND(YEAR({Created}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} = 'Commercial')`
-            ),
-            fetchAirtableData(
-                airtableApiKey,
-                airtableBaseId,
-                airtableTableName,
-                `AND(YEAR({Created}) = ${currentYear}, OR({Outcome} = 'Win', {Outcome} = 'Loss'), {Project Type} != 'Commercial')`
-            )
+            fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, commercialFilter),
+            fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, residentialFilter)
         ]);
 
-        // Calculate win rates
         const commercialWinRates = calculateWinRate(commercialRecords);
         const residentialWinRates = calculateWinRate(residentialRecords);
 
-        // Populate grids with calculated win rates
         displayWinRatesInGrid(commercialWinRates, 'commercialGrid', "Commercial");
         displayWinRatesInGrid(residentialWinRates, 'nonCommercialGrid', "Residential");
 
     } catch (error) {
         console.error("Error during initialization:", error);
     } finally {
-        // Ensure the loading message is hidden even if an error occurs
         hideLoadingMessage();
     }
 }
+
 
 async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
     let allRecords = [];

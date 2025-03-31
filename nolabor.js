@@ -261,30 +261,56 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
 
         row.forEach((cell, colIndex) => {
             if (!columnsToHide.has(colIndex)) {
-                let element = rowIndex === 1 ? document.createElement('th') : document.createElement('td');
-                if (typeof cell === "string") cell = cell.trim();
+                let element;
+if (rowIndex === 1) {
+    element = document.createElement('th');
+    columnHeaders[colIndex] = cell;
 
-                if (rowIndex !== 1 && columnHeaders[colIndex]) {
-                    const header = columnHeaders[colIndex].toLowerCase();
-                
-                    if (header.includes("%")) {
-                        let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
-                        if (!isNaN(num)) cell = `${num.toFixed(2)}%`;
-                    } else if (
-                        !header.includes("location") &&
-                        !header.includes("account") &&
-                        !header.includes("customer")
-                    ) {
-                                            let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
-                        if (!isNaN(num)) cell = `$${Math.round(num).toLocaleString()}`;
-                    }
-                                
-                                
-                } else if (rowIndex === 1) {
-                    columnHeaders[colIndex] = cell;
-                }
+    const headerDiv = document.createElement('div');
+    headerDiv.style.display = "flex";
+    headerDiv.style.flexDirection = "column";
 
-                element.textContent = cell;
+    const label = document.createElement('span');
+    label.textContent = cell;
+
+    const select = document.createElement('select');
+    select.innerHTML = `<option value="">All</option>`;
+    const uniqueValues = [...new Set(data.slice(2).map(r => r[colIndex]).filter(v => v !== "" && v != null))];
+    uniqueValues.sort().forEach(val => {
+        const option = document.createElement('option');
+        option.value = val;
+        option.textContent = val;
+        select.appendChild(option);
+    });
+
+    select.addEventListener('change', () => {
+        filterTableByColumn(tableId, colIndex, select.value);
+    });
+
+    headerDiv.appendChild(label);
+    headerDiv.appendChild(select);
+    element.appendChild(headerDiv);
+} else {
+    element = document.createElement('td');
+    if (typeof cell === "string") cell = cell.trim();
+
+    const header = columnHeaders[colIndex]?.toLowerCase() || "";
+
+    if (header.includes("%")) {
+        let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
+        if (!isNaN(num)) cell = `${num.toFixed(2)}%`;
+    } else if (
+        !header.includes("location") &&
+        !header.includes("account") &&
+        !header.includes("customer")
+    ) {
+        let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
+        if (!isNaN(num)) cell = `$${Math.round(num).toLocaleString()}`;
+    }
+
+    element.textContent = cell;
+}
+
 
                 if (
                     ["Charleston", "Charlotte", "Columbia", "Greensboro", "Greenville", "Myrtle Beach", "Raleigh", "Wilmington"].includes(cell.trim())
@@ -298,6 +324,18 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
 
         table.appendChild(tr);
         visibleRowIndex++;
+    });
+}
+
+function filterTableByColumn(tableId, columnIndex, filterValue) {
+    const table = document.getElementById(tableId);
+    const rows = Array.from(table.querySelectorAll("tr")).slice(1); // skip original header rows
+
+    rows.forEach(row => {
+        const cell = row.children[columnIndex];
+        const cellValue = cell?.textContent || "";
+        const shouldShow = !filterValue || cellValue === filterValue;
+        row.style.display = shouldShow ? "" : "none";
     });
 }
 
