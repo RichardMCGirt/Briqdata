@@ -408,8 +408,7 @@ button:hover {
 }
 
 #export-button,
-#export-button2,
-h1 {
+#export-button2 {
     display: none;
 }
 

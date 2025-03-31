@@ -1,3 +1,9 @@
+const expectedBranches = [
+    "Charlotte", "Columbia", "Greensboro", "Greenville SC", 
+    "Myrtle Beach", "Raleigh", "Wilmington", "Charleston", "Richmond", "Atlanta", "Savannanh" 
+  ];
+  
+
 document.addEventListener('DOMContentLoaded', function () {
     
     // Directly call the initialization function to start fetching data immediately
@@ -91,6 +97,7 @@ function hideLoadingMessage() {
 function calculateWinRate(records) {
     const data = {};
 
+    // Tally wins and losses from the records
     records.forEach(record => {
         const division = record.fields['Branch'];
         const outcome = record.fields['Outcome'];
@@ -108,20 +115,27 @@ function calculateWinRate(records) {
         data[division].totalCount += 1;
     });
 
+    // Ensure all expected branches are present
+    expectedBranches.forEach(branch => {
+        if (!data[branch]) {
+            data[branch] = { winCount: 0, lossCount: 0, totalCount: 0 };
+        }
+    });
 
+    // Calculate win rate
     const winRates = {};
     for (const division in data) {
-        const { winCount, lossCount, totalCount } = data[division];
+        const { winCount, totalCount } = data[division];
         winRates[division] = {
-            winCount,
-            lossCount,
-            totalCount,
-            fraction: `${winCount} / ${totalCount}`,
+            ...data[division],
+            fraction: `${winCount}/${totalCount}`,
             winRatePercentage: totalCount > 0 ? (winCount / totalCount) * 100 : 0
         };
     }
+
     return winRates;
 }
+
 
 
 function displayWinRatesInGrid(data, gridId, title) {
@@ -141,7 +155,8 @@ function displayWinRatesInGrid(data, gridId, title) {
 
     if (Object.keys(data).length === 0) {
         console.warn(`No data found for grid: ${gridId}`);
-        gridContainer.textContent = `No ${title.toLowerCase()} data available for the current year.`;
+gridContainer.textContent = `No ${title.toLowerCase()} data available for the current year.`;
+
         return;
     }
 
@@ -151,7 +166,7 @@ function displayWinRatesInGrid(data, gridId, title) {
         const branchDiv = document.createElement('div');
         branchDiv.className = 'branch-win-rate';
 
-        const branchName = document.createElement('h3');
+        const branchName = document.createElement('h1');
         branchName.textContent = branch;
         branchDiv.appendChild(branchName);
 
