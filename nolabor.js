@@ -262,34 +262,41 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
         row.forEach((cell, colIndex) => {
             if (!columnsToHide.has(colIndex)) {
                 let element;
-if (rowIndex === 1) {
-    element = document.createElement('th');
-    columnHeaders[colIndex] = cell;
-
-    const headerDiv = document.createElement('div');
-    headerDiv.style.display = "flex";
-    headerDiv.style.flexDirection = "column";
-
-    const label = document.createElement('span');
-    label.textContent = cell;
-
-    const select = document.createElement('select');
-    select.innerHTML = `<option value="">All</option>`;
-    const uniqueValues = [...new Set(data.slice(2).map(r => r[colIndex]).filter(v => v !== "" && v != null))];
-    uniqueValues.sort().forEach(val => {
-        const option = document.createElement('option');
-        option.value = val;
-        option.textContent = val;
-        select.appendChild(option);
-    });
-
-    select.addEventListener('change', () => {
-        filterTableByColumn(tableId, colIndex, select.value);
-    });
-
-    headerDiv.appendChild(label);
-    headerDiv.appendChild(select);
-    element.appendChild(headerDiv);
+                if (rowIndex === 1) {
+                    element = document.createElement('th');
+                    columnHeaders[colIndex] = cell;
+                
+                    const headerDiv = document.createElement('div');
+                    headerDiv.style.display = "flex";
+                    headerDiv.style.flexDirection = "column";
+                
+                    const label = document.createElement('span');
+                    label.textContent = cell;
+                    headerDiv.appendChild(label);
+                
+                    // Only add filter dropdown for "Customer Name" column
+                    const lowerHeader = cell.trim().toLowerCase();
+                    if (lowerHeader === "customer name") {
+                        const select = document.createElement('select');
+                        select.innerHTML = `<option value="">All</option>`;
+                
+                        const uniqueValues = [...new Set(data.slice(2).map(r => r[colIndex]).filter(v => v !== "" && v != null))];
+                        uniqueValues.sort().forEach(val => {
+                            const option = document.createElement('option');
+                            option.value = val;
+                            option.textContent = val;
+                            select.appendChild(option);
+                        });
+                
+                        select.addEventListener('change', () => {
+                            filterTableByColumn(tableId, colIndex, select.value);
+                        });
+                
+                        headerDiv.appendChild(select);
+                    }
+                
+                    element.appendChild(headerDiv);
+                                
 } else {
     element = document.createElement('td');
     if (typeof cell === "string") cell = cell.trim();
