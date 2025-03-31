@@ -276,23 +276,47 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
                 
                     // Only add filter dropdown for "Customer Name" column
                     const lowerHeader = cell.trim().toLowerCase();
-                    if (lowerHeader === "customer name") {
+                    if (lowerHeader.includes("customer") && lowerHeader.includes("name")) {
+                        const wrapper = document.createElement('div');
+                        wrapper.style.display = "flex";
+                        wrapper.style.flexDirection = "column";
+                        wrapper.style.gap = "4px";
+                    
+                        // Search box
                         const select = document.createElement('select');
-                        select.innerHTML = `<option value="">All</option>`;
+select.setAttribute("multiple", true);
+
+const uniqueValues = [...new Set(
+    data.slice(3).map(r => r[colIndex])
+        .filter(v => v && v.toLowerCase() !== "customer name")
+)];
+uniqueValues.sort().forEach(val => {
+    const option = document.createElement('option');
+    option.value = val;
+    option.textContent = val;
+    select.appendChild(option);
+});
+
+wrapper.appendChild(select);
+headerDiv.appendChild(wrapper);
+
+// ✅ Initialize Choices AFTER select is in the DOM
+const choices = new Choices(select, {
+    removeItemButton: true,
+    placeholderValue: 'Search for customer ...',
+});
+
+// ✅ Handle filter on change
+select.addEventListener('change', () => {
+    const selected = Array.from(select.selectedOptions).map(opt => opt.value);
+    filterTableByMultipleValues(tableId, colIndex, selected);
+});
+
+                    
+                        headerDiv.appendChild(wrapper);
+                    
+                    
                 
-                        const uniqueValues = [...new Set(data.slice(2).map(r => r[colIndex]).filter(v => v !== "" && v != null))];
-                        uniqueValues.sort().forEach(val => {
-                            const option = document.createElement('option');
-                            option.value = val;
-                            option.textContent = val;
-                            select.appendChild(option);
-                        });
-                
-                        select.addEventListener('change', () => {
-                            filterTableByColumn(tableId, colIndex, select.value);
-                        });
-                
-                        headerDiv.appendChild(select);
                     }
                 
                     element.appendChild(headerDiv);
@@ -345,6 +369,20 @@ function filterTableByColumn(tableId, columnIndex, filterValue) {
         row.style.display = shouldShow ? "" : "none";
     });
 }
+
+function filterTableByMultipleValues(tableId, columnIndex, selectedValues) {
+    const table = document.getElementById(tableId);
+    const rows = Array.from(table.querySelectorAll("tr")).slice(1); // skip header
+
+    rows.forEach(row => {
+        const cell = row.children[columnIndex];
+        const cellValue = cell?.textContent || "";
+        const shouldShow = selectedValues.length === 0 || selectedValues.includes(cellValue);
+        row.style.display = shouldShow ? "" : "none";
+    });
+}
+
+
 
 
 // Run both on load

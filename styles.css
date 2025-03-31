@@ -432,13 +432,51 @@ button:hover {
 .dropdown-checkbox-wrapper {
     display: flex;
     flex-direction: column;
-    max-height: 250px;
+    max-height: 750px !important;
     overflow-y: auto;
     padding: 4px;
     border: 1px solid #ccc;
     background-color: white;
     z-index: 1000;
+    color: black;
 }
+
+/* Change the dropdown background */
+.choices__list--dropdown {
+    background-color: #f0f8ff !important; /* light blue background */
+    color: #333 !important;               /* text color */
+    max-height: 250 !important;
+    overflow-y: auto !important;
+  }
+  
+  /* Change selected item highlight */
+  .choices__item--selectable.is-highlighted {
+    background-color: #009688 !important; /* teal highlight */
+    color: white !important;
+  }
+  
+  /* Change multi-select selected items */
+  .choices__list--multiple .choices__item {
+    background-color: #007BFF !important; /* blue badge */
+    color: white !important;
+    border: none;
+  }
+  
+  /* Change search input (if used inside dropdown) */
+  .choices__input {
+    background-color: #fffbe6 !important; /* light yellow */
+    color: #222 !important;
+  }
+
+  /* Optional: tweak search box inside dropdown */
+.choices__list--dropdown .choices__input {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+  }
+  
+  
 
 .dropdown-search {
     margin-bottom: 6px;
