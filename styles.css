@@ -454,7 +454,6 @@ button:hover {
 .choices__list--dropdown {
     background-color: #f0f8ff !important; /* light blue background */
     color: #333 !important;               /* text color */
-    max-height: 250 !important;
     overflow-y: auto !important;
   }
   
@@ -485,7 +484,20 @@ button:hover {
     z-index: 1;
   }
   
-  
+  .choices__inner {
+    min-height: 44px; /* make sure it's not too small */
+    padding: 6px 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .choices__list--dropdown, 
+  .choices__list[aria-expanded] {
+    max-height: 250px !important;
+    overflow-y: auto !important;
+    z-index: 9999; /* ensures it shows over everything */
+  }
 
 .dropdown-search {
     margin-bottom: 6px;
@@ -509,7 +521,7 @@ button:hover {
 }
 
 .table-container {
-    overflow-x: auto;
+    overflow: visible;
     max-height: 800px;
     width: 85%;
     margin: 0 auto; /* Center it horizontally */
@@ -519,11 +531,16 @@ button:hover {
 .table-container table {
     width: 100%;
     border-collapse: collapse;
+    overflow: visible;
+
 }
 
 .table-container table td,
 .table-container table th {
     padding: 8px;
+    overflow: visible;
+    position: relative; /* Needed so dropdown can be positioned */
+    z-index: 1; /* Bring it above others if needed */
     border: 1px solid #ddd;
     text-align: center;
 }
