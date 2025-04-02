@@ -429,6 +429,15 @@ button:hover {
     }
 }
 
+.csvTable td:first-child,
+.csvTable th:first-child {
+  max-width: 140px !important ;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
 .dropdown-checkbox-wrapper {
     display: flex;
     flex-direction: column;
@@ -460,11 +469,11 @@ button:hover {
     background-color: #007BFF !important; /* blue badge */
     color: white !important;
     border: none;
+    overflow-x: hidden;
   }
   
   /* Change search input (if used inside dropdown) */
   .choices__input {
-    background-color: #fffbe6 !important; /* light yellow */
     color: #222 !important;
   }
 

@@ -254,10 +254,10 @@ async function commitAndPushToGit() {
 
 // ✅ Run everything
 (async () => {
-    const username = process.env.VANIR_USERNAME || "";
-     const password = process.env.VANIR_PASSWORD || "";
-    // const username = "richard.mcgirt";
-   // const password = "84625";
+ //   const username = process.env.VANIR_USERNAME || "";
+  //   const password = process.env.VANIR_PASSWORD || "";
+    const username = "richard.mcgirt";
+   const password = "84625";
     
     
     if (!username || !password) {
