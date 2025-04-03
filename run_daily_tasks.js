@@ -167,17 +167,19 @@ await page.waitForSelector("#btnExport", { timeout: 30000 });
 // 🆕 Add response listener here
 
 
-    page.on('response', async (response) => {
-        const url = response.url();
-        const contentType = response.headers()['content-type'] || '';
-        console.log(`🔍 Response URL: ${url} — Content-Type: ${contentType}`);
-    
-        if (url.includes('.csv') || contentType.includes('text/csv')) {
-            const buffer = await response.buffer();
-            const csvPath = path.join(downloadsPath, 'sales_report.csv');
-            fs.writeFileSync(csvPath, buffer);
-            console.log("📥 Intercepted and saved CSV manually:", csvPath);
-        }
+page.on('response', async (response) => {
+    const url = response.url();
+    const contentType = response.headers()['content-type'] || '';
+    console.log(`🔍 Response URL: ${url} — Content-Type: ${contentType}`);
+
+    // Now, look for CSV or other response types that indicate the CSV is being downloaded
+    if (url.includes('.csv') || contentType.includes('text/csv') || contentType.includes('application/octet-stream')) {
+        const buffer = await response.buffer();
+        const csvPath = path.join(downloadsPath, 'sales_report.csv');
+        fs.writeFileSync(csvPath, buffer);
+        console.log("📥 Intercepted and saved CSV manually:", csvPath);
+    }
+
     
     
 
