@@ -102,11 +102,22 @@ async function loginAndDownloadCSV(username, password) {
     await page.setViewport({ width: 1280, height: 800 });
 
     // ✅ Set download behavior early
-    const client = await page.target().createCDPSession();
-    await client.send('Page.setDownloadBehavior', {
-        behavior: 'allow',
-        downloadPath: downloadsPath
-    });
+    // ✅ Set download behavior early and listen for downloads
+const client = await page.target().createCDPSession();
+await client.send('Page.setDownloadBehavior', {
+    behavior: 'allow',
+    downloadPath: downloadsPath
+});
+
+page._client().on('Page.downloadProgress', (event) => {
+    if (event.state === 'completed') {
+        console.log("✅ Download completed.");
+    } else if (event.state === 'canceled') {
+        console.log("❌ Download canceled.");
+    }
+});
+
+
 
     try {
         console.log("🔑 Navigating to login page...");
