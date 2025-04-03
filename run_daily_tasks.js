@@ -5,6 +5,8 @@ const path = require('path');
 const os = require('os');
 require('dotenv').config();
 console.log("✅ PAT loaded:", process.env.GITHUB_PAT ? "Yes" : "No");
+console.log("✅ VANIR_USERNAME:", process.env.VANIR_USERNAME ? "Defined" : "Missing");
+console.log("✅ GH_PAT:", process.env.GH_PAT ? "Defined" : "Missing");
 
 // ✅ Detect if running in GitHub Actions
 const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
