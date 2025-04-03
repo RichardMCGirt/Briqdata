@@ -24,8 +24,16 @@ jobs:
         with:
           node-version: '20'
 
+      - name: 🧹 Clean old node_modules (if any)
+        run: rm -rf node_modules
+        
+
       - name: 📦 Install dependencies
         run: npm install
+
+      - name: 🔍 Show installed puppeteer version
+        run: npm list puppeteer
+
 
       - name: 🧱 Install Chromium dependencies (for Puppeteer)
         run: |
