@@ -13,9 +13,16 @@ function hasPromptBeenShown() {
     return localStorage.getItem('a2hsPromptShown') === 'true';
 }
 
-// Function to display a prompt with instructions
 function showAddToHomeScreenPrompt() {
-    if (isIos() && !isInStandaloneMode() && !hasPromptBeenShown()) {
+    const isiOS = isIos();
+    const inStandalone = isInStandaloneMode();
+    const alreadyShown = hasPromptBeenShown();
+
+    console.log("Device is iOS:", isiOS);
+    console.log("Running in standalone mode:", inStandalone);
+    console.log("Prompt has already been shown:", alreadyShown);
+
+    if (isiOS && !inStandalone && !alreadyShown) {
         const prompt = document.createElement('div');
         prompt.id = "a2hs-prompt";
         prompt.style.position = "fixed";
@@ -34,10 +41,21 @@ function showAddToHomeScreenPrompt() {
         `;
         document.body.appendChild(prompt);
 
+        console.log("Prompt shown: Add to Home Screen");
+
         // Remember that we showed it so we don't show it again
         localStorage.setItem('a2hsPromptShown', 'true');
+    } else {
+        if (!isiOS) {
+            console.log("Not an iPhone/iPad/iPod. Prompt will not be shown.");
+        } else if (inStandalone) {
+            console.log("App is already installed (standalone mode). No prompt needed.");
+        } else if (alreadyShown) {
+            console.log("Prompt has already been shown. Not showing again.");
+        }
     }
 }
+
 
 // Function to remove the prompt
 function dismissPrompt() {
