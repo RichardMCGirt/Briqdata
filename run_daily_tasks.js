@@ -101,7 +101,6 @@ async function loginAndDownloadCSV(username, password) {
     await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36");
     await page.setViewport({ width: 1280, height: 800 });
 
-    // ✅ Set download behavior early
     // ✅ Set download behavior early and listen for downloads
 const client = await page.target().createCDPSession();
 await client.send('Page.setDownloadBehavior', {
@@ -162,9 +161,26 @@ page._client().on('Page.downloadProgress', (event) => {
         }, { timeout: 120000 });
 
         console.log("✅ Report loaded! Clicking 'Export To CSV'...");
-        await page.waitForSelector("#btnExport", { timeout: 30000 });
-        await page.click("#btnExport");
-        console.log("✅ Export initiated!");
+
+await page.waitForSelector("#btnExport", { timeout: 30000 });
+
+// 🆕 Add response listener here
+page.on('response', async (response) => {
+    const url = response.url();
+    const contentType = response.headers()['content-type'] || '';
+
+    if (url.includes('.csv') || contentType.includes('text/csv')) {
+        const buffer = await response.buffer();
+        const csvPath = path.join(downloadsPath, 'sales_report.csv');
+        fs.writeFileSync(csvPath, buffer);
+        console.log("📥 Intercepted and saved CSV manually:", csvPath);
+    }
+});
+
+// Then click the export button
+await page.click("#btnExport");
+console.log("✅ Export initiated!");
+
 
         // ✅ Wait for the download to complete
         let downloaded = false;
