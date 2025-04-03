@@ -34,6 +34,17 @@ async function waitForCSVFile(timeout = 60000) {
     const startTime = Date.now();
     const movedFilePath = path.join(targetDir, "sales_report.csv");
 
+    // 🧹 Clean out any old CSVs in the download folder
+    fs.readdirSync(downloadsPath).forEach(file => {
+        if (
+            file.startsWith("SalesRegisterReport") ||
+            file === "sales_report.csv"
+        ) {
+            fs.unlinkSync(path.join(downloadsPath, file));
+            console.log(`🧹 Removed old file in downloadsPath: ${file}`);
+        }
+    });
+
     console.log(`🔍 Waiting for CSV file to appear and copy to:\n  - Target: ${movedFilePath}`);
 
     while (Date.now() - startTime < timeout) {
@@ -46,23 +57,20 @@ async function waitForCSVFile(timeout = 60000) {
 
         if (matchingFile) {
             const fullPath = path.join(downloadsPath, matchingFile);
-            const newFilePath = path.join(downloadsPath, "sales_report.csv");
+            const renamedPath = path.join(downloadsPath, "sales_report.csv");
 
             try {
-                // 🔁 Rename the file in-place
-                fs.renameSync(fullPath, newFilePath);
+                fs.renameSync(fullPath, renamedPath);
                 console.log(`✅ Renamed ${matchingFile} to sales_report.csv`);
 
-                // 🔁 Copy it to the target directory
                 if (fs.existsSync(movedFilePath)) {
                     fs.unlinkSync(movedFilePath);
-                    console.log("🧹 Old sales_report.csv in target deleted.");
+                    console.log("🧹 Old sales_report.csv in target directory deleted.");
                 }
 
-                fs.copyFileSync(newFilePath, movedFilePath);
+                fs.copyFileSync(renamedPath, movedFilePath);
                 console.log(`📦 Copied sales_report.csv to: ${movedFilePath}`);
                 return movedFilePath;
-
             } catch (err) {
                 console.error(`❌ Failed to move/overwrite CSV: ${err.message}`);
                 return null;
@@ -76,6 +84,7 @@ async function waitForCSVFile(timeout = 60000) {
     console.error("❌ No matching CSV file found after timeout.");
     return null;
 }
+
 
 
 
