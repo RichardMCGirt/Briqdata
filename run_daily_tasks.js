@@ -46,17 +46,23 @@ async function waitForCSVFile(timeout = 60000) {
 
         if (matchingFile) {
             const fullPath = path.join(downloadsPath, matchingFile);
-            console.log(`✅ Found matching CSV: ${matchingFile}`);
+            const newFilePath = path.join(downloadsPath, "sales_report.csv");
 
             try {
+                // 🔁 Rename the file in-place
+                fs.renameSync(fullPath, newFilePath);
+                console.log(`✅ Renamed ${matchingFile} to sales_report.csv`);
+
+                // 🔁 Copy it to the target directory
                 if (fs.existsSync(movedFilePath)) {
                     fs.unlinkSync(movedFilePath);
-                    console.log("🧹 Old sales_report.csv in Briqdata deleted.");
+                    console.log("🧹 Old sales_report.csv in target deleted.");
                 }
 
-                fs.copyFileSync(fullPath, movedFilePath);
-                console.log(`📦 Copied ${matchingFile} to: ${movedFilePath}`);
+                fs.copyFileSync(newFilePath, movedFilePath);
+                console.log(`📦 Copied sales_report.csv to: ${movedFilePath}`);
                 return movedFilePath;
+
             } catch (err) {
                 console.error(`❌ Failed to move/overwrite CSV: ${err.message}`);
                 return null;
@@ -70,6 +76,7 @@ async function waitForCSVFile(timeout = 60000) {
     console.error("❌ No matching CSV file found after timeout.");
     return null;
 }
+
 
 
 // ✅ Puppeteer script to login and download CSV

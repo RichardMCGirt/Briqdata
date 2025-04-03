@@ -41,10 +41,11 @@ jobs:
         run: node run_daily_tasks.js
 
       - name: 📎 Upload downloaded CSV
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: sales-report
-          path: /tmp/downloads/SalesRegisterReport*.csv
+          path: /tmp/downloads/sales_report.csv
+      
 
 
       - name: ✅ Finished
