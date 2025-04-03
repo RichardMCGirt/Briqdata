@@ -165,9 +165,21 @@ page._client().on('Page.downloadProgress', (event) => {
 await page.waitForSelector("#btnExport", { timeout: 30000 });
 
 // 🆕 Add response listener here
-page.on('response', async (response) => {
-    const url = response.url();
-    const contentType = response.headers()['content-type'] || '';
+
+
+    page.on('response', async (response) => {
+        const url = response.url();
+        const contentType = response.headers()['content-type'] || '';
+        console.log(`🔍 Response URL: ${url} — Content-Type: ${contentType}`);
+    
+        if (url.includes('.csv') || contentType.includes('text/csv')) {
+            const buffer = await response.buffer();
+            const csvPath = path.join(downloadsPath, 'sales_report.csv');
+            fs.writeFileSync(csvPath, buffer);
+            console.log("📥 Intercepted and saved CSV manually:", csvPath);
+        }
+    
+    
 
     if (url.includes('.csv') || contentType.includes('text/csv')) {
         const buffer = await response.buffer();
