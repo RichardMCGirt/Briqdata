@@ -28,44 +28,45 @@ if (!fs.existsSync(downloadsPath)) {
 // ✅ Function to wait for CSV file
 async function waitForCSVFile(timeout = 60000) {
     const startTime = Date.now();
-    const expectedFilePath = path.join(downloadsPath, "sales_report.csv");
     const movedFilePath = path.join(targetDir, "sales_report.csv");
 
-    console.log(`🔍 Checking for CSV file in:\n  - Downloads: ${expectedFilePath}\n  - Briqdata: ${movedFilePath}`);
+    console.log(`🔍 Waiting for CSV file to appear and copy to:\n  - Target: ${movedFilePath}`);
 
     while (Date.now() - startTime < timeout) {
-        // Log files for debugging
-        console.log("📂 Current files in downloadsPath:", fs.readdirSync(downloadsPath));
+        const files = fs.readdirSync(downloadsPath);
+        console.log("📂 Current files in downloadsPath:", files);
 
-        if (fs.existsSync(movedFilePath)) {
-            console.log(`✅ CSV is already in Briqdata: ${movedFilePath}`);
-            return movedFilePath;
-        }
+        const matchingFile = files.find(f =>
+            f.startsWith("SalesRegisterReport") && f.endsWith(".csv")
+        );
 
-        if (fs.existsSync(expectedFilePath)) {
-            console.log(`✅ Found CSV in Downloads: ${expectedFilePath}`);
+        if (matchingFile) {
+            const fullPath = path.join(downloadsPath, matchingFile);
+            console.log(`✅ Found matching CSV: ${matchingFile}`);
 
-            if (fs.existsSync(movedFilePath)) {
-                try {
+            try {
+                if (fs.existsSync(movedFilePath)) {
                     fs.unlinkSync(movedFilePath);
-                    console.log("✅ Old file deleted successfully.");
-                } catch (error) {
-                    console.error("❌ Error deleting old file:", error);
+                    console.log("🧹 Old sales_report.csv in Briqdata deleted.");
                 }
-            }
 
-            fs.renameSync(expectedFilePath, movedFilePath);
-            console.log(`📂 Successfully moved CSV to: ${movedFilePath}`);
-            return movedFilePath;
+                fs.copyFileSync(fullPath, movedFilePath);
+                console.log(`📦 Copied ${matchingFile} to: ${movedFilePath}`);
+                return movedFilePath;
+            } catch (err) {
+                console.error(`❌ Failed to move/overwrite CSV: ${err.message}`);
+                return null;
+            }
         }
 
-        console.log("⏳ Waiting for CSV file...");
+        console.log("⏳ CSV not found yet. Retrying...");
         await new Promise(resolve => setTimeout(resolve, 3000));
     }
 
-    console.error("❌ No CSV file found after timeout.");
+    console.error("❌ No matching CSV file found after timeout.");
     return null;
 }
+
 
 // ✅ Puppeteer script to login and download CSV
 async function loginAndDownloadCSV(username, password) {
