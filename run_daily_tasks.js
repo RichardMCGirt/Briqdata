@@ -164,27 +164,31 @@ async function commitAndPushToGit() {
         execSync(`git config --global user.email "richard.mcgirt@vanirinstalledsales.com"`);
         execSync(`git config --global user.name "RichardMcGirt"`);
 
+        // All commands below run inside the repo folder
+        const gitOptions = { cwd: targetDir, stdio: "inherit" };
+
         try {
-            execSync('git remote get-url origin');
+            execSync('git remote get-url origin', gitOptions);
         } catch (e) {
-            execSync(`git remote add origin ${repoUrl}`);
+            execSync(`git remote add origin ${repoUrl}`, gitOptions);
         }
 
-        execSync(`git remote set-url origin ${repoUrl}`);
-        execSync(`git add .`, { stdio: "inherit" });
+        execSync(`git remote set-url origin ${repoUrl}`, gitOptions);
+        execSync(`git add .`, gitOptions);
 
         try {
-            execSync(`git commit -m "Automated upload of latest sales CSV"`, { stdio: "inherit" });
+            execSync(`git commit -m "Automated upload of latest sales CSV"`, gitOptions);
         } catch (e) {
             console.log("⚠️ No changes to commit.");
         }
 
-        execSync(`git push origin main`, { stdio: "inherit" });
+        execSync(`git push origin main`, gitOptions);
         console.log("✅ Successfully pushed to GitHub!");
     } catch (error) {
         console.error("❌ Error pushing to GitHub:", error.message);
     }
 }
+
 
 // ✅ Main script
 (async () => {
