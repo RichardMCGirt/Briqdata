@@ -83,7 +83,7 @@ async function loginAndDownloadCSV(username, password) {
 
     try {
         console.log("🔑 Navigating to login page...");
-        await page.goto("https://vanirlive.omnna-lbm.live/index.php?action=Login&module=Users", { waitUntil: "networkidle2", timeout: 90000 });
+        await page.goto("https://vanirlive.omnna-lbm.live/index.php?action=Login&module=Users", { waitUntil: "domcontentloaded", timeout: 90000 });
         await page.waitForSelector('input[name="user_name"]', { timeout: 30000 });
         console.log("✅ Login form detected.");
 
@@ -91,7 +91,7 @@ async function loginAndDownloadCSV(username, password) {
         await page.type('input[name="user_password"]', password, { delay: 50 });
         await Promise.all([
             page.click('input[type="submit"]'),
-            page.waitForNavigation({ waitUntil: "networkidle2", timeout: 60000 })
+            page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 60000 })
         ]);
 
         const loginFailed = await page.evaluate(() => {
@@ -107,7 +107,7 @@ async function loginAndDownloadCSV(username, password) {
         console.log("✅ Login successful!");
 
         const reportUrl = "https://vanirlive.omnna-lbm.live/index.php?module=Customreport&action=CustomreportAjax&file=Customreportview&parenttab=Analytics&entityId=3729087";
-        await page.goto(reportUrl, { waitUntil: "networkidle2", timeout: 60000 });
+        await page.goto(reportUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
         await new Promise(resolve => setTimeout(resolve, 9000));
 
         const dropdownSelector = "select#ddlSavedTemplate";
@@ -155,25 +155,11 @@ async function commitAndPushToGit() {
     try {
         console.log("🚀 Starting Git push...");
 
-        if (!process.env.GITHUB_PAT) {
-            throw new Error("❌ GitHub PAT is missing! Set it in your GitHub Actions Secrets.");
-        }
-
-        const repoUrl = `https://${process.env.GITHUB_PAT}@github.com/RichardMcGirt/Briqdata.git`;
-
         execSync(`git config --global user.email "richard.mcgirt@vanirinstalledsales.com"`);
         execSync(`git config --global user.name "RichardMcGirt"`);
 
-        // All commands below run inside the repo folder
         const gitOptions = { cwd: targetDir, stdio: "inherit" };
 
-        try {
-            execSync('git remote get-url origin', gitOptions);
-        } catch (e) {
-            execSync(`git remote add origin ${repoUrl}`, gitOptions);
-        }
-
-        execSync(`git remote set-url origin ${repoUrl}`, gitOptions);
         execSync(`git add .`, gitOptions);
 
         try {
@@ -182,12 +168,15 @@ async function commitAndPushToGit() {
             console.log("⚠️ No changes to commit.");
         }
 
-        execSync(`git push origin main`, gitOptions);
+        // 🟢 Use your system credentials (SSH key or cached HTTPS auth)
+        execSync(`git push`, gitOptions);
+
         console.log("✅ Successfully pushed to GitHub!");
     } catch (error) {
         console.error("❌ Error pushing to GitHub:", error.message);
     }
 }
+
 
 
 // ✅ Main script
