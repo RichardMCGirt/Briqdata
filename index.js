@@ -1,35 +1,51 @@
-window.onload = function() {
-    // Hide the content initially while checking the login status
-    document.body.style.display = 'none';
+// Detect if the device is running iOS
+function isIos() {
+    return /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+}
 
-    // Check if the user is logged in by verifying the 'loggedIn' flag in localStorage or cookies
-    const isLoggedIn = localStorage.getItem('loggedIn') || getCookie('loggedIn') === 'true';
+// Check if the app is running in standalone mode
+function isInStandaloneMode() {
+    return ('standalone' in window.navigator) && window.navigator.standalone;
+}
 
-    // If the user is not logged in, log them out, clear localStorage, and redirect to the login page
-    if (!isLoggedIn) {
-        // Clear login status
-        localStorage.removeItem('loggedIn');
-        document.cookie = "loggedIn=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+// Check if we've already shown the prompt
+function hasPromptBeenShown() {
+    return localStorage.getItem('a2hsPromptShown') === 'true';
+}
 
-        // Show an error message to the user
-        const errorMessage = document.createElement('p');
-        errorMessage.style.color = 'red';
-        errorMessage.textContent = "You must be logged in to access this page.";
+// Function to display a prompt with instructions
+function showAddToHomeScreenPrompt() {
+    if (isIos() && !isInStandaloneMode() && !hasPromptBeenShown()) {
+        const prompt = document.createElement('div');
+        prompt.id = "a2hs-prompt";
+        prompt.style.position = "fixed";
+        prompt.style.bottom = "10px";
+        prompt.style.left = "10px";
+        prompt.style.right = "10px";
+        prompt.style.backgroundColor = "#fff";
+        prompt.style.border = "1px solid #ccc";
+        prompt.style.padding = "15px";
+        prompt.style.zIndex = "1000";
+        prompt.style.textAlign = "center";
+        prompt.style.boxShadow = "0 0 10px rgba(0,0,0,0.1)";
+        prompt.innerHTML = `
+            <p>To install this app, tap the <strong>Share</strong> icon <span style="font-size: 18px;">📤</span> then select <strong>'Add to Home Screen'</strong>.</p>
+            <button onclick="dismissPrompt()">Dismiss</button>
+        `;
+        document.body.appendChild(prompt);
 
-        // Append the error message to the body
-        document.body.appendChild(errorMessage);
-
-        // Redirect to the login page after 3 seconds
-        setTimeout(function() {
-            window.location.href = "login.html";
-        }, 3000);
-    } else {
-        // If logged in, proceed with loading the content normally
-
-        // Show the content after checking login status
-        document.body.style.display = 'block';
+        // Remember that we showed it so we don't show it again
+        localStorage.setItem('a2hsPromptShown', 'true');
     }
-};
+}
+
+// Function to remove the prompt
+function dismissPrompt() {
+    const prompt = document.getElementById('a2hs-prompt');
+    if (prompt) {
+        prompt.remove();
+    }
+}
 
 // Function to set a cookie
 function setCookie(name, value, days) {
@@ -52,9 +68,33 @@ function getCookie(name) {
     return "";
 }
 
+// Main logic on page load
+window.onload = function() {
+    // Hide content initially
+    document.body.style.display = 'none';
 
-// Ensure that the login status is not cleared on page refresh
+    const isLoggedIn = localStorage.getItem('loggedIn') || getCookie('loggedIn') === 'true';
+
+    if (!isLoggedIn) {
+        localStorage.removeItem('loggedIn');
+        document.cookie = "loggedIn=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+        const errorMessage = document.createElement('p');
+        errorMessage.style.color = 'red';
+        errorMessage.textContent = "You must be logged in to access this page.";
+        document.body.appendChild(errorMessage);
+
+        setTimeout(function() {
+            window.location.href = "login.html";
+        }, 3000);
+    } else {
+        document.body.style.display = 'block';
+        showAddToHomeScreenPrompt(); // Show iOS install prompt
+    }
+};
+
+// Optional: Clear login status on page unload (if needed)
 window.onbeforeunload = function() {
-    // Optional: Remove this line if you want to retain the logged-in state
-    // localStorage.removeItem('loggedIn');
+    // Comment this out to keep users logged in
+     localStorage.removeItem('loggedIn');
 };

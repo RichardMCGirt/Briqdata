@@ -7,12 +7,6 @@ const filterFormula = `AND(
     {Created} >= DATEADD(TODAY(), -90, 'days')
 )`;
 
-  
-  
-
-
-
-
 // Fetch Airtable Data with Logs
 async function fetchAirtableData(apiKey, baseId, tableName, formula) {
     try {
@@ -54,7 +48,6 @@ async function fetchAirtableData(apiKey, baseId, tableName, formula) {
         return [];
     }
 }
-
 
 // Aggregate Activity Counts by 'Submitted By'
 function aggregateBySubmittedBy(records) {
@@ -109,7 +102,6 @@ function populateDropdown10(users, dropdownId, userActivityCounts) {
     });
 }
 
-
 function displayActivityCountsAsBarChart(data, canvasId) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) {
@@ -139,7 +131,6 @@ function displayActivityCountsAsBarChart(data, canvasId) {
     // Find the minimum value
     const minValue = validData[0][1].totalCount;
 
-    // Remove only the first column if multiple have the same min value
    // Ensure we don't remove valid data unnecessarily
 if (validData.length === 0) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -148,7 +139,6 @@ if (validData.length === 0) {
     ctx.fillText("No data available for the selected user.", canvas.width / 2, canvas.height / 2);
     return;
 }
-
 
     const labels = validData.map(([key]) => key); // Names of users
     const totalCounts = validData.map(([_, value]) => value.totalCount); // Activity counts per user
@@ -172,8 +162,6 @@ if (validData.length === 0) {
         },
     });
 }
-
-
 
 // Main Initialization Function
 async function initializeApp() {
