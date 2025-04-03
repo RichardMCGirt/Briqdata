@@ -85,6 +85,13 @@ async function loginAndDownloadCSV(username, password) {
     await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36");
     await page.setViewport({ width: 1280, height: 800 });
 
+    // ✅ Set download behavior early
+    const client = await page.target().createCDPSession();
+    await client.send('Page.setDownloadBehavior', {
+        behavior: 'allow',
+        downloadPath: downloadsPath
+    });
+
     try {
         console.log("🔑 Navigating to login page...");
         await page.goto("https://vanirlive.omnna-lbm.live/index.php?action=Login&module=Users", { waitUntil: "domcontentloaded", timeout: 90000 });
@@ -127,18 +134,30 @@ async function loginAndDownloadCSV(username, password) {
             return reportTable && reportTable.innerText.length > 500;
         }, { timeout: 120000 });
 
-        // ✅ Set download behavior
-        const client = await page.target().createCDPSession();
-        await client.send('Page.setDownloadBehavior', {
-            behavior: 'allow',
-            downloadPath: downloadsPath
-        });
-
         console.log("✅ Report loaded! Clicking 'Export To CSV'...");
         await page.waitForSelector("#btnExport", { timeout: 30000 });
         await page.click("#btnExport");
-
         console.log("✅ Export initiated!");
+
+        // ✅ Wait for the download to complete
+        let downloaded = false;
+        for (let i = 0; i < 20; i++) {
+            const files = fs.readdirSync(downloadsPath);
+            if (files.find(f => f.startsWith("SalesRegisterReport") && f.endsWith(".csv"))) {
+                downloaded = true;
+                console.log("✅ CSV download detected.");
+                break;
+            }
+            console.log("⏳ Waiting for CSV to download...");
+            await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+
+        if (!downloaded) {
+            console.error("❌ CSV did not download in time.");
+            await page.screenshot({ path: "csv_download_timeout.png" });
+            await browser.close();
+            process.exit(1);
+        }
 
     } catch (error) {
         console.error("❌ Error in Puppeteer process:", error);
@@ -153,6 +172,7 @@ async function loginAndDownloadCSV(username, password) {
         await browser.close();
     }
 }
+
 
 // ✅ Git commit and push automation
 async function commitAndPushToGit() {

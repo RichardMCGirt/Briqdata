@@ -40,6 +40,13 @@ jobs:
       - name: 🧠 Run Puppeteer script
         run: node run_daily_tasks.js
 
+      - name: 📎 Upload downloaded CSV
+        uses: actions/upload-artifact@v3
+        with:
+          name: sales-report
+          path: /tmp/downloads/SalesRegisterReport*.csv
+
+
       - name: ✅ Finished
         run: echo "🚀 All done!"
 
