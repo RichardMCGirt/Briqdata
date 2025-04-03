@@ -3,6 +3,8 @@ const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+require('dotenv').config();
+console.log("✅ PAT loaded:", process.env.GITHUB_PAT ? "Yes" : "No");
 
 // ✅ Detect if running in GitHub Actions
 const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
@@ -155,27 +157,50 @@ async function commitAndPushToGit() {
     try {
         console.log("🚀 Starting Git push...");
 
+        const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
+        const gitOptions = { cwd: targetDir, stdio: "inherit" };
+
         execSync(`git config --global user.email "richard.mcgirt@vanirinstalledsales.com"`);
         execSync(`git config --global user.name "RichardMcGirt"`);
 
-        const gitOptions = { cwd: targetDir, stdio: "inherit" };
+        if (isGitHubActions) {
+            const PAT = process.env.GITHUB_PAT;
+            if (!PAT) {
+                throw new Error("❌ GitHub PAT is missing in GitHub Actions.");
+            }
+
+            const repoUrl = `https://${PAT}@github.com/RichardMcGirt/Briqdata.git`;
+
+            try {
+                execSync('git remote get-url origin', gitOptions);
+            } catch {
+                execSync(`git remote add origin ${repoUrl}`, gitOptions);
+            }
+
+            execSync(`git remote set-url origin ${repoUrl}`, gitOptions);
+            console.log("🔗 GitHub Actions remote set via PAT.");
+        } else {
+            // Use SSH locally
+            execSync(`git remote set-url origin git@github.com:RichardMcGirt/Briqdata.git`, gitOptions);
+            console.log("🔐 Local Git remote set to SSH.");
+        }
 
         execSync(`git add .`, gitOptions);
 
         try {
             execSync(`git commit -m "Automated upload of latest sales CSV"`, gitOptions);
-        } catch (e) {
+        } catch {
             console.log("⚠️ No changes to commit.");
         }
 
-        // 🟢 Use your system credentials (SSH key or cached HTTPS auth)
-        execSync(`git push`, gitOptions);
-
+        execSync(`git push origin main`, gitOptions);
         console.log("✅ Successfully pushed to GitHub!");
     } catch (error) {
-        console.error("❌ Error pushing to GitHub:", error.message);
+        console.error("❌ Error during Git operations:", error.message);
     }
 }
+
+
 
 
 
