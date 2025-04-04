@@ -8,7 +8,23 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
 
+    <script>
+       // Redirect if not logged in
+  const loggedIn = localStorage.getItem("loggedIn");
+  console.log("🧠 localStorage.loggedIn:", loggedIn);
+
+  if (loggedIn !== "true") {
+      console.log("🚫 Not logged in — redirecting to login.html");
+      window.location.href = "login.html";
+  } else {
+      console.log("✅ Logged in — access granted to dashboard");
+  }
+      </script>
+      
+
 </head>
+
+
 
 <body>
     <nav style="text-align: center; margin: 20px 0 0;">

@@ -23,18 +23,8 @@ function toggleButton() {
     // Enable the button if there's text in the input field, otherwise disable it
     loginButton.disabled = passwordInput.value.trim() === '';
 }
-// Function to validate the login input
-function validateLogin() {
-    const password = document.getElementById('password').value.trim();
-    const errorMessage = document.getElementById('error-message'); // Error message container
-
-    // Check if the entered password is "Vanir"
-    if (password === "Vanir") {
-        // Set the loggedIn flag in localStorage and redirect to index.html
-        localStorage.setItem('loggedIn', 'true');
-        window.location.href = "index.html";
-    } else {
-        // Show error message if incorrect
-        errorMessage.textContent = "Incorrect password. Please enter 'Vanir'.";
-    }
+// Utility to set a cookie with name, value, and expiration days
+function setCookie(name, value, days) {
+    const expires = new Date(Date.now() + days * 864e5).toUTCString();
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
 }

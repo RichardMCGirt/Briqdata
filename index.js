@@ -87,14 +87,13 @@ function getCookie(name) {
 }
 
 // Main logic on page load
-window.onload = function() {
-    // Hide content initially
+document.addEventListener("DOMContentLoaded", function () {
     document.body.style.display = 'none';
 
-    const isLoggedIn = localStorage.getItem('loggedIn') || getCookie('loggedIn') === 'true';
+    const isLoggedIn = localStorage.getItem("loggedIn") === 'true' || getCookie('loggedIn') === 'true';
 
     if (!isLoggedIn) {
-        localStorage.removeItem('loggedIn');
+       // localStorage.removeItem('loggedIn');
         document.cookie = "loggedIn=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
         const errorMessage = document.createElement('p');
@@ -102,17 +101,17 @@ window.onload = function() {
         errorMessage.textContent = "You must be logged in to access this page.";
         document.body.appendChild(errorMessage);
 
-        setTimeout(function() {
+        setTimeout(function () {
             window.location.href = "login.html";
         }, 3000);
     } else {
         document.body.style.display = 'block';
         showAddToHomeScreenPrompt(); // Show iOS install prompt
     }
-};
+});
 
 // Optional: Clear login status on page unload (if needed)
 window.onbeforeunload = function() {
     // Comment this out to keep users logged in
-     localStorage.removeItem('loggedIn');
+  //   localStorage.removeItem('loggedIn');
 };
