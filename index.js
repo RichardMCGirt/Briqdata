@@ -110,8 +110,4 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-// Optional: Clear login status on page unload (if needed)
-window.onbeforeunload = function() {
-    // Comment this out to keep users logged in
-  //   localStorage.removeItem('loggedIn');
-};
+
