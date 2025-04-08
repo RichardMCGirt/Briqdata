@@ -195,10 +195,18 @@ function handleMasterCSVFile(file) {
 }
 
 function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContainerMain') {
+    // ✅ Destroy Choices.js instances (logic)
     if (typeof Choices !== "undefined" && Choices.instances) {
-        Choices.instances.forEach(instance => instance.destroy());
+        // Clone first because Choices modifies this array during destroy()
+        [...Choices.instances].forEach(instance => instance.destroy());
     }
-    document.querySelectorAll('.choices').forEach(el => el.remove());
+
+    // ✅ Remove leftover .choices DOM wrappers
+    document.querySelectorAll('.choices').forEach(el => {
+        const parent = el.closest('th, td');
+        if (parent) parent.innerHTML = ''; // fully reset the cell
+    });
+
 
     if (data.length <= 1) return;
 
