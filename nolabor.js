@@ -195,6 +195,10 @@ function handleMasterCSVFile(file) {
 }
 
 function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContainerMain') {
+    if (typeof Choices !== "undefined" && Choices.instances) {
+        Choices.instances.forEach(instance => instance.destroy());
+    }
+    
     if (data.length <= 1) return;
 
     const table = document.getElementById(tableId);
@@ -284,33 +288,39 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
                     
                         // Search box
                         const select = document.createElement('select');
-select.setAttribute("multiple", true);
+                        select.setAttribute("multiple", true);
+                        select.classList.add("customer-filter");
+                        
+                        // Populate dropdown options
+                        const uniqueValues = [...new Set(
+                            data.slice(3).map(r => r[colIndex])
+                                .filter(v => v && v.toLowerCase() !== "customer name")
+                        )];
+                        uniqueValues.sort().forEach(val => {
+                            const option = document.createElement('option');
+                            option.value = val;
+                            option.textContent = val;
+                            select.appendChild(option);
+                        });
+                        
+                        wrapper.appendChild(select);
+                        headerDiv.appendChild(wrapper);
+                        
+                        // ✅ Initialize Choices.js
+                        const choices = new Choices(select, {
+                            removeItemButton: true,
+                            placeholderValue: 'Search for customer ...',
+                        });
+                        
+                        // ✅ Filter logic
+                        select.addEventListener('change', () => {
+                            const selected = Array.from(select.selectedOptions).map(opt => opt.value);
+                            filterTableByMultipleValues(tableId, colIndex, selected);
+                        });
+                        
+                        
 
-const uniqueValues = [...new Set(
-    data.slice(3).map(r => r[colIndex])
-        .filter(v => v && v.toLowerCase() !== "customer name")
-)];
-uniqueValues.sort().forEach(val => {
-    const option = document.createElement('option');
-    option.value = val;
-    option.textContent = val;
-    select.appendChild(option);
-});
 
-wrapper.appendChild(select);
-headerDiv.appendChild(wrapper);
-
-// ✅ Initialize Choices AFTER select is in the DOM
-const choices = new Choices(select, {
-    removeItemButton: true,
-    placeholderValue: 'Search for customer ...',
-});
-
-// ✅ Handle filter on change
-select.addEventListener('change', () => {
-    const selected = Array.from(select.selectedOptions).map(opt => opt.value);
-    filterTableByMultipleValues(tableId, colIndex, selected);
-});
 
                     
                         headerDiv.appendChild(wrapper);
