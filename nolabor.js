@@ -193,23 +193,31 @@ function handleMasterCSVFile(file) {
         }
     });
 }
+const choicesInstances = [];
 
 function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContainerMain') {
-    // ✅ Destroy Choices.js instances (logic)
-    if (typeof Choices !== "undefined" && Choices.instances) {
-        // Clone first because Choices modifies this array during destroy()
-        [...Choices.instances].forEach(instance => instance.destroy());
-    }
+    // ✅ 1. Destroy existing Choices instances
+    choicesInstances.forEach(instance => {
+        try {
+            instance.destroy();
+        } catch (e) {
+            console.warn('Failed to destroy Choices instance:', e);
+        }
+    });
+    choicesInstances.length = 0;
 
-    // ✅ Remove leftover .choices DOM wrappers
+    // ✅ 2. Remove leftover select boxes and Choices wrappers
     document.querySelectorAll('.choices').forEach(el => {
         const parent = el.closest('th, td');
-        if (parent) parent.innerHTML = ''; // fully reset the cell
+        if (parent) parent.innerHTML = '';
     });
 
-
-    if (data.length <= 1) return;
-
+    document.querySelectorAll('.choices').forEach(el => {
+        const wrapper = el.closest('th');
+        if (wrapper) wrapper.innerHTML = '';
+    });
+    
+    // ✅ 3. Clear table and container
     const table = document.getElementById(tableId);
     const dateContainer = document.getElementById(dateContainerId);
     if (!table || !dateContainer) return;
@@ -217,6 +225,8 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
     table.innerHTML = '';
     dateContainer.innerHTML = '<h4>Extracted Date</h4>';
     dateContainer.style.display = "none";
+
+    if (data.length <= 1) return;
 
     let dateFound = false;
     let extractedDates = [];
@@ -242,6 +252,8 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
             }
         });
     });
+
+    
 
     // Show extracted dates
     if (dateFound) {
@@ -316,10 +328,15 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
                         headerDiv.appendChild(wrapper);
                         
                         // ✅ Initialize Choices.js
-                        const choices = new Choices(select, {
-                            removeItemButton: true,
-                            placeholderValue: 'Search for customer ...',
-                        });
+                       // ✅ Prevent duplicate Choices overlay
+if (!select.classList.contains('choices__input')) {
+    const choices = new Choices(select, {
+        removeItemButton: true,
+        placeholderValue: 'Search for customer ...',
+    });
+    choicesInstances.push(choices);
+}
+
                         
                         // ✅ Filter logic
                         select.addEventListener('change', () => {
