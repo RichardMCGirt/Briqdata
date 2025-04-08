@@ -101,7 +101,7 @@ async function fetchAirtableDatas2(apiKey, baseId, tableName) {
         let allRecords = [];
         let offset;
 
-        // Formula to filter records created in the last 30 days
+        // Formula to filter records created in the last 90 days
         const filterFormula = `AND(IS_AFTER({Last Time Outcome Modified}, DATEADD(TODAY(), -90, 'days')), OR({Outcome} = 'Win', {Outcome} = 'Loss'))`;
         const encodedFormula = encodeURIComponent(filterFormula);
 
@@ -109,7 +109,6 @@ async function fetchAirtableDatas2(apiKey, baseId, tableName) {
             const url = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodedFormula}${
                 offset ? `&offset=${offset}` : ''
             }`;
-
 
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${apiKey}` },
@@ -123,16 +122,17 @@ async function fetchAirtableDatas2(apiKey, baseId, tableName) {
 
             const data = await response.json();
             allRecords = allRecords.concat(data.records);
-
             offset = data.offset; // Continue fetching if there are more records
         } while (offset);
 
+        console.log(`Total records fetched: ${allRecords.length}`);
         return allRecords;
     } catch (error) {
         console.error("Error fetching data:", error);
         return [];
     }
 }
+
 
 function displayLoadingMessages2(message) {
     const fetchProgress = document.getElementById('fetch-progress');
@@ -155,7 +155,7 @@ function calculateWinRates2(records) {
 
     records.forEach(record => {
         // Directly access the ACM field value
-        const submittedBy = record.fields['SubmitedBY'] || 'Empty';
+        const submittedBy = record.fields['AC'] || 'Empty';
 
         if (!data[submittedBy]) {
             data[submittedBy] = { winCount: 0, lossCount: 0, totalCount: 0 };
