@@ -198,7 +198,8 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
     if (typeof Choices !== "undefined" && Choices.instances) {
         Choices.instances.forEach(instance => instance.destroy());
     }
-    
+    document.querySelectorAll('.choices').forEach(el => el.remove());
+
     if (data.length <= 1) return;
 
     const table = document.getElementById(tableId);
@@ -317,16 +318,6 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
                             const selected = Array.from(select.selectedOptions).map(opt => opt.value);
                             filterTableByMultipleValues(tableId, colIndex, selected);
                         });
-                        
-                        
-
-
-
-                    
-                        headerDiv.appendChild(wrapper);
-                    
-                    
-                
                     }
                 
                     element.appendChild(headerDiv);
