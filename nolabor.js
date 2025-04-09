@@ -68,6 +68,7 @@ async function fetchAndFilterGitHubCSV() {
         console.error("GitHub CSV fetch failed", err);
     }
 }
+document.querySelectorAll('th').forEach(th => th.innerHTML = '');
 
 function cleanUpChoices() {
     // Destroy and remove existing Choices instances
@@ -251,9 +252,7 @@ const choicesInstances = [];
         const parent = el.closest('th, td');
         if (parent) parent.innerHTML = '';
     });
-    document.querySelectorAll('.choices__list').forEach(el => {
-        if (!el.closest('.choices')) el.remove();
-    });
+
     document.querySelectorAll('th').forEach(th => th.innerHTML = '');
 
     const table = document.getElementById(tableId);
@@ -264,7 +263,9 @@ const choicesInstances = [];
     dateContainer.innerHTML = '<h4>Extracted Date</h4>';
     dateContainer.style.display = "none";
 
-    
+    document.querySelectorAll('.choices').forEach(el => el.remove());
+    document.querySelectorAll('.choices__list').forEach(el => el.remove());
+    console.log(`Rendering fresh table for #${tableId}`);
 
     if (data.length <= 1) return;
 
@@ -348,85 +349,42 @@ const choicesInstances = [];
                     
                         const select = document.createElement('select');
                         select.setAttribute("multiple", true);
-select.classList.add("customer-filter");
-
-const uniqueValues = [...new Set(
-    data.slice(3).map(r => r[colIndex])
-        .filter(v => v && v.toLowerCase() !== "customer name")
-)];
-uniqueValues.sort().forEach(val => {
-    const option = document.createElement('option');
-    option.value = val;
-    option.textContent = val;
-    select.appendChild(option);
-});
-
-// ✅ Listen for selection changes to filter
-select.addEventListener("change", () => {
-    const selectedOptions = Array.from(select.selectedOptions).map(opt => opt.value);
-    filterTableByMultipleValues(tableId, colIndex, selectedOptions);
-});
-
-wrapper.appendChild(select);
-headerDiv.appendChild(wrapper);
-
+                        select.classList.add("customer-filter");
                     
-                        const dropdownWrapper = document.createElement('div');
-                        dropdownWrapper.style.position = 'relative';
-                        dropdownWrapper.style.display = 'flex';
-                        dropdownWrapper.style.flexDirection = 'column';
-                        dropdownWrapper.style.gap = '4px';
-                    
-                        const searchInput = document.createElement('input');
-                        searchInput.type = 'text';
-                        searchInput.placeholder = 'Search for customer...';
-                        searchInput.style.padding = '4px';
-                        searchInput.style.width = '100%';
-                    
-                        const dropdownList = document.createElement('ul');
-                        dropdownList.style.listStyle = 'none';
-                        dropdownList.style.margin = 0;
-                        dropdownList.style.padding = '4px';
-                        dropdownList.style.maxHeight = '150px';
-                        dropdownList.style.overflowY = 'auto';
-                        dropdownList.style.border = '1px solid #ccc';
-                        dropdownList.style.display = 'none';
-                        dropdownList.style.background = 'white';
-                        dropdownList.style.zIndex = 1000;
-                        dropdownList.style.position = 'absolute';
-                        dropdownList.style.top = '100%';
-                        dropdownList.style.left = 0;
-                        dropdownList.style.width = '100%';
-                    
-                        const clearButton = document.createElement('button');
-                        clearButton.textContent = "Clear Filter";
-                        clearButton.style.marginTop = "4px";
-                        clearButton.style.fontSize = "12px";
-                        clearButton.addEventListener('click', () => {
-                            searchInput.value = '';
-                            filterTableByColumn(tableId, colIndex, '');
+                        const uniqueValues = [...new Set(
+                            data.slice(3).map(r => r[colIndex])
+                                .filter(v => v && v.toLowerCase() !== "customer name")
+                        )];
+                        uniqueValues.sort().forEach(val => {
+                            const option = document.createElement('option');
+                            option.value = val;
+                            option.textContent = val;
+                            select.appendChild(option);
                         });
                     
-                        dropdownWrapper.appendChild(clearButton);
+                        wrapper.appendChild(select);
+                        headerDiv.appendChild(wrapper);
                     
-                        searchInput.addEventListener('focus', () => {
-                            dropdownList.style.display = 'block';
-                        });
-                        searchInput.addEventListener('input', () => {
-                            const searchTerm = searchInput.value.toLowerCase();
-                            Array.from(dropdownList.children).forEach(li => {
-                                li.style.display = li.textContent.toLowerCase().includes(searchTerm) ? 'block' : 'none';
-                            });
-                        });
-                        document.addEventListener('click', (e) => {
-                            if (!dropdownWrapper.contains(e.target)) {
-                                dropdownList.style.display = 'none';
-                            }
+                        // ✅ Apply Choices.js to the select
+                        const choices = new Choices(select, {
+                            removeItemButton: true,
+                            placeholderValue: 'Select customers',
+                            searchPlaceholderValue: 'Type to search...',
+                            shouldSort: true,
+                            searchEnabled: true
                         });
                     
-                        dropdownWrapper.appendChild(searchInput);
-                        dropdownWrapper.appendChild(dropdownList);
-                        headerDiv.appendChild(dropdownWrapper);
+                        choices.passedElement.element.addEventListener('change', () => {
+                            const selectedOptions = choices.getValue(true); // get selected values as array
+                            filterTableByMultipleValues(tableId, colIndex, selectedOptions);
+                        });
+                    
+                        choicesInstances.push(choices);
+                    
+                    
+
+                    
+              
                     }
                     
                     // ✅ Append the constructed headerDiv no matter what
