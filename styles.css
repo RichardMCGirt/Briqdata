@@ -507,12 +507,34 @@ button:hover {
     font-size: 12px;
 }
 
+.table-wrapper {
+    z-index: 1;
+  }
+  
+
 .checkbox-list label {
     display: block;
     font-size: 12px;
     padding: 2px 0;
 }
-
+/* Ensure parents don't clip the dropdown */
+.choices {
+    position: relative;
+    z-index: 10;
+  }
+  
+  /* You can even use fixed or absolute if necessary */
+  /* Remove floating styles so dropdown takes up space in the flow */
+.choices__list--dropdown {
+    position: static !important;     /* makes it behave like a regular block */
+    z-index: auto !important;        /* removes stacking context */
+    margin-top: 6px;                 /* optional spacing */
+    background: #f0f8ff !important;  /* your background */
+    border: 1px solid #ccc;          /* optional for visibility */
+    box-shadow: none !important;     /* remove floating shadow if any */
+  }
+  
+  
 
 .container {
     width: 90%;
