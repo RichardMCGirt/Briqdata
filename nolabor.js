@@ -1,3 +1,5 @@
+
+
 // === Shared Utilities ===
 function filterColumns(data) {
     if (!data.length) return [];
@@ -238,6 +240,7 @@ function handleMasterCSVFile(file) {
     });
 }
 const choicesInstances = [];
+const pendingFilters = []; // <-- This is the fix you were missing
 
 
   
@@ -316,6 +319,7 @@ const choicesInstances = [];
     let columnHeaders = [];
 
     data.slice(1).forEach((row, rowIndex) => {
+        
         if (row.every(cell => cell === "" || cell == null)) return;
 
         const tr = document.createElement('tr');
@@ -373,11 +377,35 @@ const choicesInstances = [];
                             shouldSort: true,
                             searchEnabled: true
                         });
-                    
+                        
+                        choicesInstances.push(choices);
+                        
+                        // ✅ Restore filters on load
+                      // ✅ Restore filters on load
+const storedFilter = localStorage.getItem(`filter-${tableId}-${colIndex}`);
+if (storedFilter) {
+    const parsed = JSON.parse(storedFilter);
+    parsed.forEach(val => {
+        choices.setChoiceByValue(val);
+    });
+
+    // ⏳ Defer actual filtering until table is built
+    pendingFilters.push({
+        tableId,
+        columnIndex: colIndex,
+        selectedValues: parsed
+    });
+}
+
+                        
+                        // ✅ Listen for changes and save to localStorage
                         choices.passedElement.element.addEventListener('change', () => {
-                            const selectedOptions = choices.getValue(true); // get selected values as array
+                            const selectedOptions = choices.getValue(true);
+                            localStorage.setItem(`filter-${tableId}-${colIndex}`, JSON.stringify(selectedOptions));
                             filterTableByMultipleValues(tableId, colIndex, selectedOptions);
                         });
+                        
+                        
                     
                         choicesInstances.push(choices);
                     
@@ -424,16 +452,33 @@ const choicesInstances = [];
                 }
 
                 tr.appendChild(element);
+                    // ✅ Apply all pending filters after table has been fully rendered
+
             }
         });
 
         table.appendChild(tr);
         visibleRowIndex++;
     });
+    
+    // ✅ Move this here, after full table rendering
+    pendingFilters.forEach(({ tableId, columnIndex, selectedValues }) => {
+        filterTableByMultipleValues(tableId, columnIndex, selectedValues);
+    });
+    pendingFilters.length = 0;
 }
 
 
-  
+
+function clearAllFilters(tableId) {
+    Object.keys(localStorage).forEach(key => {
+        if (key.startsWith(`filter-${tableId}-`)) {
+            localStorage.removeItem(key);
+        }
+    });
+    location.reload();
+}
+
 
 function filterTableByColumn(tableId, columnIndex, filterValue) {
     const table = document.getElementById(tableId);
