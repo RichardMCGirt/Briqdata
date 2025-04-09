@@ -49,14 +49,44 @@ async function fetchAndFilterGitHubCSV() {
         const githubCSV = 'https://raw.githubusercontent.com/RichardMCGirt/Briqdata/refs/heads/main/SalesComparisonbyMasterAccount-1743165085-1710047455.csv';
         const res = await fetch(githubCSV);
         const text = await res.text();
-        const results = Papa.parse(text.trim(), { skipEmptyLines: true });
+        const previous = localStorage.getItem('masterCsv');
 
+        if (text === previous) {
+            console.log("🔁 Same master CSV — skipping re-render.");
+            const parsed = Papa.parse(previous.trim(), { skipEmptyLines: true });
+            const filtered = filterColumns(parsed.data);
+            displayTable(filtered, 'csvTableMaster', 'dateContainerMaster');
+            return;
+        }
+
+        localStorage.setItem('masterCsv', text);
+
+        const results = Papa.parse(text.trim(), { skipEmptyLines: true });
         const filtered = filterColumns(results.data);
         displayTable(filtered, 'csvTableMaster', 'dateContainerMaster');
     } catch (err) {
         console.error("GitHub CSV fetch failed", err);
     }
 }
+
+function cleanUpChoices() {
+    // Destroy and remove existing Choices instances
+    choicesInstances.forEach(instance => {
+      try {
+        instance.destroy();
+      } catch (e) {
+        console.warn('Failed to destroy Choices instance:', e);
+      }
+    });
+    choicesInstances.length = 0;
+  
+    // Remove any lingering choices wrappers
+    document.querySelectorAll('.choices').forEach(el => el.remove());
+  
+    // Remove orphaned dropdowns
+    document.querySelectorAll('.choices__list').forEach(el => el.remove());
+  }
+  
 
 function displayTableToId(data, tableId) {
     const table = document.getElementById(tableId);
@@ -92,16 +122,27 @@ async function loadDefaultCSV() {
         const fileData = await response.json();
         const fileUrl = fileData.download_url;
 
-        console.log(`✅ Found sales_report.csv`);
         const csvResponse = await fetch(fileUrl);
-        if (!csvResponse.ok) throw new Error(`Error loading CSV file: ${csvResponse.statusText}`);
-
         const csvData = await csvResponse.text();
+
+        const previousData = localStorage.getItem('csvData');
+
+        if (previousData === csvData) {
+            console.log("🔁 Same sales_report.csv — skipping re-render.");
+            // ✅ Still need to show table
+            Papa.parse(previousData, {
+                complete: function(results) {
+                    displayTable(results.data, 'csvTable', 'dateContainerMain');
+                }
+            });
+            return;
+        }
+
         localStorage.setItem('csvData', csvData);
 
         Papa.parse(csvData, {
             complete: function(results) {
-                displayTable(results.data);
+                displayTable(results.data, 'csvTable', 'dateContainerMain');
             },
             error: function(error) {
                 console.error("Error parsing CSV:", error);
@@ -111,6 +152,8 @@ async function loadDefaultCSV() {
         console.error("❌ Error loading sales_report.csv:", error);
     }
 }
+
+
 
 
 // ==== DROP ZONE FOR MAIN REPORT ====
@@ -195,29 +238,24 @@ function handleMasterCSVFile(file) {
 }
 const choicesInstances = [];
 
-function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContainerMain') {
-    // ✅ 1. Destroy existing Choices instances
-    choicesInstances.forEach(instance => {
-        try {
-            instance.destroy();
-        } catch (e) {
-            console.warn('Failed to destroy Choices instance:', e);
-        }
-    });
-    choicesInstances.length = 0;
 
-    // ✅ 2. Remove leftover select boxes and Choices wrappers
+  
+
+  function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContainerMain') {
+    // ✅ 1. Destroy any lingering choices BEFORE we render new selects
+    cleanUpChoices();
+
+    // ✅ 2. Clear all previous table/filters
+    choicesInstances.length = 0;
     document.querySelectorAll('.choices').forEach(el => {
         const parent = el.closest('th, td');
         if (parent) parent.innerHTML = '';
     });
-
-    document.querySelectorAll('.choices').forEach(el => {
-        const wrapper = el.closest('th');
-        if (wrapper) wrapper.innerHTML = '';
+    document.querySelectorAll('.choices__list').forEach(el => {
+        if (!el.closest('.choices')) el.remove();
     });
-    
-    // ✅ 3. Clear table and container
+    document.querySelectorAll('th').forEach(th => th.innerHTML = '');
+
     const table = document.getElementById(tableId);
     const dateContainer = document.getElementById(dateContainerId);
     if (!table || !dateContainer) return;
@@ -225,6 +263,8 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
     table.innerHTML = '';
     dateContainer.innerHTML = '<h4>Extracted Date</h4>';
     dateContainer.style.display = "none";
+
+    
 
     if (data.length <= 1) return;
 
@@ -253,7 +293,7 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
         });
     });
 
-    
+
 
     // Show extracted dates
     if (dateFound) {
@@ -306,6 +346,8 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
                         wrapper.style.display = "flex";
                         wrapper.style.flexDirection = "column";
                         wrapper.style.gap = "4px";
+
+                        
                     
                         // Search box
                         const select = document.createElement('select');
@@ -314,35 +356,33 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
                         
                         // Populate dropdown options
                         const uniqueValues = [...new Set(
-                            data.slice(3).map(r => r[colIndex])
-                                .filter(v => v && v.toLowerCase() !== "customer name")
+                          data.slice(3).map(r => r[colIndex])
+                            .filter(v => v && v.toLowerCase() !== "customer name")
                         )];
                         uniqueValues.sort().forEach(val => {
-                            const option = document.createElement('option');
-                            option.value = val;
-                            option.textContent = val;
-                            select.appendChild(option);
+                          const option = document.createElement('option');
+                          option.value = val;
+                          option.textContent = val;
+                          select.appendChild(option);
                         });
                         
                         wrapper.appendChild(select);
                         headerDiv.appendChild(wrapper);
+                        element.appendChild(headerDiv);
                         
-                        // ✅ Initialize Choices.js
-                       // ✅ Prevent duplicate Choices overlay
-if (!select.classList.contains('choices__input')) {
-    const choices = new Choices(select, {
-        removeItemButton: true,
-        placeholderValue: 'Search for customer ...',
-    });
-    choicesInstances.push(choices);
-}
-
-                        
-                        // ✅ Filter logic
-                        select.addEventListener('change', () => {
-                            const selected = Array.from(select.selectedOptions).map(opt => opt.value);
-                            filterTableByMultipleValues(tableId, colIndex, selected);
+                        // ✅ Choices INIT should happen here, only ONCE
+                        const choices = new Choices(select, {
+                          removeItemButton: true,
+                          placeholderValue: 'Search for customer ...',
                         });
+                        choicesInstances.push(choices);
+                        
+                        // ✅ Filter logic stays here
+                        select.addEventListener('change', () => {
+                          const selected = Array.from(select.selectedOptions).map(opt => opt.value);
+                          filterTableByMultipleValues(tableId, colIndex, selected);
+                        });
+                        
                     }
                 
                     element.appendChild(headerDiv);
@@ -383,6 +423,9 @@ if (!select.classList.contains('choices__input')) {
         visibleRowIndex++;
     });
 }
+
+
+  
 
 function filterTableByColumn(tableId, columnIndex, filterValue) {
     const table = document.getElementById(tableId);
