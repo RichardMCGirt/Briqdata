@@ -330,62 +330,112 @@ const choicesInstances = [];
                 if (rowIndex === 1) {
                     element = document.createElement('th');
                     columnHeaders[colIndex] = cell;
-                
+                    
                     const headerDiv = document.createElement('div');
                     headerDiv.style.display = "flex";
                     headerDiv.style.flexDirection = "column";
-                
+                    
                     const label = document.createElement('span');
                     label.textContent = cell;
                     headerDiv.appendChild(label);
-                
-                    // Only add filter dropdown for "Customer Name" column
+                    
                     const lowerHeader = cell.trim().toLowerCase();
                     if (lowerHeader.includes("customer") && lowerHeader.includes("name")) {
                         const wrapper = document.createElement('div');
                         wrapper.style.display = "flex";
                         wrapper.style.flexDirection = "column";
                         wrapper.style.gap = "4px";
+                    
+                        const select = document.createElement('select');
+                        select.setAttribute("multiple", true);
+select.classList.add("customer-filter");
+
+const uniqueValues = [...new Set(
+    data.slice(3).map(r => r[colIndex])
+        .filter(v => v && v.toLowerCase() !== "customer name")
+)];
+uniqueValues.sort().forEach(val => {
+    const option = document.createElement('option');
+    option.value = val;
+    option.textContent = val;
+    select.appendChild(option);
+});
+
+// ✅ Listen for selection changes to filter
+select.addEventListener("change", () => {
+    const selectedOptions = Array.from(select.selectedOptions).map(opt => opt.value);
+    filterTableByMultipleValues(tableId, colIndex, selectedOptions);
+});
+
+wrapper.appendChild(select);
+headerDiv.appendChild(wrapper);
+
+                    
+                        const dropdownWrapper = document.createElement('div');
+                        dropdownWrapper.style.position = 'relative';
+                        dropdownWrapper.style.display = 'flex';
+                        dropdownWrapper.style.flexDirection = 'column';
+                        dropdownWrapper.style.gap = '4px';
+                    
+                        const searchInput = document.createElement('input');
+                        searchInput.type = 'text';
+                        searchInput.placeholder = 'Search for customer...';
+                        searchInput.style.padding = '4px';
+                        searchInput.style.width = '100%';
+                    
+                        const dropdownList = document.createElement('ul');
+                        dropdownList.style.listStyle = 'none';
+                        dropdownList.style.margin = 0;
+                        dropdownList.style.padding = '4px';
+                        dropdownList.style.maxHeight = '150px';
+                        dropdownList.style.overflowY = 'auto';
+                        dropdownList.style.border = '1px solid #ccc';
+                        dropdownList.style.display = 'none';
+                        dropdownList.style.background = 'white';
+                        dropdownList.style.zIndex = 1000;
+                        dropdownList.style.position = 'absolute';
+                        dropdownList.style.top = '100%';
+                        dropdownList.style.left = 0;
+                        dropdownList.style.width = '100%';
+                    
+                        const clearButton = document.createElement('button');
+                        clearButton.textContent = "Clear Filter";
+                        clearButton.style.marginTop = "4px";
+                        clearButton.style.fontSize = "12px";
+                        clearButton.addEventListener('click', () => {
+                            searchInput.value = '';
+                            filterTableByColumn(tableId, colIndex, '');
+                        });
+                    
+                        dropdownWrapper.appendChild(clearButton);
+                    
+                        searchInput.addEventListener('focus', () => {
+                            dropdownList.style.display = 'block';
+                        });
+                        searchInput.addEventListener('input', () => {
+                            const searchTerm = searchInput.value.toLowerCase();
+                            Array.from(dropdownList.children).forEach(li => {
+                                li.style.display = li.textContent.toLowerCase().includes(searchTerm) ? 'block' : 'none';
+                            });
+                        });
+                        document.addEventListener('click', (e) => {
+                            if (!dropdownWrapper.contains(e.target)) {
+                                dropdownList.style.display = 'none';
+                            }
+                        });
+                    
+                        dropdownWrapper.appendChild(searchInput);
+                        dropdownWrapper.appendChild(dropdownList);
+                        headerDiv.appendChild(dropdownWrapper);
+                    }
+                    
+                    // ✅ Append the constructed headerDiv no matter what
+                    element.appendChild(headerDiv);
+                    
 
                         
                     
-                        // Search box
-                        const select = document.createElement('select');
-                        select.setAttribute("multiple", true);
-                        select.classList.add("customer-filter");
-                        
-                        // Populate dropdown options
-                        const uniqueValues = [...new Set(
-                          data.slice(3).map(r => r[colIndex])
-                            .filter(v => v && v.toLowerCase() !== "customer name")
-                        )];
-                        uniqueValues.sort().forEach(val => {
-                          const option = document.createElement('option');
-                          option.value = val;
-                          option.textContent = val;
-                          select.appendChild(option);
-                        });
-                        
-                        wrapper.appendChild(select);
-                        headerDiv.appendChild(wrapper);
-                        element.appendChild(headerDiv);
-                        
-                        // ✅ Choices INIT should happen here, only ONCE
-                        const choices = new Choices(select, {
-                          removeItemButton: true,
-                          placeholderValue: 'Search for customer ...',
-                        });
-                        choicesInstances.push(choices);
-                        
-                        // ✅ Filter logic stays here
-                        select.addEventListener('change', () => {
-                          const selected = Array.from(select.selectedOptions).map(opt => opt.value);
-                          filterTableByMultipleValues(tableId, colIndex, selected);
-                        });
-                        
-                    }
                 
-                    element.appendChild(headerDiv);
                                 
 } else {
     element = document.createElement('td');
