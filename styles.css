@@ -542,12 +542,33 @@ button:hover {
 }
 
 .table-container {
-    overflow: visible;
     max-height: 800px;
-    width: 85%;
-    margin: 0 auto; /* Center it horizontally */
-    text-align: center; /* Center the text inside */
-}
+    overflow: auto;
+    border: 1px solid #ccc;
+    margin-bottom: 2rem;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed; /* ensures equal-width columns */
+  }
+  
+  th, td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #ddd;
+    word-wrap: break-word;
+    white-space: nowrap;
+  }
+  
+  thead th {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
+  }
+  
 
 .table-container table {
     width: 100%;
@@ -565,6 +586,16 @@ button:hover {
     border: 1px solid #ddd;
     text-align: center;
 }
+
+#csvTableMaster th {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  
 
 #dateContainerMaster {
     width: fit-content;
@@ -588,17 +619,15 @@ th, td {
 }
 
 
-th{
+th {
     background-color: black !important;
     color: white !important;
     font-size: 16px;
-}
-th {
-    background-color: #f4f4f4;
     position: sticky;
     top: 0;
     z-index: 2;
 }
+
 
 /* Apply black background and white text to the first row of table data */
 #csvTable tr:nth-child(1) td {

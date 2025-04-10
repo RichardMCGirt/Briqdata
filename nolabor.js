@@ -332,8 +332,9 @@ const pendingFilters = []; // <-- This is the fix you were missing
         row.forEach((cell, colIndex) => {
             if (!columnsToHide.has(colIndex)) {
                 let element;
-                if (rowIndex === 1) {
-                    element = document.createElement('th');
+                const headerRowIndex = tableId === 'csvTable' ? 2 : 1;
+                if (rowIndex === headerRowIndex) {
+                                    element = document.createElement('th');
                     columnHeaders[colIndex] = cell;
                     
                     const headerDiv = document.createElement('div');
