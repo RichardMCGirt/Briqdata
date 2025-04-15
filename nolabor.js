@@ -4,26 +4,58 @@
 function filterColumns(data) {
     if (!data.length) return [];
 
-    const transposed = data[0].map((_, colIndex) => data.map(row => row[colIndex]));
-    const filteredTransposed = transposed.filter(col =>
-        !col.some(cell => typeof cell === "string" && cell.toLowerCase().includes("labor"))
-    );
+    const headerRow = data[0];
 
-    return filteredTransposed[0].map((_, rowIndex) =>
-        filteredTransposed.map(col => col[rowIndex])
+    const keepColumnIndexes = headerRow.map((header, index) => {
+        const headerText = (header || "").toLowerCase();
+        return !headerText.includes("labor");
+    });
+
+    return data.map(row =>
+        row.filter((_, colIndex) => keepColumnIndexes[colIndex])
     );
 }
+
 
 // === Section 1: Handle Master Account CSV Upload ===
 function displayTableM(data) {
     const output = document.getElementById("output");
     output.innerHTML = "";
     const table = document.createElement("table");
-    if (row.includes("Charleston")) {
-        console.log("🕵️ Charleston row:", row);
-    }
+    Papa.parse(csvData, {
+        skipEmptyLines: true,
+        complete: function(results) {
+            const allRows = results.data;
     
-    data.forEach(row => {
+            const headerIndex = allRows.findIndex(row =>
+                row.some(cell => typeof cell === 'string' && cell.trim().toLowerCase() === 'location')
+            );
+    
+            if (headerIndex === -1) {
+                console.warn("⚠️ Could not find header row.");
+                displayTable(allRows, 'csvTable', 'dateContainerMain');
+                return;
+            }
+    
+            const sliced = allRows.slice(headerIndex);
+            const filtered = filterColumns(sliced); // removes 'labor' columns
+            displayTable(filtered, 'csvTable', 'dateContainerMain');
+        }
+    });
+    
+      
+    
+    
+    
+    
+          
+    
+
+    data.forEach((row, i) => {
+        if (row.includes("Charleston")) {
+            console.log(`🕵️ Charleston FOUND in row ${i + 1}:`, row);
+        }
+
         const tr = document.createElement("tr");
         row.forEach(cell => {
             const td = document.createElement("td");
@@ -36,6 +68,7 @@ function displayTableM(data) {
     output.appendChild(table);
 }
 
+
 function handleFile() {
     const fileInput = document.getElementById("csvFile");
     const file = fileInput.files[0];
@@ -43,7 +76,7 @@ function handleFile() {
 
     Papa.parse(file, {
         complete: function(results) {
-            const filtered = filterColumns(results.data);
+            const filtered = results.data;
             displayTableM(filtered);
         }
     });
@@ -58,21 +91,54 @@ async function fetchAndFilterGitHubCSV() {
 
         if (text === previous) {
             console.log("🔁 Same master CSV — skipping re-render.");
+
             const parsed = Papa.parse(previous.trim(), { skipEmptyLines: true });
-            const filtered = filterColumns(parsed.data);
+            const allRows = parsed.data;
+
+            const headerIndex = allRows.findIndex(row =>
+                row.some(cell => typeof cell === 'string' && cell.trim().toLowerCase() === 'location')
+            );
+
+            if (headerIndex === -1) {
+                console.warn("⚠️ Could not find 'Location' header row.");
+                displayTable(allRows, 'csvTableMaster', 'dateContainerMaster');
+                return;
+            }
+
+            const sliced = allRows.slice(headerIndex);
+            const filtered = filterColumns(sliced);
             displayTable(filtered, 'csvTableMaster', 'dateContainerMaster');
             return;
         }
 
         localStorage.setItem('masterCsv', text);
 
-        const results = Papa.parse(text.trim(), { skipEmptyLines: true });
-        const filtered = filterColumns(results.data);
+        const parsed = Papa.parse(text.trim(), { skipEmptyLines: true });
+        const allRows = parsed.data;
+
+        const headerIndex = allRows.findIndex(row =>
+            row.some(cell => typeof cell === 'string' && cell.trim().toLowerCase() === 'location')
+        );
+
+        if (headerIndex === -1) {
+            console.warn("⚠️ Could not find 'Location' header row.");
+            displayTable(allRows, 'csvTableMaster', 'dateContainerMaster');
+            return;
+        }
+
+        const sliced = allRows.slice(headerIndex);
+        const filtered = filterColumns(sliced);
+
+        // 🔍 Debug logs
+        console.log("🧠 Master Table Header Row:", filtered[0]);
+        console.log("🔍 Row with Charleston (if any):", filtered.find(row => row[0] === "Charleston"));
+
         displayTable(filtered, 'csvTableMaster', 'dateContainerMaster');
     } catch (err) {
-        console.error("GitHub CSV fetch failed", err);
+        console.error("❌ GitHub CSV fetch failed", err);
     }
 }
+
 document.querySelectorAll('th').forEach(th => th.innerHTML = '');
 
 function cleanUpChoices() {
@@ -273,6 +339,10 @@ const pendingFilters = []; // <-- This is the fix you were missing
     document.querySelectorAll('.choices__list').forEach(el => el.remove());
     console.log(`Rendering fresh table for #${tableId}`);
 
+       // ✅ 🔍 ADD DEBUG LOGS HERE:
+       console.log("Headers:", data[0]);
+       console.log("Row with Charleston:", data.find(row => row.includes("Charleston")));
+
     if (data.length <= 1) return;
 
     let dateFound = false;
@@ -282,9 +352,7 @@ const pendingFilters = []; // <-- This is the fix you were missing
     // Extract labor & date info
     data.forEach(row => {
         row.forEach((cell, colIndex) => {
-            if (typeof cell === "string" && cell.toLowerCase().includes("labor")) {
-                columnsToHide.add(colIndex);
-            }
+           
 
             if (typeof cell === "string") {
                 cell = cell.trim();
@@ -335,7 +403,7 @@ const pendingFilters = []; // <-- This is the fix you were missing
         row.forEach((cell, colIndex) => {
             if (!columnsToHide.has(colIndex)) {
                 let element;
-                const headerRowIndex = tableId === 'csvTable' ? 2 : 1;
+                const headerRowIndex = 0;
                 if (rowIndex === headerRowIndex) {
                                     element = document.createElement('th');
                     columnHeaders[colIndex] = cell;
