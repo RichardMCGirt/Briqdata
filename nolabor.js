@@ -19,7 +19,10 @@ function displayTableM(data) {
     const output = document.getElementById("output");
     output.innerHTML = "";
     const table = document.createElement("table");
-
+    if (row.includes("Charleston")) {
+        console.log("🕵️ Charleston row:", row);
+    }
+    
     data.forEach(row => {
         const tr = document.createElement("tr");
         row.forEach(cell => {
