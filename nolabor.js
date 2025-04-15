@@ -428,19 +428,32 @@ if (storedFilter) {
     element = document.createElement('td');
     if (typeof cell === "string") cell = cell.trim();
 
-    const header = columnHeaders[colIndex]?.toLowerCase() || "";
-
-    if (header.includes("%")) {
-        let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
-        if (!isNaN(num)) cell = `${num.toFixed(2)}%`;
+    const header = (columnHeaders[colIndex] || "").trim().toLowerCase();
+    const originalCell = cell;
+    
+    // 💡 Basic number detection
+    const numeric = parseFloat(cell.replace(/[^0-9.-]/g, ""));
+    const isNumeric = !isNaN(numeric);
+    
+    // 👇 CSV Table specific workaround
+    const isCsvTable = tableId === 'csvTable';
+    const isShortNumber = isNumeric && Math.abs(numeric) < 100;
+    
+    // 💡 Basic heuristic: small numbers in csvTable treated as %
+    if (isCsvTable && isShortNumber) {
+        cell = `${numeric.toFixed(2)}%`;
     } else if (
+        isNumeric &&
         !header.includes("location") &&
         !header.includes("account") &&
-        !header.includes("customer")
+        !header.includes("customer") &&
+        !cell.includes("%")
     ) {
-        let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
-        if (!isNaN(num)) cell = `$${Math.round(num).toLocaleString()}`;
+        cell = `$${Math.round(numeric).toLocaleString()}`;
     }
+    
+    
+    
 
     element.textContent = cell;
 }
