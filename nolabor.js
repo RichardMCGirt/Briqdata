@@ -447,6 +447,9 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
 
                 td.textContent = cell;
 
+              
+                
+
                 if (
                     ["Charleston", "Charlotte", "Columbia", "Greensboro", "Greenville", "Myrtle Beach", "Raleigh", "Wilmington"].includes(cell.trim())
                 ) {
@@ -462,6 +465,73 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
 
     table.appendChild(tbody);
 
+    // ✅ Only call this once, after table is fully built
+    if (tableId === "csvTableMaster") {
+        populateFilterFromColumnOne("csvTableMaster", "multiFilter");
+    }
+    
+}
+
+function populateFilterFromColumnOne(tableId, selectId) {
+    console.log(`🔍 populateFilterFromColumnOne for table: #${tableId}, select: #${selectId}`);
+
+    const table = document.getElementById(tableId);
+    const select = document.getElementById(selectId);
+    if (!table || !select) {
+        console.warn("❌ Table or select element not found.");
+        return;
+    }
+
+    const uniqueValues = new Set();
+
+    table.querySelectorAll("tbody tr").forEach((row, index) => {
+        const cell = row.querySelector("td");
+        if (cell && cell.textContent.trim()) {
+            const value = cell.textContent.trim();
+            uniqueValues.add(value);
+            console.log(`📌 Row ${index + 1}: Added "${value}" to uniqueValues`);
+        } else {
+            console.log(`⚠️ Row ${index + 1}: No valid first-column cell found or empty`);
+        }
+    });
+
+    console.log("✅ Unique values collected:", [...uniqueValues]);
+
+    // Clear old options
+    select.innerHTML = "";
+
+    // Add new options
+    [...uniqueValues].sort().forEach(value => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        select.appendChild(option);
+        console.log(`🧩 Option added: "${value}"`);
+    });
+
+    // Destroy previous instances of Choices
+    if (window.choicesInstances) {
+        console.log("♻️ Destroying old Choices instances");
+        window.choicesInstances.forEach(i => i.destroy());
+    } else {
+        window.choicesInstances = [];
+    }
+
+    const choices = new Choices(select, {
+        removeItemButton: true,
+        placeholderValue: "Filter by Custome Name",
+        searchPlaceholderValue: "Search...",
+    });
+
+    window.choicesInstances.push(choices);
+    console.log("✅ Choices initialized and attached");
+
+    // Attach filter handler
+    select.addEventListener("change", () => {
+        const selected = Array.from(select.selectedOptions).map(opt => opt.value);
+        console.log("🔧 Filtering table by selected values:", selected);
+        filterTableByMultipleValues(tableId, 0, selected);
+    });
 }
 
 

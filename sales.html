@@ -71,6 +71,10 @@
 
     <h3 class="grid-header"> Sales Comparison by Master Account</h3>
 
+    <div id="filter-container">
+      <select id="multiFilter" multiple></select>
+    </div>
+
     <div id="dateContainerMaster"></div> <!-- NEW ID -->
 
     <div id="dropZone" class="drop-zone">
@@ -78,9 +82,13 @@
         <input type="file" id="csvFile" accept=".csv" hidden />
       </div>
       <br>
-    
+     
       <div class="table-container">
+
+      
         <div id="dateContainerMaster"></div>
+      
+        
       
         <table id="csvTableMaster">
           <thead></thead>

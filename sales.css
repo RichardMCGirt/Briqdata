@@ -141,4 +141,17 @@ th {
 
 
 
+#filter-container {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  z-index: 9999;
+  padding: 10px;
+  background: white; /* optional: makes it pop above content */
+}
+
+#multiFilter {
+  width: 100%;
+  z-index: 9999;
+}
 
