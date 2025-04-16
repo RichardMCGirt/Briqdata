@@ -5,8 +5,9 @@ function filterColumns(data) {
     console.log("🔎 filterColumns received data:", data);
 
     const headerRow = data.find(row =>
-        row.some(cell => typeof cell === "string" && cell.trim().toLowerCase() === 'location')
+        row.some(cell => typeof cell === "string" && cell.toLowerCase().includes("location"))
     );
+    
 
     if (!headerRow) {
         console.warn("⚠️ No header row found with 'Location'");
@@ -80,10 +81,8 @@ async function fetchAndFilterGitHubCSV() {
             const filtered = filterColumns(parsed.data);
             console.log("🧹 Filtered data:", filtered);
 
-            const hasCharleston = filtered.some(row =>
-                row.some(cell => typeof cell === "string" && cell.includes("Charleston"))
-            );
-            console.log("🔍 Does filtered data contain 'Charleston'? ➤", hasCharleston);
+           
+            console.log("✅ Calling displayTable with filtered data");
 
             displayTable(filtered, 'csvTableMaster', 'dateContainerMaster');
             return;
@@ -97,10 +96,8 @@ async function fetchAndFilterGitHubCSV() {
         const filtered = filterColumns(results.data);
         console.log("🧹 Filtered data:", filtered);
 
-        const hasCharleston = filtered.some(row =>
-            row.some(cell => typeof cell === "string" && cell.includes("Charleston"))
-        );
-        console.log("🔍 Does filtered data contain 'Charleston'? ➤", hasCharleston);
+       
+        console.log("✅ Calling displayTable with filtered data");
 
         displayTable(filtered, 'csvTableMaster', 'dateContainerMaster');
     } catch (err) {
@@ -131,8 +128,15 @@ function cleanUpChoices() {
 
 function displayTableToId(data, tableId) {
     const table = document.getElementById(tableId);
-    if (!table || data.length === 0) return;
-
+    const tbody = table?.querySelector("tbody");
+    if (!table || !tbody) {
+        console.error(`❌ Table or tbody with ID '${tableId}' not found.`);
+        return;
+    }
+        if (!table) {
+        console.error(`❌ Table with ID '${tableId}' not found in the DOM.`);
+    }
+    
     table.innerHTML = "";
 
     data.forEach(row => {
@@ -142,7 +146,7 @@ function displayTableToId(data, tableId) {
             td.textContent = cell;
             tr.appendChild(td);
         });
-        table.appendChild(tr);
+tbody.appendChild(tr);
     });
 }
 
@@ -285,18 +289,8 @@ const choicesInstances = [];
 
   
 
-  function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContainerMain') {
-    // ✅ 1. Destroy any lingering choices BEFORE we render new selects
+function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContainerMain') {
     cleanUpChoices();
-
-    // ✅ 2. Clear all previous table/filters
-    choicesInstances.length = 0;
-    document.querySelectorAll('.choices').forEach(el => {
-        const parent = el.closest('th, td');
-        if (parent) parent.innerHTML = '';
-    });
-
-    document.querySelectorAll('th').forEach(th => th.innerHTML = '');
 
     const table = document.getElementById(tableId);
     const dateContainer = document.getElementById(dateContainerId);
@@ -316,7 +310,7 @@ const choicesInstances = [];
     let extractedDates = [];
     const columnsToHide = new Set();
 
-    // Extract labor & date info
+    // Detect columns to hide (labor) and extract any dates
     data.forEach(row => {
         row.forEach((cell, colIndex) => {
             if (typeof cell === "string" && cell.toLowerCase().includes("labor")) {
@@ -330,16 +324,13 @@ const choicesInstances = [];
                     dateFound = true;
                     const [_, month, day, year] = match;
                     const monthNames = ["January", "February", "March", "April", "May", "June",
-                                        "July", "August", "September", "October", "November", "December"];
+                        "July", "August", "September", "October", "November", "December"];
                     extractedDates.push(`${monthNames[parseInt(month, 10) - 1]} ${parseInt(day, 10)}, ${year}`);
                 }
             }
         });
     });
 
-
-
-    // Show extracted dates
     if (dateFound) {
         extractedDates.forEach(date => {
             const p = document.createElement('p');
@@ -354,27 +345,64 @@ const choicesInstances = [];
         dateContainer.appendChild(noDate);
     }
 
-    // Table rendering logic (same as before)
-    let visibleRowIndex = 0;
-    let columnHeaders = [];
+    // === Render table ===
+    let headerIndex = 2;
 
-// Find the header row index dynamically
-const headerIndex = data.findIndex(row =>
-  row.some(cell => typeof cell === 'string' && cell.trim().toLowerCase() === 'location')
-);
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      if (
+        row.some(cell => typeof cell === "string" && cell.toLowerCase().includes("location")) &&
+        row.filter(cell => typeof cell === "string").length >= 3 // make sure it's not just 1 cell
+      ) {
+        headerIndex = i;
+        console.log(`✅ Found header row at index ${i}:`, row);
+        break;
+      }
+    }
+    
+    if (headerIndex === -1) {
+      console.warn("⚠️ No valid header row found — displaying nothing.");
+      data.slice(0, 10).forEach((r, i) => console.log(`Row ${i}:`, r));
+      return;
+    }
+    
 
-// If not found, default to 0
-const startIndex = headerIndex !== -1 ? headerIndex : 1;
-const charlestonRow = data.find(row =>
-    row.some(cell => typeof cell === "string" && cell.includes("Charleston"))
-);
-console.log("📋 Charleston row about to render:", charlestonRow);
+    const headerRow = data[headerIndex];
+    const bodyRows = data.slice(headerIndex + 1);
+    const columnHeaders = [];
 
-data.slice(startIndex).forEach((row, rowIndex) => {
+    // --- Render header row ---
+    const thead = document.createElement("thead");
+    const trHead = document.createElement("tr");
+    headerRow.forEach((cell, colIndex) => {
+        if (!columnsToHide.has(colIndex)) {
+            const th = document.createElement("th");
+            columnHeaders[colIndex] = cell;
+
+            const headerDiv = document.createElement("div");
+            headerDiv.style.display = "flex";
+            headerDiv.style.flexDirection = "column";
+
+            const label = document.createElement("span");
+            label.textContent = cell;
+            headerDiv.appendChild(label);
+
+            th.appendChild(headerDiv);
+            trHead.appendChild(th);
+        }
+    });
+    thead.appendChild(trHead);
+    table.appendChild(thead);
+
+    // --- Ensure and clear tbody ---
+    let tbody = document.createElement("tbody");
+
+    // --- Render data rows ---
+    bodyRows.forEach((row, rowIndex) => {
         if (row.every(cell => cell === "" || cell == null)) return;
 
-        const tr = document.createElement('tr');
-        tr.classList.add(visibleRowIndex % 2 === 0 ? "even-row" : "odd-row");
+        const tr = document.createElement("tr");
+        tr.classList.add(rowIndex % 2 === 0 ? "even-row" : "odd-row");
 
         if (row.some(cell => typeof cell === "string" && cell.toLowerCase().includes("total"))) {
             tr.classList.add("thick-border-top");
@@ -382,110 +410,42 @@ data.slice(startIndex).forEach((row, rowIndex) => {
 
         row.forEach((cell, colIndex) => {
             if (!columnsToHide.has(colIndex)) {
-                let element;
-                if (rowIndex === 1) {
-                    element = document.createElement('th');
-                    columnHeaders[colIndex] = cell;
-                    
-                    const headerDiv = document.createElement('div');
-                    headerDiv.style.display = "flex";
-                    headerDiv.style.flexDirection = "column";
-                    
-                    const label = document.createElement('span');
-                    label.textContent = cell;
-                    headerDiv.appendChild(label);
-                    
-                    const lowerHeader = cell.trim().toLowerCase();
-                    if (lowerHeader.includes("customer") && lowerHeader.includes("name")) {
-                        const wrapper = document.createElement('div');
-                        wrapper.style.display = "flex";
-                        wrapper.style.flexDirection = "column";
-                        wrapper.style.gap = "4px";
-                    
-                        const select = document.createElement('select');
-                        select.setAttribute("multiple", true);
-                        select.classList.add("customer-filter");
-                    
-                        const uniqueValues = [...new Set(
-                            data.slice(3).map(r => r[colIndex])
-                                .filter(v => v && v.toLowerCase() !== "customer name")
-                        )];
-                        uniqueValues.sort().forEach(val => {
-                            const option = document.createElement('option');
-                            option.value = val;
-                            option.textContent = val;
-                            select.appendChild(option);
-                        });
-                    
-                        wrapper.appendChild(select);
-                        headerDiv.appendChild(wrapper);
-                    
-                        // ✅ Apply Choices.js to the select
-                        const choices = new Choices(select, {
-                            removeItemButton: true,
-                            placeholderValue: 'Select customers',
-                            searchPlaceholderValue: 'Type to search...',
-                            shouldSort: true,
-                            searchEnabled: true
-                        });
-                    
-                        choices.passedElement.element.addEventListener('change', () => {
-                            const selectedOptions = choices.getValue(true); // get selected values as array
-                            filterTableByMultipleValues(tableId, colIndex, selectedOptions);
-                        });
-                    
-                        choicesInstances.push(choices);
-                    
-                    
+                const td = document.createElement("td");
+                if (typeof cell === "string") cell = cell.trim();
 
-                    
-              
-                    }
-                    
-                    // ✅ Append the constructed headerDiv no matter what
-                    element.appendChild(headerDiv);
-                    
+                const header = columnHeaders[colIndex]?.toLowerCase() || "";
 
-                        
-                    
-                
-                                
-} else {
-    element = document.createElement('td');
-    if (typeof cell === "string") cell = cell.trim();
+                if (header.includes("%")) {
+                    let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
+                    if (!isNaN(num)) cell = `${num.toFixed(2)}%`;
+                } else if (
+                    !header.includes("location") &&
+                    !header.includes("account") &&
+                    !header.includes("customer")
+                ) {
+                    let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
+                    if (!isNaN(num)) cell = `$${Math.round(num).toLocaleString()}`;
+                }
 
-    const header = columnHeaders[colIndex]?.toLowerCase() || "";
-
-    if (header.includes("%")) {
-        let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
-        if (!isNaN(num)) cell = `${num.toFixed(2)}%`;
-    } else if (
-        !header.includes("location") &&
-        !header.includes("account") &&
-        !header.includes("customer")
-    ) {
-        let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
-        if (!isNaN(num)) cell = `$${Math.round(num).toLocaleString()}`;
-    }
-
-    element.textContent = cell;
-}
-
+                td.textContent = cell;
 
                 if (
                     ["Charleston", "Charlotte", "Columbia", "Greensboro", "Greenville", "Myrtle Beach", "Raleigh", "Wilmington"].includes(cell.trim())
                 ) {
-                    element.classList.add("bold-text");
+                    td.classList.add("bold-text");
                 }
 
-                tr.appendChild(element);
+                tr.appendChild(td);
             }
         });
 
-        table.appendChild(tr);
-        visibleRowIndex++;
+        tbody.appendChild(tr);
     });
+
+    table.appendChild(tbody);
 }
+
+
 
 
   
