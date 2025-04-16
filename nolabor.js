@@ -1,20 +1,36 @@
-
-
 // === Shared Utilities ===
 function filterColumns(data) {
     if (!data.length) return [];
 
-    const headerRow = data[0];
+    console.log("🔎 filterColumns received data:", data);
 
-    const keepColumnIndexes = headerRow.map((header, index) => {
-        const headerText = (header || "").toLowerCase();
-        return !headerText.includes("labor");
+    const headerRow = data.find(row =>
+        row.some(cell => typeof cell === "string" && cell.trim().toLowerCase() === 'location')
+    );
+
+    if (!headerRow) {
+        console.warn("⚠️ No header row found with 'Location'");
+        return data; // fallback: return unfiltered
+    }
+
+    const keepColumnIndexes = headerRow.map((cell, index) => {
+        const isLabor = typeof cell === 'string' && cell.toLowerCase().includes("labor");
+        if (isLabor) {
+            console.log(`🧯 Excluding labor column: "${cell}" at index ${index}`);
+        }
+        return !isLabor;
     });
 
-    return data.map(row =>
-        row.filter((_, colIndex) => keepColumnIndexes[colIndex])
+    const filtered = data.map(row =>
+        row.filter((_, i) => keepColumnIndexes[i])
     );
+
+    console.log("✅ filterColumns final output:", filtered);
+    return filtered;
 }
+
+
+
 
 
 // === Section 1: Handle Master Account CSV Upload ===
@@ -22,40 +38,8 @@ function displayTableM(data) {
     const output = document.getElementById("output");
     output.innerHTML = "";
     const table = document.createElement("table");
-    Papa.parse(csvData, {
-        skipEmptyLines: true,
-        complete: function(results) {
-            const allRows = results.data;
-    
-            const headerIndex = allRows.findIndex(row =>
-                row.some(cell => typeof cell === 'string' && cell.trim().toLowerCase() === 'location')
-            );
-    
-            if (headerIndex === -1) {
-                console.warn("⚠️ Could not find header row.");
-                displayTable(allRows, 'csvTable', 'dateContainerMain');
-                return;
-            }
-    
-            const sliced = allRows.slice(headerIndex);
-            const filtered = filterColumns(sliced); // removes 'labor' columns
-            displayTable(filtered, 'csvTable', 'dateContainerMain');
-        }
-    });
-    
-      
-    
-    
-    
-    
-          
-    
 
-    data.forEach((row, i) => {
-        if (row.includes("Charleston")) {
-            console.log(`🕵️ Charleston FOUND in row ${i + 1}:`, row);
-        }
-
+    data.forEach(row => {
         const tr = document.createElement("tr");
         row.forEach(cell => {
             const td = document.createElement("td");
@@ -68,7 +52,6 @@ function displayTableM(data) {
     output.appendChild(table);
 }
 
-
 function handleFile() {
     const fileInput = document.getElementById("csvFile");
     const file = fileInput.files[0];
@@ -76,7 +59,7 @@ function handleFile() {
 
     Papa.parse(file, {
         complete: function(results) {
-            const filtered = results.data;
+            const filtered = filterColumns(results.data);
             displayTableM(filtered);
         }
     });
@@ -91,51 +74,37 @@ async function fetchAndFilterGitHubCSV() {
 
         if (text === previous) {
             console.log("🔁 Same master CSV — skipping re-render.");
-
             const parsed = Papa.parse(previous.trim(), { skipEmptyLines: true });
-            const allRows = parsed.data;
+            console.log("📦 Raw parsed data from localStorage:", parsed.data);
 
-            const headerIndex = allRows.findIndex(row =>
-                row.some(cell => typeof cell === 'string' && cell.trim().toLowerCase() === 'location')
+            const filtered = filterColumns(parsed.data);
+            console.log("🧹 Filtered data:", filtered);
+
+            const hasCharleston = filtered.some(row =>
+                row.some(cell => typeof cell === "string" && cell.includes("Charleston"))
             );
+            console.log("🔍 Does filtered data contain 'Charleston'? ➤", hasCharleston);
 
-            if (headerIndex === -1) {
-                console.warn("⚠️ Could not find 'Location' header row.");
-                displayTable(allRows, 'csvTableMaster', 'dateContainerMaster');
-                return;
-            }
-
-            const sliced = allRows.slice(headerIndex);
-            const filtered = filterColumns(sliced);
             displayTable(filtered, 'csvTableMaster', 'dateContainerMaster');
             return;
         }
 
         localStorage.setItem('masterCsv', text);
 
-        const parsed = Papa.parse(text.trim(), { skipEmptyLines: true });
-        const allRows = parsed.data;
+        const results = Papa.parse(text.trim(), { skipEmptyLines: true });
+        console.log("📦 Raw parsed data from GitHub:", results.data);
 
-        const headerIndex = allRows.findIndex(row =>
-            row.some(cell => typeof cell === 'string' && cell.trim().toLowerCase() === 'location')
+        const filtered = filterColumns(results.data);
+        console.log("🧹 Filtered data:", filtered);
+
+        const hasCharleston = filtered.some(row =>
+            row.some(cell => typeof cell === "string" && cell.includes("Charleston"))
         );
-
-        if (headerIndex === -1) {
-            console.warn("⚠️ Could not find 'Location' header row.");
-            displayTable(allRows, 'csvTableMaster', 'dateContainerMaster');
-            return;
-        }
-
-        const sliced = allRows.slice(headerIndex);
-        const filtered = filterColumns(sliced);
-
-        // 🔍 Debug logs
-        console.log("🧠 Master Table Header Row:", filtered[0]);
-        console.log("🔍 Row with Charleston (if any):", filtered.find(row => row[0] === "Charleston"));
+        console.log("🔍 Does filtered data contain 'Charleston'? ➤", hasCharleston);
 
         displayTable(filtered, 'csvTableMaster', 'dateContainerMaster');
     } catch (err) {
-        console.error("❌ GitHub CSV fetch failed", err);
+        console.error("❌ GitHub CSV fetch failed:", err);
     }
 }
 
@@ -300,16 +269,18 @@ fileInput.addEventListener("change", (e) => {
 function handleMasterCSVFile(file) {
     Papa.parse(file, {
         complete: function(results) {
+            console.log("📦 Raw parsed data:", results.data); // <- Add this
             const filtered = filterColumns(results.data);
+            console.log("🧹 Filtered data:", filtered); // <- Add this
             displayTable(filtered, 'csvTableMaster', 'dateContainerMaster');
         },
+    
         error: function(error) {
             console.error("CSV parsing error:", error);
         }
     });
 }
 const choicesInstances = [];
-const pendingFilters = []; // <-- This is the fix you were missing
 
 
   
@@ -339,10 +310,6 @@ const pendingFilters = []; // <-- This is the fix you were missing
     document.querySelectorAll('.choices__list').forEach(el => el.remove());
     console.log(`Rendering fresh table for #${tableId}`);
 
-       // ✅ 🔍 ADD DEBUG LOGS HERE:
-       console.log("Headers:", data[0]);
-       console.log("Row with Charleston:", data.find(row => row.includes("Charleston")));
-
     if (data.length <= 1) return;
 
     let dateFound = false;
@@ -352,7 +319,9 @@ const pendingFilters = []; // <-- This is the fix you were missing
     // Extract labor & date info
     data.forEach(row => {
         row.forEach((cell, colIndex) => {
-           
+            if (typeof cell === "string" && cell.toLowerCase().includes("labor")) {
+                columnsToHide.add(colIndex);
+            }
 
             if (typeof cell === "string") {
                 cell = cell.trim();
@@ -389,8 +358,19 @@ const pendingFilters = []; // <-- This is the fix you were missing
     let visibleRowIndex = 0;
     let columnHeaders = [];
 
-    data.slice(1).forEach((row, rowIndex) => {
-        
+// Find the header row index dynamically
+const headerIndex = data.findIndex(row =>
+  row.some(cell => typeof cell === 'string' && cell.trim().toLowerCase() === 'location')
+);
+
+// If not found, default to 0
+const startIndex = headerIndex !== -1 ? headerIndex : 1;
+const charlestonRow = data.find(row =>
+    row.some(cell => typeof cell === "string" && cell.includes("Charleston"))
+);
+console.log("📋 Charleston row about to render:", charlestonRow);
+
+data.slice(startIndex).forEach((row, rowIndex) => {
         if (row.every(cell => cell === "" || cell == null)) return;
 
         const tr = document.createElement('tr');
@@ -403,9 +383,8 @@ const pendingFilters = []; // <-- This is the fix you were missing
         row.forEach((cell, colIndex) => {
             if (!columnsToHide.has(colIndex)) {
                 let element;
-                const headerRowIndex = 0;
-                if (rowIndex === headerRowIndex) {
-                                    element = document.createElement('th');
+                if (rowIndex === 1) {
+                    element = document.createElement('th');
                     columnHeaders[colIndex] = cell;
                     
                     const headerDiv = document.createElement('div');
@@ -449,35 +428,11 @@ const pendingFilters = []; // <-- This is the fix you were missing
                             shouldSort: true,
                             searchEnabled: true
                         });
-                        
-                        choicesInstances.push(choices);
-                        
-                        // ✅ Restore filters on load
-                      // ✅ Restore filters on load
-const storedFilter = localStorage.getItem(`filter-${tableId}-${colIndex}`);
-if (storedFilter) {
-    const parsed = JSON.parse(storedFilter);
-    parsed.forEach(val => {
-        choices.setChoiceByValue(val);
-    });
-
-    // ⏳ Defer actual filtering until table is built
-    pendingFilters.push({
-        tableId,
-        columnIndex: colIndex,
-        selectedValues: parsed
-    });
-}
-
-                        
-                        // ✅ Listen for changes and save to localStorage
+                    
                         choices.passedElement.element.addEventListener('change', () => {
-                            const selectedOptions = choices.getValue(true);
-                            localStorage.setItem(`filter-${tableId}-${colIndex}`, JSON.stringify(selectedOptions));
+                            const selectedOptions = choices.getValue(true); // get selected values as array
                             filterTableByMultipleValues(tableId, colIndex, selectedOptions);
                         });
-                        
-                        
                     
                         choicesInstances.push(choices);
                     
@@ -499,32 +454,19 @@ if (storedFilter) {
     element = document.createElement('td');
     if (typeof cell === "string") cell = cell.trim();
 
-    const header = (columnHeaders[colIndex] || "").trim().toLowerCase();
-    const originalCell = cell;
-    
-    // 💡 Basic number detection
-    const numeric = parseFloat(cell.replace(/[^0-9.-]/g, ""));
-    const isNumeric = !isNaN(numeric);
-    
-    // 👇 CSV Table specific workaround
-    const isCsvTable = tableId === 'csvTable';
-    const isShortNumber = isNumeric && Math.abs(numeric) < 100;
-    
-    // 💡 Basic heuristic: small numbers in csvTable treated as %
-    if (isCsvTable && isShortNumber) {
-        cell = `${numeric.toFixed(2)}%`;
+    const header = columnHeaders[colIndex]?.toLowerCase() || "";
+
+    if (header.includes("%")) {
+        let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
+        if (!isNaN(num)) cell = `${num.toFixed(2)}%`;
     } else if (
-        isNumeric &&
         !header.includes("location") &&
         !header.includes("account") &&
-        !header.includes("customer") &&
-        !cell.includes("%")
+        !header.includes("customer")
     ) {
-        cell = `$${Math.round(numeric).toLocaleString()}`;
+        let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
+        if (!isNaN(num)) cell = `$${Math.round(num).toLocaleString()}`;
     }
-    
-    
-    
 
     element.textContent = cell;
 }
@@ -537,33 +479,16 @@ if (storedFilter) {
                 }
 
                 tr.appendChild(element);
-                    // ✅ Apply all pending filters after table has been fully rendered
-
             }
         });
 
         table.appendChild(tr);
         visibleRowIndex++;
     });
-    
-    // ✅ Move this here, after full table rendering
-    pendingFilters.forEach(({ tableId, columnIndex, selectedValues }) => {
-        filterTableByMultipleValues(tableId, columnIndex, selectedValues);
-    });
-    pendingFilters.length = 0;
 }
 
 
-
-function clearAllFilters(tableId) {
-    Object.keys(localStorage).forEach(key => {
-        if (key.startsWith(`filter-${tableId}-`)) {
-            localStorage.removeItem(key);
-        }
-    });
-    location.reload();
-}
-
+  
 
 function filterTableByColumn(tableId, columnIndex, filterValue) {
     const table = document.getElementById(tableId);

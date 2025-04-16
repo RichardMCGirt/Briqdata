@@ -533,7 +533,9 @@ button:hover {
     box-shadow: none !important;     /* remove floating shadow if any */
   }
   
-  
+  #csvTableMaster .thick-border-top {
+    border-top: 3px solid #000;
+  }
 
 .container {
     width: 90%;
