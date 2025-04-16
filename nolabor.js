@@ -51,6 +51,7 @@ function displayTableM(data) {
     });
 
     output.appendChild(table);
+
 }
 
 function handleFile() {
@@ -178,6 +179,8 @@ async function loadDefaultCSV() {
             Papa.parse(previousData, {
                 complete: function(results) {
                     displayTable(results.data, 'csvTable', 'dateContainerMain');
+                    hideFirstRowOfCsvTable();
+
                 }
             });
             return;
@@ -188,6 +191,8 @@ async function loadDefaultCSV() {
         Papa.parse(csvData, {
             complete: function(results) {
                 displayTable(results.data, 'csvTable', 'dateContainerMain');
+                hideFirstRowOfCsvTable();
+
             },
             error: function(error) {
                 console.error("Error parsing CSV:", error);
@@ -235,6 +240,8 @@ function handleMainCSVFile(file) {
         Papa.parse(csvData, {
             complete: function(results) {
                 displayTable(results.data, 'csvTable', 'dateContainerMain');
+                hideFirstRowOfCsvTable();
+
             },
             error: function(error) {
                 console.error("Error parsing uploaded CSV:", error);
@@ -286,7 +293,18 @@ function handleMasterCSVFile(file) {
 }
 const choicesInstances = [];
 
+function hideFirstColumn(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
 
+    const theadRow = table.querySelector("thead tr");
+    if (theadRow) theadRow.style.display = "none";
+
+    const tbodyRow = table.querySelector("tbody tr");
+    if (tbodyRow) tbodyRow.style.display = "none";
+}
+
+  
   
 
 function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContainerMain') {
@@ -443,6 +461,7 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
     });
 
     table.appendChild(tbody);
+
 }
 
 
@@ -450,17 +469,15 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
 
   
 
-function filterTableByColumn(tableId, columnIndex, filterValue) {
-    const table = document.getElementById(tableId);
-    const rows = Array.from(table.querySelectorAll("tr")).slice(1); // skip original header rows
+function hideFirstRowOfCsvTable() {
+    const table = document.getElementById("csvTable");
+    if (!table) return;
 
-    rows.forEach(row => {
-        const cell = row.children[columnIndex];
-        const cellValue = cell?.textContent || "";
-        const shouldShow = !filterValue || cellValue === filterValue;
-        row.style.display = shouldShow ? "" : "none";
-    });
+    const firstTheadRow = table.querySelector("thead tr");
+    if (firstTheadRow) firstTheadRow.style.display = "none";
+
 }
+
 
 function filterTableByMultipleValues(tableId, columnIndex, selectedValues) {
     const table = document.getElementById(tableId);
