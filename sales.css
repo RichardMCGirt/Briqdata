@@ -155,3 +155,6 @@ th {
   z-index: 9999;
 }
 
+.choices__inner {
+  width: fit-content !important;
+}

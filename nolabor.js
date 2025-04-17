@@ -521,6 +521,8 @@ function populateFilterFromColumnOne(tableId, selectId) {
         removeItemButton: true,
         placeholderValue: "Filter by Custome Name",
         searchPlaceholderValue: "Search...",
+        itemSelectText: "", // 🔥 This removes "Press to select"
+
     });
 
     window.choicesInstances.push(choices);
