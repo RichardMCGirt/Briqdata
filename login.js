@@ -11,7 +11,7 @@ function validateLogin() {
         window.location.href = "index.html";
     } else {
         // Show error message if incorrect
-        errorMessage.textContent = "Incorrect password. Please enter 'Vanir'.";
+        errorMessage.textContent = "Incorrect password";
     }
 }
 
