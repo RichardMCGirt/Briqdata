@@ -75,7 +75,7 @@ tr:nth-child(even) {
 
 tbody {
     display: block;
-    max-height: calc(100vh - 180px);
+    max-height: calc(100vh - 47vh);
     overflow-y: auto;
 }
 
