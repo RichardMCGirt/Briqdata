@@ -155,7 +155,7 @@ function calculateWinRates2(records) {
 
     records.forEach(record => {
         // Directly access the ACM field value
-        const submittedBy = record.fields['AC'] || 'Empty';
+        const submittedBy = record.fields['SubmitedBY'] || 'Empty';
 
         if (!data[submittedBy]) {
             data[submittedBy] = { winCount: 0, lossCount: 0, totalCount: 0 };

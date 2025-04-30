@@ -153,14 +153,21 @@ function displayWinRatesInGrid(data, gridId, title) {
 
     if (Object.keys(data).length === 0) {
         console.warn(`No data found for grid: ${gridId}`);
-gridContainer.textContent = `No ${title.toLowerCase()} data available for the current year.`;
-
+        gridContainer.textContent = `No ${title.toLowerCase()} data available for the current year.`;
         return;
     }
 
     const sortedData = Object.entries(data).sort((a, b) => a[0].localeCompare(b[0]));
 
+    let visibleCount = 0;
+
     sortedData.forEach(([branch, winRateData]) => {
+        if (winRateData.winRatePercentage === 0) {
+            return; // Skip rendering this branch if percentage is 0
+        }
+
+        visibleCount++;
+
         const branchDiv = document.createElement('div');
         branchDiv.className = 'branch-win-rate';
 
@@ -179,9 +186,8 @@ gridContainer.textContent = `No ${title.toLowerCase()} data available for the cu
         gridContainer.appendChild(branchDiv);
     });
 
-
-
-    // Set the display style for the grid container
-    gridContainer.style.display = 'grid';
+    if (visibleCount === 0) {
+        gridContainer.textContent = `No ${title.toLowerCase()} data with win rate above 0% for the current year.`;
+    }
 }
 
