@@ -432,31 +432,31 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
                 if (typeof cell === "string") cell = cell.trim();
 
                 const filteredColIndex = tr.children.length;
-                let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
-                
-                // Columns to display as dollar values (1-based index after filtering)
-                const dollarColumns = new Set([1, 3, 5, 6, 8, 10]);
-                
-                // Special fix for percent columns 5 and 8 (1-based) → 0-based: 4, 7
-                const specialPercentShiftColumns = new Set([4, 7]);
-                
-                if (!isNaN(num)) {
-                    if (dollarColumns.has(filteredColIndex)) {
-                        cell = `$${Math.round(num).toLocaleString()}`;
-                    } else {
-                        if (
-                            specialPercentShiftColumns.has(filteredColIndex) &&
-                            num < -1
-                        ) {
-                            // If it's a large negative, it's likely already percent-based (e.g., -83 → -0.83)
-                            num = num / 100;
-                        } else if (Math.abs(num) <= 1 && num !== 0) {
-                            // Small decimals (e.g. 0.25 → 25%)
-                            num = num * 100;
-                        }
-                        cell = `${num.toFixed(2)}%`;
-                    }
-                }
+let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
+
+// Columns: 1-based → 0-based indexes
+const dollarColumns = new Set([1, 3, 5, 6, 8, 10]);
+const specialPercentShiftColumns = new Set([4, 7]);
+
+if (!isNaN(num)) {
+    if (dollarColumns.has(filteredColIndex)) {
+        cell = `$${Math.round(num).toLocaleString()}`;
+    } else {
+        if (
+            rowIndex === 1 && // only for row 2 (rowIndex is 0-based)
+            specialPercentShiftColumns.has(filteredColIndex) &&
+            Math.abs(num) > 1
+        ) {
+            num = num / 100; // special fix for row 2
+        } else if (Math.abs(num) <= 1 && num !== 0) {
+            num = num * 100;
+        }
+
+        cell = `${num.toFixed(2)}%`;
+    }
+}
+
+
                 
 
                 
