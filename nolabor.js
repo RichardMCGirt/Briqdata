@@ -89,7 +89,7 @@ function handleFile() {
 
 async function fetchAndFilterGitHubCSV() {
     try {
-        const githubCSV = 'https://raw.githubusercontent.com/RichardMCGirt/Briqdata/refs/heads/main/SalesComparisonbyMasterAccount-1743165085-1710047455.csv';
+        const githubCSV = 'https://raw.githubusercontent.com/RichardMCGirt/Briqdata/refs/heads/main/SalesComparisonbyMasterAccount-1746031907-414419086%20(1).csv';
         const res = await fetch(githubCSV);
         const text = await res.text();
         const previous = localStorage.getItem('masterCsv');
