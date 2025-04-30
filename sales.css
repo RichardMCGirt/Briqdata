@@ -41,7 +41,6 @@
     max-height: 800px;
     overflow: auto;
     border: 1px solid #ccc;
-    margin-bottom: 2rem;
   }
   
   table {
@@ -63,7 +62,6 @@
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
     table-layout: auto;
 }
 th, td {

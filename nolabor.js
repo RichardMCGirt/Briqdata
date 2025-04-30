@@ -315,7 +315,7 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
     if (!table || !dateContainer) return;
 
     table.innerHTML = '';
-    dateContainer.innerHTML = '<h4>Extracted Date</h4>';
+    dateContainer.innerHTML = '<h4>Date downloaded</h4>';
     dateContainer.style.display = "none";
 
     document.querySelectorAll('.choices').forEach(el => el.remove());
