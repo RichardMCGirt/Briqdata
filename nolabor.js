@@ -2,33 +2,28 @@
 function filterColumns(data) {
     if (!data.length) return [];
 
-    console.log("🔎 filterColumns received data:", data);
-
     const headerRow = data.find(row =>
         row.some(cell => typeof cell === "string" && cell.toLowerCase().includes("location"))
     );
-    
 
-    if (!headerRow) {
-        console.warn("⚠️ No header row found with 'Location'");
-        return data; // fallback: return unfiltered
-    }
+    if (!headerRow) return data;
 
-    const keepColumnIndexes = headerRow.map((cell, index) => {
-        const isLabor = typeof cell === 'string' && cell.toLowerCase().includes("labor");
-        if (isLabor) {
-            console.log(`🧯 Excluding labor column: "${cell}" at index ${index}`);
-        }
-        return !isLabor;
-    });
+    const keepColumnIndexes = headerRow.map((cell, index) =>
+        !(typeof cell === 'string' && cell.toLowerCase().includes("labor"))
+    );
 
     const filtered = data.map(row =>
         row.filter((_, i) => keepColumnIndexes[i])
     );
 
-    console.log("✅ filterColumns final output:", filtered);
+    // NEW: Save original indexes
+    filtered.originalIndexes = keepColumnIndexes
+        .map((keep, i) => keep ? i : null)
+        .filter(i => i !== null);
+
     return filtered;
 }
+
 
 
 
@@ -39,20 +34,45 @@ function displayTableM(data) {
     const output = document.getElementById("output");
     output.innerHTML = "";
     const table = document.createElement("table");
+    const originalIndexes = data.originalIndexes || [];
 
-    data.forEach(row => {
+    // Define column sets using original 1-based indexes
+    const masterDollarCols = new Set([3, 5, 7, 8, 10, 12]);
+    const masterPercentCols = new Set([4, 6, 9, 11]);
+
+    data.forEach((row, rowIndex) => {
         const tr = document.createElement("tr");
-        row.forEach(cell => {
+
+        row.forEach((cell, filteredIndex) => {
             const td = document.createElement("td");
+
+            // Get original column index if available
+            const originalColIndex = originalIndexes[filteredIndex];
+            const colNumber = (originalColIndex !== undefined) ? originalColIndex + 1 : filteredIndex + 1;
+
+            let num = parseFloat(cell?.toString().replace(/[^0-9.-]+/g, ""));
+
+            if (!isNaN(num)) {
+                if (masterDollarCols.has(colNumber)) {
+                    cell = `$${Math.round(num).toLocaleString()}`;
+                } else if (masterPercentCols.has(colNumber)) {
+                    if (Math.abs(num) <= 1 && num !== 0) {
+                        num *= 100;
+                    }
+                    cell = `${num.toFixed(2)}%`;
+                }
+            }
+
             td.textContent = cell;
             tr.appendChild(td);
         });
+
         table.appendChild(tr);
     });
 
     output.appendChild(table);
-
 }
+
 
 function handleFile() {
     const fileInput = document.getElementById("csvFile");
@@ -432,41 +452,43 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
                 if (typeof cell === "string") cell = cell.trim();
 
                 const filteredColIndex = tr.children.length;
-let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
-
-// Columns: 1-based → 0-based indexes
-const dollarColumns = new Set([1, 3, 5, 6, 8, 10]);
-const specialPercentShiftColumns = new Set([4, 7]);
-
-if (!isNaN(num)) {
-    if (dollarColumns.has(filteredColIndex)) {
-        cell = `$${Math.round(num).toLocaleString()}`;
-    } else {
-        if (
-            rowIndex === 1 && // only for row 2 (rowIndex is 0-based)
-            specialPercentShiftColumns.has(filteredColIndex) &&
-            Math.abs(num) > 1
-        ) {
-            num = num / 100; // special fix for row 2
-        } else if (Math.abs(num) <= 1 && num !== 0) {
-            num = num * 100;
-        }
-
-        cell = `${num.toFixed(2)}%`;
-    }
-}
-
-
+                let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
+                const colNumber = colIndex + 1;
                 
-
+                // === Main csvTable formatting ===
+                if (!isNaN(num) && tableId === "csvTable") {
+                    const dollarColumns = new Set([1, 3, 5, 6, 8, 10]);
+                    const specialPercentShiftColumns = new Set([4, 7]);
                 
-
+                    if (dollarColumns.has(filteredColIndex)) {
+                        cell = `$${Math.round(num).toLocaleString()}`;
+                    } else {
+                        if (rowIndex === 1 && specialPercentShiftColumns.has(filteredColIndex) && Math.abs(num) > 1) {
+                            num = num / 100;
+                        } else if (Math.abs(num) <= 1 && num !== 0) {
+                            num = num * 100;
+                        }
+                        cell = `${num.toFixed(2)}%`;
+                    }
+                }
+                
+                // === Master table formatting ===
+                else if (!isNaN(num) && tableId === "csvTableMaster") {
+                    const masterDollarCols = new Set([ 3,6,  9, 10, 13, 16]);
+                    const masterPercentCols = new Set([4, 5,8, 12, 15]);
+                
+                    if (masterDollarCols.has(colNumber)) {
+                        cell = `$${Math.round(num).toLocaleString()}`;
+                    } else if (masterPercentCols.has(colNumber)) {
+                        if (Math.abs(num) <= 1 && num !== 0) {
+                            num = num * 100;
+                        }
+                        cell = `${num.toFixed(2)}%`;
+                    }
+                }
+                
 
                 td.textContent = cell;
-
-              
-                
-
                 if (
                     ["Charleston", "Charlotte", "Columbia", "Greensboro", "Greenville", "Myrtle Beach", "Raleigh", "Wilmington"].includes(cell.trim())
                 ) {
