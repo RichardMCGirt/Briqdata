@@ -385,7 +385,7 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
     if (!table || !dateContainer) return;
 
     table.innerHTML = '';
-    dateContainer.innerHTML = '<h4>Date downloaded</h4>';
+    dateContainer.innerHTML = ''; // clear
     dateContainer.style.display = "none";
 
     document.querySelectorAll('.choices').forEach(el => el.remove());
@@ -420,11 +420,20 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
     });
 
     if (dateFound) {
-        extractedDates.forEach(date => {
-            const p = document.createElement('p');
-            p.textContent = date;
-            dateContainer.appendChild(p);
-        });
+        const dateRow = document.createElement('div');
+        dateRow.className = 'date-row';
+    
+        const label = document.createElement('span');
+        label.className = 'date-label';
+        label.textContent = 'Date downloaded:';
+    
+        const value = document.createElement('span');
+        value.className = 'date-value';
+        value.textContent = extractedDates.join(', ');
+    
+        dateRow.appendChild(label);
+        dateRow.appendChild(value);
+        dateContainer.appendChild(dateRow);
         dateContainer.style.display = "block";
     } else {
         const noDate = document.createElement('p');
@@ -509,19 +518,39 @@ bodyRows.forEach((row, rowIndex) => {
             let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
             const colNumber = colIndex + 1;
 
-            if (!isNaN(num) && tableId === "csvTableMaster") {
-                const masterDollarCols = new Set([3, 6, 9, 10, 13, 16]);
-                const masterPercentCols = new Set([4, 5, 8, 12, 15]);
-
-                if (masterDollarCols.has(colNumber)) {
-                    cell = `$${Math.round(num).toLocaleString()}`;
-                } else if (masterPercentCols.has(colNumber)) {
-                    if (Math.abs(num) <= 1 && num !== 0) {
-                        num = num * 100;
+            if (!isNaN(num)) {
+                if (tableId === "csvTableMaster") {
+                    const masterDollarCols = new Set([3, 6, 9, 10, 13, 16]);
+                    const masterPercentCols = new Set([4, 5, 8, 12, 15]);
+            
+                    if (masterDollarCols.has(colNumber)) {
+                        cell = `$${Math.round(num).toLocaleString()}`;
+                    } else if (masterPercentCols.has(colNumber)) {
+                        if (Math.abs(num) <= 1 && num !== 0) {
+                            num = num * 100;
+                        }
+                        cell = `${num.toFixed(2)}%`;
                     }
-                    cell = `${num.toFixed(2)}%`;
+                }
+            
+                // 🔧 Add this for csvTable
+                else if (tableId === "csvTable") {
+                    const dollarColumns = new Set([1, 3, 5, 6, 8, 10]);
+                    const specialPercentShiftColumns = new Set([4, 7]);
+            
+                    if (dollarColumns.has(filteredColIndex)) {
+                        cell = `$${Math.round(num).toLocaleString()}`;
+                    } else {
+                        if (rowIndex === 1 && specialPercentShiftColumns.has(filteredColIndex) && Math.abs(num) > 1) {
+                            num = num / 100;
+                        } else if (Math.abs(num) <= 1 && num !== 0) {
+                            num = num * 100;
+                        }
+                        cell = `${num.toFixed(2)}%`;
+                    }
                 }
             }
+            
 
             td.textContent = cell;
 

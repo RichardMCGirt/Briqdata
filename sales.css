@@ -50,7 +50,23 @@
   }
   
 
- 
+  #dateContainerMain .date-row,
+  #dateContainerMaster .date-row {
+    display: flex;
+    justify-content: center;  /* center horizontally */
+    align-items: center;
+    gap: 10px;                 /* uniform spacing between items */
+    font-size: 16px;
+    margin: 10px 0;
+}
+
+#dateContainerMain .date-value,
+#dateContainerMaster .date-value {
+    font-weight: bold;
+}
+
+
+
   
 
   .totals-row {
