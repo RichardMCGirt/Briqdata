@@ -559,6 +559,20 @@ totalRows.forEach(r => tbody.appendChild(r));
     
 }
 
+function applyRowStripes(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+
+    const rows = Array.from(table.querySelectorAll("tbody tr"))
+        .filter(row => row.style.display !== "none" && !row.classList.contains("totals-row"));
+
+    rows.forEach((row, index) => {
+        row.classList.remove("even-row", "odd-row");
+        row.classList.add(index % 2 === 0 ? "even-row" : "odd-row");
+    });
+}
+
+
 function populateFilterFromColumnOne(tableId, selectId) {
     console.log(`🔍 populateFilterFromColumnOne for table: #${tableId}, select: #${selectId}`);
 
@@ -628,19 +642,44 @@ document.getElementById("locationRadios").addEventListener("change", function (e
     if (e.target.name === "branchFilter") {
         const selectedBranch = e.target.value.toLowerCase();
         const table = document.getElementById("csvTableMaster");
-        const rows = table.querySelectorAll("tbody tr");
+        const tbody = table.querySelector("tbody");
+        const allRows = Array.from(tbody.querySelectorAll("tr"));
 
-        rows.forEach(row => {
+        // Filter visible rows
+        const matchingRows = allRows.filter(row => {
             const firstCell = row.querySelector("td");
-            if (!firstCell) return;
+            if (!firstCell) return false;
             const text = firstCell.textContent.trim().toLowerCase();
-            const showRow = !selectedBranch || text.includes(selectedBranch);
-            row.style.display = showRow ? "" : "none";
+            return !selectedBranch || text.includes(selectedBranch);
         });
 
+        // Sort matching rows alphabetically by first cell
+        matchingRows.sort((a, b) => {
+            const aText = a.querySelector("td")?.textContent.trim().toLowerCase() || "";
+            const bText = b.querySelector("td")?.textContent.trim().toLowerCase() || "";
+            return aText.localeCompare(bText);
+        });
+
+        // Hide all rows
+        allRows.forEach(row => row.style.display = "none");
+
+        // Remove existing totals row (we’ll re-add it after sorting)
+        const existingTotal = table.querySelector(".totals-row");
+        if (existingTotal) existingTotal.remove();
+
+        // Re-append sorted, matching rows
+        matchingRows.forEach(row => {
+            row.style.display = "";
+            tbody.appendChild(row);
+        });
+
+        // Recalculate and append totals row
         appendTotalsRow("csvTableMaster");
+        applyRowStripes("csvTableMaster");
+
     }
 });
+
 
 
 
