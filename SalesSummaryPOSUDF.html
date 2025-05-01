@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sales Summary Uploader</title>
+  <style>
+    table { border-collapse: collapse; width: 100%; margin-bottom: 2rem; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: right; }
+    th { background-color: #f2f2f2; }
+    input { margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <h2>Upload Sales Summary CSV</h2>
+  <input type="file" id="fileInput" accept=".csv" />
+
+  <h3>Totals by City</h3>
+  <div id="cityTotals"></div>
+
+  <h3>Totals by Project Type</h3>
+  <div id="typeTotals"></div>
+
+     <script src ="salessummary.js"></script>  
+
+</body>
+</html>

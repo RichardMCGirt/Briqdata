@@ -96,10 +96,7 @@
       <br>
       <div class="table-container">
 
-   
         <div id="dateContainerMaster"></div>
-      
-      
       
         <table id="csvTableMaster">
           <thead></thead>
@@ -107,7 +104,19 @@
         </table>
       </div>
       
-      
+      <br>
+
+      <h2>Upload Sales Summary CSV</h2>
+      <input type="file" id="fileInputSummary" accept=".csv" />
+    
+      <h3>Totals by Branch </h3>
+      <div id="cityTotals"></div>
+    
+      <h3>Totals by Project Type</h3>
+      <div id="typeTotals"></div>
+    
+         <script src ="salessummary.js"></script>  
+    
       
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
