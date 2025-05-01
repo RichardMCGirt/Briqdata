@@ -709,11 +709,6 @@ document.getElementById("locationRadios").addEventListener("change", function (e
     }
 });
 
-
-
-
-  
-
 function hideFirstRowOfCsvTable() {
     const table = document.getElementById("csvTable");
     if (!table) return;
@@ -734,6 +729,122 @@ function filterTableByMultipleValues(tableId, columnIndex, selectedValues) {
         const shouldShow = selectedValues.length === 0 || selectedValues.includes(cellValue);
         row.style.display = shouldShow ? "" : "none";
     });
+}
+
+let enterPressCount = 0;
+let enterTimer = null;
+
+document.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+        enterPressCount++;
+
+        clearTimeout(enterTimer);
+        enterTimer = setTimeout(() => {
+            if (enterPressCount === 2) {
+                showTop10NetYTD();
+            }
+            enterPressCount = 0;
+        }, 400);
+    }
+});
+
+function showTop10NetYTD() {
+    const table = document.getElementById("csvTableMaster");
+    if (!table) return console.warn("⚠️ Table not found");
+
+    const headerCells = table.querySelectorAll("thead th");
+    let netYtdIndex = -1;
+
+    headerCells.forEach((th, idx) => {
+        if (th.textContent.toLowerCase().includes("net ytd")) {
+            netYtdIndex = idx;
+        }
+    });
+
+    if (netYtdIndex === -1) {
+        alert("NET YTD column not found.");
+        return;
+    }
+
+    const rows = Array.from(table.querySelectorAll("tbody tr"))
+        .filter(row => {
+            const text = row.textContent.toLowerCase();
+            return row.style.display !== "none" && !text.includes("total");
+        });
+
+    const data = rows.map(row => {
+        const cells = row.querySelectorAll("td");
+        const name = cells[0]?.textContent || "";
+        const valRaw = cells[netYtdIndex]?.textContent || "";
+        const valNum = parseFloat(valRaw.replace(/[^0-9.-]/g, ""));
+        return { name, value: isNaN(valNum) ? 0 : valNum };
+    });
+
+    data.sort((a, b) => b.value - a.value);
+    const top10 = data.slice(0, 10);
+
+    // Remove previous modal
+    document.getElementById("top10Modal")?.remove();
+
+    // Modal wrapper
+    const modal = document.createElement("div");
+    modal.id = "top10Modal";
+    Object.assign(modal.style, {
+        position: "fixed",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        background: "#fff",
+        padding: "20px",
+        border: "2px solid #333",
+        borderRadius: "12px",
+        boxShadow: "0 5px 25px rgba(0,0,0,0.3)",
+        zIndex: "9999",
+        maxHeight: "80vh",
+        maxWidth: "30vw",
+        overflowY: "auto",
+        width: "100%",
+        textAlign: "center",
+        fontFamily: "Arial, sans-serif",
+        boxSizing: "border-box"
+    });
+
+    const title = document.createElement("h3");
+    title.textContent = "Top 10 NET YTD";
+    title.style.textAlign = "center";
+    title.style.marginBottom = "12px";
+    modal.appendChild(title);
+
+    top10.forEach((entry, i) => {
+        const item = document.createElement("div");
+        item.textContent = `${i + 1}. ${entry.name}: $${entry.value.toLocaleString()}`;
+        Object.assign(item.style, {
+            margin: "4px 0",
+            whiteSpace: "nowrap", // ensures 1 line
+            overflow: "hidden",
+            textOverflow: "ellipsis"
+        });
+        modal.appendChild(item);
+    });
+
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = "Close";
+    Object.assign(closeBtn.style, {
+        marginTop: "15px",
+        display: "block",
+        marginLeft: "auto",
+        marginRight: "auto",
+        padding: "6px 14px",
+        border: "none",
+        background: "#333",
+        color: "#fff",
+        borderRadius: "6px",
+        cursor: "pointer"
+    });
+    closeBtn.onclick = () => modal.remove();
+    modal.appendChild(closeBtn);
+
+    document.body.appendChild(modal);
 }
 
 
