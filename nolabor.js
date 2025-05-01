@@ -72,6 +72,56 @@ function displayTableM(data) {
 
     output.appendChild(table);
 }
+function appendTotalsRow(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+
+    const tbody = table.querySelector("tbody");
+    if (!tbody) return;
+
+    const rows = Array.from(tbody.querySelectorAll("tr")).filter(row => row.style.display !== "none");
+
+    if (rows.length === 0) return;
+
+    const columnCount = rows[0].children.length;
+    const totals = Array(columnCount).fill(0);
+
+    rows.forEach(row => {
+        row.querySelectorAll("td").forEach((cell, i) => {
+            if (i === 1) return; // 🛑 Skip column index 1 (second column)
+            const val = parseFloat(cell.textContent.replace(/[^0-9.-]+/g, ''));
+            if (!isNaN(val)) {
+                totals[i] += val;
+            }
+        });
+    });
+
+    // Remove any existing totals row
+    const existingTotal = table.querySelector(".totals-row");
+    if (existingTotal) existingTotal.remove();
+
+    const totalRow = document.createElement("tr");
+    totalRow.className = "totals-row";
+
+    totals.forEach((val, i) => {
+        const td = document.createElement("td");
+
+        if (i === 0) {
+            td.textContent = "Total:";
+            td.style.fontWeight = "bold";
+        } else if (i === 1) {
+            td.textContent = ""; // 🧼 Leave column 2 (index 1) blank
+        } else {
+            td.textContent = isNaN(val) ? "" : `$${Math.round(val).toLocaleString()}`;
+        }
+
+        totalRow.appendChild(td);
+    });
+
+    tbody.appendChild(totalRow);
+}
+
+
 
 
 function handleFile() {
@@ -436,68 +486,66 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
     let tbody = document.createElement("tbody");
 
     // --- Render data rows ---
-    bodyRows.forEach((row, rowIndex) => {
-        if (row.every(cell => cell === "" || cell == null)) return;
+    let normalRows = [];
+let totalRows = [];
 
-        const tr = document.createElement("tr");
-        tr.classList.add(rowIndex % 2 === 0 ? "even-row" : "odd-row");
+bodyRows.forEach((row, rowIndex) => {
+    if (row.every(cell => cell === "" || cell == null)) return;
 
-        if (row.some(cell => typeof cell === "string" && cell.toLowerCase().includes("total"))) {
-            tr.classList.add("thick-border-top");
-        }
+    const tr = document.createElement("tr");
+    tr.classList.add(rowIndex % 2 === 0 ? "even-row" : "odd-row");
 
-        row.forEach((cell, colIndex) => {
-            if (!columnsToHide.has(colIndex)) {
-                const td = document.createElement("td");
-                if (typeof cell === "string") cell = cell.trim();
+    const isTotalRow = row.some(cell =>
+        typeof cell === "string" && cell.toLowerCase().includes("total")
+    );
+    if (isTotalRow) tr.classList.add("thick-border-top");
 
-                const filteredColIndex = tr.children.length;
-                let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
-                const colNumber = colIndex + 1;
-                
-                // === Main csvTable formatting ===
-                if (!isNaN(num) && tableId === "csvTable") {
-                    const dollarColumns = new Set([1, 3, 5, 6, 8, 10]);
-                    const specialPercentShiftColumns = new Set([4, 7]);
-                
-                    if (dollarColumns.has(filteredColIndex)) {
-                        cell = `$${Math.round(num).toLocaleString()}`;
-                    } else {
-                        if (rowIndex === 1 && specialPercentShiftColumns.has(filteredColIndex) && Math.abs(num) > 1) {
-                            num = num / 100;
-                        } else if (Math.abs(num) <= 1 && num !== 0) {
-                            num = num * 100;
-                        }
-                        cell = `${num.toFixed(2)}%`;
+    row.forEach((cell, colIndex) => {
+        if (!columnsToHide.has(colIndex)) {
+            const td = document.createElement("td");
+            if (typeof cell === "string") cell = cell.trim();
+
+            const filteredColIndex = tr.children.length;
+            let num = parseFloat(cell.replace(/[^0-9.-]+/g, ""));
+            const colNumber = colIndex + 1;
+
+            if (!isNaN(num) && tableId === "csvTableMaster") {
+                const masterDollarCols = new Set([3, 6, 9, 10, 13, 16]);
+                const masterPercentCols = new Set([4, 5, 8, 12, 15]);
+
+                if (masterDollarCols.has(colNumber)) {
+                    cell = `$${Math.round(num).toLocaleString()}`;
+                } else if (masterPercentCols.has(colNumber)) {
+                    if (Math.abs(num) <= 1 && num !== 0) {
+                        num = num * 100;
                     }
+                    cell = `${num.toFixed(2)}%`;
                 }
-                
-                // === Master table formatting ===
-                else if (!isNaN(num) && tableId === "csvTableMaster") {
-                    const masterDollarCols = new Set([ 3,6,  9, 10, 13, 16]);
-                    const masterPercentCols = new Set([4, 5,8, 12, 15]);
-                
-                    if (masterDollarCols.has(colNumber)) {
-                        cell = `$${Math.round(num).toLocaleString()}`;
-                    } else if (masterPercentCols.has(colNumber)) {
-                        if (Math.abs(num) <= 1 && num !== 0) {
-                            num = num * 100;
-                        }
-                        cell = `${num.toFixed(2)}%`;
-                    }
-                }
-                
-
-                td.textContent = cell;
-                if (
-                    ["Charleston", "Charlotte", "Columbia", "Greensboro", "Greenville", "Myrtle Beach", "Raleigh", "Wilmington"].includes(cell.trim())
-                ) {
-                    td.classList.add("bold-text");
-                }
-
-                tr.appendChild(td);
             }
-        });
+
+            td.textContent = cell;
+
+            if (
+                ["Charleston", "Charlotte", "Columbia", "Greensboro", "Greenville", "Myrtle Beach", "Raleigh", "Wilmington"].includes(cell.trim())
+            ) {
+                td.classList.add("bold-text");
+            }
+
+            tr.appendChild(td);
+        }
+    });
+
+    if (isTotalRow) {
+        totalRows.push(tr);
+    } else {
+        normalRows.push(tr);
+    }
+
+
+// Append normal rows first, then totals
+normalRows.forEach(r => tbody.appendChild(r));
+totalRows.forEach(r => tbody.appendChild(r));
+
 
         tbody.appendChild(tr);
     });
@@ -575,6 +623,24 @@ function populateFilterFromColumnOne(tableId, selectId) {
     });
 }
 
+
+document.getElementById("locationRadios").addEventListener("change", function (e) {
+    if (e.target.name === "branchFilter") {
+        const selectedBranch = e.target.value.toLowerCase();
+        const table = document.getElementById("csvTableMaster");
+        const rows = table.querySelectorAll("tbody tr");
+
+        rows.forEach(row => {
+            const firstCell = row.querySelector("td");
+            if (!firstCell) return;
+            const text = firstCell.textContent.trim().toLowerCase();
+            const showRow = !selectedBranch || text.includes(selectedBranch);
+            row.style.display = showRow ? "" : "none";
+        });
+
+        appendTotalsRow("csvTableMaster");
+    }
+});
 
 
 
