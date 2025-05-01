@@ -24,11 +24,6 @@ function filterColumns(data) {
     return filtered;
 }
 
-
-
-
-
-
 // === Section 1: Handle Master Account CSV Upload ===
 function displayTableM(data) {
     const output = document.getElementById("output");
