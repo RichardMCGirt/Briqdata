@@ -18,18 +18,25 @@ document.getElementById("fileInputSummary").addEventListener("change", function 
 });
 
 document.getElementById("loadFromGitHub").addEventListener("click", async () => {
-  const url = "https://raw.githubusercontent.com/RichardMCGirt/Briqdata/refs/heads/main/SalesSummarybyPOSUDF1byLocation-1746128794-1882400813.csv";
-  console.log("🌐 Fetching file from GitHub:", url);
-  try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-    const content = await response.text();
-    console.log("📄 GitHub file loaded");
-    processSummaryData(content);
-  } catch (error) {
-    console.error("❌ Failed to load file from GitHub:", error);
-  }
-});
+    const url = "https://raw.githubusercontent.com/RichardMCGirt/Briqdata/refs/heads/main/SalesSummarybyPOSUDF1byLocation-1746128794-1882400813.csv";
+    console.log("🌐 Fetching file from GitHub:", url);
+  
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const content = await response.text();
+      console.log("📄 GitHub file loaded");
+  
+      // ✅ Unhide the container
+      document.getElementById("hiddenContent").style.display = "block";
+  
+      processSummaryData(content);
+    } catch (error) {
+      console.error("❌ Failed to load file from GitHub:", error);
+    }
+  });
+  
+  
 
 function processSummaryData(content) {
   console.log("📊 Raw content preview:\n", content.slice(0, 300)); // First 300 chars

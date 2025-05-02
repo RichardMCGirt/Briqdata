@@ -106,20 +106,23 @@
       
       <br>
 
-      <h2>Upload Sales Summary CSV</h2>
-      <input type="file" id="fileInputSummary" accept=".csv" />
-      <button id="loadFromGitHub"> Load from GitHub</button>
+ <!-- Visible on page load -->
+<button id="loadFromGitHub">Load from GitHub</button>
 
-      <h3>Totals by Branch </h3>
-      <div id="cityTotals"></div>
-    
-      <h3>Totals Residential and Commercial</h3>
-      <div id="typeTotals"></div>
-    
-         <script src ="salessummary.js"></script>  
-    
+<!-- Hidden on page load -->
+<div id="hiddenContent" style="display: none;">
+  <h2>Sales Summary</h2>
+  <input type="file" id="fileInputSummary" accept=".csv" />
+
+  <h3>Totals by Branch </h3>
+  <div id="cityTotals"></div>
+
+  <h3>Totals Residential and Commercial</h3>
+  <div id="typeTotals"></div>
+</div>
+
       
-
+<script src="salessummary.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
    <script src ="nolabor.js"></script> 
