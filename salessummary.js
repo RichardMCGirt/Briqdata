@@ -36,8 +36,6 @@ document.getElementById("loadFromGitHub").addEventListener("click", async () => 
     }
   });
   
-  
-
 function processSummaryData(content) {
   console.log("📊 Raw content preview:\n", content.slice(0, 300)); // First 300 chars
 
@@ -93,7 +91,7 @@ function generateCityTable(data, labelKey) {
   
     keys.forEach((key, i) => {
       const rowIndex = i + 1;
-      if (rowIndex === 1 || rowIndex === 10) return; // Skip 2nd and 11th rows
+      if (rowIndex === 1 || rowIndex === 10) return; 
   
       const isLast = i === keys.length - 1;
       const rowClass = i % 2 === 0 ? "even-row" : "odd-row";
@@ -101,13 +99,14 @@ function generateCityTable(data, labelKey) {
   
       rows += `<tr class="${rowClass}"${borderStyle}>
         <td>${key}</td>
-        <td>${data[key].netSales.toLocaleString()}</td>
-        <td>${data[key].grossProfit.toLocaleString()}</td>
+        <td>$${data[key].netSales.toLocaleString()}</td>
+        <td>$${data[key].grossProfit.toLocaleString()}</td>
       </tr>`;
     });
   
     return `<table class="styled-table">${rows}</table>`;
   }
+  
   
   function generateTable(data, labelKey) {
     let rows = `<tr><th>${labelKey}</th><th>Net Sales</th><th>Gross Profit</th></tr>`;
@@ -115,15 +114,15 @@ function generateCityTable(data, labelKey) {
   
     keys.forEach((key, i) => {
       const rowClass = i % 2 === 0 ? "even-row" : "odd-row";
-      // No special border styling for typeTotals
       rows += `<tr class="${rowClass}">
         <td>${key}</td>
-        <td>${data[key].netSales.toLocaleString()}</td>
-        <td>${data[key].grossProfit.toLocaleString()}</td>
+        <td>$${data[key].netSales.toLocaleString()}</td>
+        <td>$${data[key].grossProfit.toLocaleString()}</td>
       </tr>`;
     });
   
     return `<table class="styled-table">${rows}</table>`;
   }
+  
   
   

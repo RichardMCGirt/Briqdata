@@ -91,7 +91,7 @@ function appendTotalsRow(tableId) {
         });
     });
 
-    // Remove any existing totals row
+    // Remove existing total row
     const existingTotal = table.querySelector(".totals-row");
     if (existingTotal) existingTotal.remove();
 
@@ -107,7 +107,18 @@ function appendTotalsRow(tableId) {
         } else if (i === 1) {
             td.textContent = ""; // 🧼 Leave column 2 (index 1) blank
         } else {
-            td.textContent = isNaN(val) ? "" : `$${Math.round(val).toLocaleString()}`;
+            // 🔍 Skip percentage columns for 'csvTableMaster'
+            if (tableId === "csvTableMaster") {
+                const percentCols = new Set([4, 5, 8, 12, 15]); // 1-based indexes
+                if (percentCols.has(i + 1)) {
+                    td.textContent = ""; // leave percentage columns blank
+                } else {
+                    td.textContent = isNaN(val) ? "" : `$${Math.round(val).toLocaleString()}`;
+                }
+            } else {
+                // for other tables, show total as usual
+                td.textContent = isNaN(val) ? "" : `$${Math.round(val).toLocaleString()}`;
+            }
         }
 
         totalRow.appendChild(td);
@@ -115,6 +126,7 @@ function appendTotalsRow(tableId) {
 
     tbody.appendChild(totalRow);
 }
+
 
 
 
