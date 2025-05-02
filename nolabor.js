@@ -842,9 +842,6 @@ function showTop10NetYTD() {
     document.body.appendChild(modal);
 }
 
-
-
-
 // Run both on load
 window.addEventListener('DOMContentLoaded', async () => {
 // For main sales report
