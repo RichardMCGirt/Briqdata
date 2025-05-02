@@ -78,7 +78,7 @@ function processSummaryData(content) {
   console.log("📈 City Totals:", cityTotals);
   console.log("🏢 Type Totals:", typeTotals);
 
-  const cityTable = generateCityTable(cityTotals, "City");
+  const cityTable = generateCityTable(cityTotals, "Branch");
   const typeTable = generateTable(typeTotals, "Project Type");
 
   document.getElementById("cityTotals").innerHTML = cityTable;
