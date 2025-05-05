@@ -107,7 +107,6 @@ function generateCityTable(data, labelKey) {
     return `<table class="styled-table">${rows}</table>`;
   }
   
-  
   function generateTable(data, labelKey) {
     let rows = `<tr><th>${labelKey}</th><th>Net Sales</th><th>Gross Profit</th></tr>`;
     const keys = Object.keys(data);
