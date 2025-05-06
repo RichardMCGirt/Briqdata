@@ -36,14 +36,14 @@ async function createChart() {
     const records = await fetchAirtableData9();
   
     const filtered = records.filter(
-      rec => rec.fields["Revisions - Estimating"] !== undefined && rec.fields["Estimator formula"]
+      rec => rec.fields["#of Elevations and/or Options"] !== undefined && rec.fields["Estimator formula"]
     );
   
     // Aggregate totals by Estimator formula
     const totalsByEstimator = {};
     for (const rec of filtered) {
       const name = rec.fields["Estimator formula"];
-      const value = rec.fields["Revisions - Estimating"];
+      const value = rec.fields["#of Elevations and/or Options"];
       if (!totalsByEstimator[name]) {
         totalsByEstimator[name] = 0;
       }
@@ -67,7 +67,7 @@ const sortedEntries = Object.entries(totalsByEstimator).sort((a, b) => {
       data: {
         labels,
         datasets: [{
-            label: 'Number of Revisions',
+            label: '#of Elevations and/or Options',
             data,
             backgroundColor: 'grey',
             borderColor: 'grey',
