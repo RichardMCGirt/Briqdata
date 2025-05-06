@@ -62,7 +62,7 @@ async function createChart() {
       data: {
         labels,
         datasets: [{
-          label: 'Revisions - Estimating',
+          label: 'Revisions',
           data,
           borderWidth: 1
         }]
@@ -86,7 +86,7 @@ async function createChart() {
           x: {
             title: {
               display: true,
-              text: 'Employee'
+              text: 'Estimator'
             }
           }
         }
