@@ -69,13 +69,24 @@ const sortedEntries = Object.entries(totalsByEstimator).sort((a, b) => {
         datasets: [{
             label: '#of Elevations and/or Options',
             data,
-            backgroundColor: 'grey',
+            backgroundColor: 'rgba(1, 16, 115, 0.8)',
             borderColor: 'grey',
             borderWidth: 1
           }]          
       },
       options: {
         responsive: true,
+        interaction: {
+          mode: 'nearest',
+          intersect: false
+        },
+        elements: {
+          bar: {
+            borderWidth: 1,
+            hoverBorderWidth: 3,
+            hoverBackgroundColor: 'rgba(1, 16, 115, 1)' // Full opacity (darker than 0.8)
+        }
+        },
         scales: {
           y: {
             beginAtZero: true,
@@ -96,8 +107,21 @@ const sortedEntries = Object.entries(totalsByEstimator).sort((a, b) => {
               text: ''
             }
           }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.label}: ${context.parsed.y ?? context.parsed}`;
+              }
+            }
+          }
         }
       }
+      
+      
+      
+      
     });
   }
   
