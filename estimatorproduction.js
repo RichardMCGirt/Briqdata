@@ -84,7 +84,7 @@ const sortedEntries = Object.entries(totalsByEstimator).sort((a, b) => {
           bar: {
             borderWidth: 1,
             hoverBorderWidth: 3,
-            hoverBackgroundColor: 'rgba(1, 16, 115, 1)' // Full opacity (darker than 0.8)
+            hoverBackgroundColor: 'rgba(1, 16, 115, 1)' 
         }
         },
         scales: {
