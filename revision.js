@@ -50,7 +50,6 @@ async function createChart() {
       totalsByEstimator[name] += value;
     }
   
-    // Convert to array and sort by value ascending
 // Convert to array and sort by value ascending, then alphabetically if same
 const sortedEntries = Object.entries(totalsByEstimator).sort((a, b) => {
     if (a[1] === b[1]) {
@@ -68,10 +67,12 @@ const sortedEntries = Object.entries(totalsByEstimator).sort((a, b) => {
       data: {
         labels,
         datasets: [{
-          label: 'Number of Revisions',
-          data,
-          borderWidth: 1
-        }]
+            label: 'Number of Revisions',
+            data,
+            backgroundColor: 'grey',
+            borderColor: 'grey',
+            borderWidth: 1
+          }]          
       },
       options: {
         responsive: true,
