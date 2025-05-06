@@ -4,7 +4,7 @@ const airtableBaseId = 'appK9gZS77OmsIK50';
 const airtableTableName = 'tblQo2148s04gVPq1';
 const airtableView = 'viwJrqe60OdxOUrpr';
 
-async function fetchAirtableData() {
+async function fetchAirtableData9() {
   console.log("📡 Fetching from Airtable with pagination using specific view...");
   const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
   const headers = {
@@ -33,7 +33,7 @@ async function fetchAirtableData() {
 }
 
 async function createChart() {
-    const records = await fetchAirtableData();
+    const records = await fetchAirtableData9();
   
     const filtered = records.filter(
       rec => rec.fields["Revisions - Estimating"] !== undefined && rec.fields["Estimator formula"]
@@ -51,8 +51,14 @@ async function createChart() {
     }
   
     // Convert to array and sort by value ascending
-    const sortedEntries = Object.entries(totalsByEstimator).sort((a, b) => a[1] - b[1]);
-  
+// Convert to array and sort by value ascending, then alphabetically if same
+const sortedEntries = Object.entries(totalsByEstimator).sort((a, b) => {
+    if (a[1] === b[1]) {
+      return a[0].localeCompare(b[0]); // Alphabetical tiebreaker
+    }
+    return a[1] - b[1]; // Numerical ascending
+  });
+    
     const labels = sortedEntries.map(entry => entry[0]);
     const data = sortedEntries.map(entry => entry[1]);
   
@@ -62,7 +68,7 @@ async function createChart() {
       data: {
         labels,
         datasets: [{
-          label: 'Revisions',
+          label: 'Number of Revisions',
           data,
           borderWidth: 1
         }]
@@ -74,7 +80,7 @@ async function createChart() {
             beginAtZero: true,
             title: {
               display: true,
-              text: 'Revisions - Estimating'
+              text: ''
             },
             ticks: {
               stepSize: 1,
@@ -86,7 +92,7 @@ async function createChart() {
           x: {
             title: {
               display: true,
-              text: 'Estimator'
+              text: ''
             }
           }
         }
@@ -94,8 +100,4 @@ async function createChart() {
     });
   }
   
-  
-  
-  
-
 createChart();
