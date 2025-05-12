@@ -118,10 +118,6 @@ const sortedEntries = Object.entries(totalsByEstimator).sort((a, b) => {
           }
         }
       }
-      
-      
-      
-      
     });
   }
   

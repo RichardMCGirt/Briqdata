@@ -74,16 +74,29 @@ function appendTotalsRow(tableId) {
     const tbody = table.querySelector("tbody");
     if (!tbody) return;
 
-    const rows = Array.from(tbody.querySelectorAll("tr")).filter(row => row.style.display !== "none");
+    const rows = Array.from(tbody.querySelectorAll("tr")).filter(row => 
+        row.style.display !== "none" && !row.classList.contains("totals-row")
+    );
 
     if (rows.length === 0) return;
 
     const columnCount = rows[0].children.length;
     const totals = Array(columnCount).fill(0);
 
+    // Dynamically detect percent columns
+    const headerCells = table.querySelectorAll("thead th");
+    const percentCols = new Set();
+    headerCells.forEach((th, idx) => {
+        const text = th.textContent.toLowerCase();
+        if (text.includes('%') || text.includes('gp') || text.includes('percent') || text.includes('rate')) {
+            percentCols.add(idx);
+        }
+    });
+
+    // Sum values in non-percent columns
     rows.forEach(row => {
         row.querySelectorAll("td").forEach((cell, i) => {
-            if (i === 1) return; // 🛑 Skip column index 1 (second column)
+            if (i === 1 || percentCols.has(i)) return; // skip second col & percent cols
             const val = parseFloat(cell.textContent.replace(/[^0-9.-]+/g, ''));
             if (!isNaN(val)) {
                 totals[i] += val;
@@ -91,41 +104,31 @@ function appendTotalsRow(tableId) {
         });
     });
 
-    // Remove existing total row
-    const existingTotal = table.querySelector(".totals-row");
-    if (existingTotal) existingTotal.remove();
+    // Remove any existing total row
+    table.querySelectorAll(".totals-row").forEach(row => row.remove());
 
+    // Create new total row
     const totalRow = document.createElement("tr");
     totalRow.className = "totals-row";
 
     totals.forEach((val, i) => {
         const td = document.createElement("td");
-
         if (i === 0) {
             td.textContent = "Total:";
             td.style.fontWeight = "bold";
         } else if (i === 1) {
-            td.textContent = ""; // 🧼 Leave column 2 (index 1) blank
+            td.textContent = ""; // Leave second column blank
+        } else if (percentCols.has(i)) {
+            td.textContent = ""; // Do not total percent columns
         } else {
-            // 🔍 Skip percentage columns for 'csvTableMaster'
-            if (tableId === "csvTableMaster") {
-                const percentCols = new Set([4, 5, 8, 12, 15]); // 1-based indexes
-                if (percentCols.has(i + 1)) {
-                    td.textContent = ""; // leave percentage columns blank
-                } else {
-                    td.textContent = isNaN(val) ? "" : `$${Math.round(val).toLocaleString()}`;
-                }
-            } else {
-                // for other tables, show total as usual
-                td.textContent = isNaN(val) ? "" : `$${Math.round(val).toLocaleString()}`;
-            }
+            td.textContent = isNaN(val) ? "" : `$${Math.round(val).toLocaleString()}`;
         }
-
         totalRow.appendChild(td);
     });
 
     tbody.appendChild(totalRow);
 }
+
 
 
 
@@ -224,7 +227,6 @@ function displayTableToId(data, tableId) {
             td.textContent = cell;
             tr.appendChild(td);
         });
-tbody.appendChild(tr);
     });
 }
 
@@ -392,6 +394,8 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
     if (!table || !dateContainer) return;
 
     table.innerHTML = '';
+    const existingTotals = table.querySelectorAll(".totals-row");
+existingTotals.forEach(row => row.remove());
     dateContainer.innerHTML = ''; // clear
     dateContainer.style.display = "none";
 
@@ -503,7 +507,6 @@ function displayTable(data, tableId = 'csvTable', dateContainerId = 'dateContain
 
     // --- Render data rows ---
     let normalRows = [];
-let totalRows = [];
 
 bodyRows.forEach((row, rowIndex) => {
     if (row.every(cell => cell === "" || cell == null)) return;
@@ -571,29 +574,42 @@ bodyRows.forEach((row, rowIndex) => {
         }
     });
 
-    if (isTotalRow) {
-        totalRows.push(tr);
-    } else {
+    if (isTotalRow && tableId === "csvTable") {
+        tr.classList.add("totals-row");
+        tr.style.fontWeight = "bold";
+        tr.style.borderTop = "2px solid #000";
+        normalRows.push(tr); // ✅ Still include it in render
+        return;
+    }
+    
+    if (!isTotalRow) {
         normalRows.push(tr);
     }
+    
+    
 
 
 // Append normal rows first, then totals
-normalRows.forEach(r => tbody.appendChild(r));
-totalRows.forEach(r => tbody.appendChild(r));
 
 
-        tbody.appendChild(tr);
+
     });
 
+    normalRows.forEach(r => tbody.appendChild(r));
     table.appendChild(tbody);
 
     // ✅ Only call this once, after table is fully built
     if (tableId === "csvTableMaster") {
         populateFilterFromColumnOne("csvTableMaster", "multiFilter");
     }
+
+    // ✅ Append totals for both tables
+    if (tableId === "csvTableMaster") {
+        appendTotalsRow("csvTableMaster");
+    }
     
 }
+
 
 function applyRowStripes(tableId) {
     const table = document.getElementById(tableId);
@@ -700,8 +716,9 @@ document.getElementById("locationRadios").addEventListener("change", function (e
         allRows.forEach(row => row.style.display = "none");
 
         // Remove existing totals row (we’ll re-add it after sorting)
-        const existingTotal = table.querySelector(".totals-row");
-        if (existingTotal) existingTotal.remove();
+        const existingTotals = table.querySelectorAll(".totals-row");
+        existingTotals.forEach(row => row.remove());
+        
 
         // Re-append sorted, matching rows
         matchingRows.forEach(row => {
