@@ -2,7 +2,7 @@ console.log("🧪 revision.js loaded");
 const airtableApiKey = 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238';
 const airtableBaseId = 'appK9gZS77OmsIK50';
 const airtableTableName = 'tblQo2148s04gVPq1';
-const airtableView = 'viwJrqe60OdxOUrpr';
+const airtableView = 'viw6WmfanCTsMU9xA';
 
 async function fetchAirtableData9() {
   console.log("📡 Fetching from Airtable with pagination using specific view...");
