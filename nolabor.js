@@ -67,6 +67,7 @@ function displayTableM(data) {
 
     output.appendChild(table);
 }
+
 function appendTotalsRow(tableId) {
     const table = document.getElementById(tableId);
     if (!table) return;
@@ -74,7 +75,7 @@ function appendTotalsRow(tableId) {
     const tbody = table.querySelector("tbody");
     if (!tbody) return;
 
-    const rows = Array.from(tbody.querySelectorAll("tr")).filter(row => 
+    const rows = Array.from(tbody.querySelectorAll("tr")).filter(row =>
         row.style.display !== "none" && !row.classList.contains("totals-row")
     );
 
@@ -83,7 +84,7 @@ function appendTotalsRow(tableId) {
     const columnCount = rows[0].children.length;
     const totals = Array(columnCount).fill(0);
 
-    // Dynamically detect percent columns
+    // Detect percent columns from header
     const headerCells = table.querySelectorAll("thead th");
     const percentCols = new Set();
     headerCells.forEach((th, idx) => {
@@ -92,44 +93,56 @@ function appendTotalsRow(tableId) {
             percentCols.add(idx);
         }
     });
-
-    // Sum values in non-percent columns
+    if (tableId === 'csvTable') {
+        // Manually define known percentage column indexes for csvTable
+        percentCols.add(2); 
+        percentCols.add(4); 
+        percentCols.add(7); 
+        percentCols.add(9); 
+    }
+    
+    // Sum only non-percent numeric cells
     rows.forEach(row => {
         row.querySelectorAll("td").forEach((cell, i) => {
-            if (i === 1 || percentCols.has(i)) return; // skip second col & percent cols
-            const val = parseFloat(cell.textContent.replace(/[^0-9.-]+/g, ''));
+            // Skip column 1 for csvTableMaster and skip percent columns
+            if ((tableId === 'csvTableMaster' && i === 1) || percentCols.has(i)) return;
+
+            const raw = cell.textContent.replace(/[^0-9.-]+/g, '');
+            const val = parseFloat(raw);
             if (!isNaN(val)) {
                 totals[i] += val;
             }
         });
     });
 
-    // Remove any existing total row
+    // Remove any old total rows
     table.querySelectorAll(".totals-row").forEach(row => row.remove());
 
-    // Create new total row
+    // Create totals row
     const totalRow = document.createElement("tr");
     totalRow.className = "totals-row";
 
-    totals.forEach((val, i) => {
+    for (let i = 0; i < columnCount; i++) {
         const td = document.createElement("td");
+
         if (i === 0) {
             td.textContent = "Total:";
             td.style.fontWeight = "bold";
-        } else if (i === 1) {
-            td.textContent = ""; // Leave second column blank
-        } else if (percentCols.has(i)) {
-            td.textContent = ""; // Do not total percent columns
+        } else if (
+            percentCols.has(i) ||
+            (tableId === 'csvTableMaster' && i === 1)
+        ) {
+            td.textContent = ""; // leave blank
         } else {
-            td.textContent = isNaN(val) ? "" : `$${Math.round(val).toLocaleString()}`;
+            const totalVal = totals[i];
+            td.textContent = isNaN(totalVal) ? "" : `$${Math.round(totalVal).toLocaleString()}`;
         }
+
         totalRow.appendChild(td);
-    });
+    }
 
     tbody.appendChild(totalRow);
 }
-
-
 
 
 
@@ -206,6 +219,19 @@ function cleanUpChoices() {
     document.querySelectorAll('.choices__list').forEach(el => el.remove());
   }
   
+  function removeExistingInaccurateTotalRow(tbody) {
+    const totalRow = Array.from(tbody.querySelectorAll("tr")).find(row =>
+        Array.from(row.cells).some(cell =>
+            typeof cell.textContent === "string" && cell.textContent.toLowerCase().includes("total")
+        )
+    );
+
+    if (totalRow) {
+        console.log("🧹 Removing existing total row:", totalRow);
+        totalRow.remove();
+    }
+}
+
 
 function displayTableToId(data, tableId) {
     const table = document.getElementById(tableId);
@@ -586,14 +612,7 @@ bodyRows.forEach((row, rowIndex) => {
         normalRows.push(tr);
     }
     
-    
-
-
-// Append normal rows first, then totals
-
-
-
-    });
+        });
 
     normalRows.forEach(r => tbody.appendChild(r));
     table.appendChild(tbody);
@@ -602,14 +621,18 @@ bodyRows.forEach((row, rowIndex) => {
     if (tableId === "csvTableMaster") {
         populateFilterFromColumnOne("csvTableMaster", "multiFilter");
     }
-
-    // ✅ Append totals for both tables
-    if (tableId === "csvTableMaster") {
-        appendTotalsRow("csvTableMaster");
+    
+    // ✅ Always remove inaccurate existing total row and recalculate
+    if (["csvTableMaster", "csvTable"].includes(tableId)) {
+        const tbody = table.querySelector("tbody");
+        if (tbody) {
+            removeExistingInaccurateTotalRow(tbody);
+            appendTotalsRow(tableId);
+        }
     }
     
+    
 }
-
 
 function applyRowStripes(tableId) {
     const table = document.getElementById(tableId);
@@ -623,7 +646,6 @@ function applyRowStripes(tableId) {
         row.classList.add(index % 2 === 0 ? "even-row" : "odd-row");
     });
 }
-
 
 function populateFilterFromColumnOne(tableId, selectId) {
     console.log(`🔍 populateFilterFromColumnOne for table: #${tableId}, select: #${selectId}`);
@@ -689,7 +711,6 @@ function populateFilterFromColumnOne(tableId, selectId) {
     });
 }
 
-
 document.getElementById("locationRadios").addEventListener("change", function (e) {
     if (e.target.name === "branchFilter") {
         const selectedBranch = e.target.value.toLowerCase();
@@ -741,7 +762,6 @@ function hideFirstRowOfCsvTable() {
     if (firstTheadRow) firstTheadRow.style.display = "none";
 
 }
-
 
 function filterTableByMultipleValues(tableId, columnIndex, selectedValues) {
     const table = document.getElementById(tableId);
