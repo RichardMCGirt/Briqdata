@@ -24,7 +24,7 @@ function togglePrompt(event) {
 
 function validatePassword() {
     const password = document.getElementById("password-input").value;
-    const correctPassword = "Vanir2025!!";
+    const correctPassword = "Vanir";
     document.getElementById("submit-btn").disabled = password !== correctPassword;
 }
 
