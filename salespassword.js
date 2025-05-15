@@ -6,7 +6,7 @@ function togglePrompt(event) {
         return;
     }
 
-    const correctPassword = "Vanir2025!!";
+    const correctPassword = "Vanir";
     const savedPasswords = JSON.parse(localStorage.getItem("savedPasswords")) || [];
 
     // Try auto-login if correct password is stored
