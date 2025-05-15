@@ -30,7 +30,7 @@ function validatePassword() {
 
 function checkPassword() {
     const password = document.getElementById("password-input").value;
-    const correctPassword = "Vanir2025!!";
+    const correctPassword = "Vanir";
 
     if (password === correctPassword) {
         sessionStorage.setItem("salesAccess", "true");
@@ -42,7 +42,7 @@ function checkPassword() {
 }
 
 function savePassword(password) {
-    const correctPassword = "Vanir2025!!";
+    const correctPassword = "Vanir";
     if (password !== correctPassword) return; // Only save if it matches the correct password
 
     let savedPasswords = JSON.parse(localStorage.getItem("savedPasswords")) || [];
@@ -53,7 +53,7 @@ function savePassword(password) {
 }
 
 function loadPreviousPasswords() {
-    const correctPassword = "Vanir2025!!";
+    const correctPassword = "Vanir";
     const savedPasswords = JSON.parse(localStorage.getItem("savedPasswords")) || [];
     const container = document.getElementById("previous-passwords");
     container.innerHTML = "";
