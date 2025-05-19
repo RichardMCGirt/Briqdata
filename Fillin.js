@@ -8,18 +8,22 @@ document.addEventListener('DOMContentLoaded', async function () {
     const totalCostDisplay = document.getElementById('total-cost-display');
     let chartInstance = null;
 
-   
     async function fetchData(offset = null) {
-        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100`;
+        const now = new Date();
+        const lastYear = new Date(now.setFullYear(now.getFullYear() - 1));
+        const isoDate = lastYear.toISOString(); // e.g., "2024-05-19T14:00:00.000Z"
+    
+        const filterFormula = `filterByFormula=IS_AFTER({Created}, "${isoDate}")`;
+        let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100&${filterFormula}`;
         if (offset) url += `&offset=${offset}`;
-
+    
         try {
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${airtableApiKey}` }
             });
-
+    
             if (!response.ok) throw new Error(`Error: ${response.statusText}`);
-
+    
             const data = await response.json();
             return data;
         } catch (error) {
@@ -27,6 +31,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             return { records: [] };
         }
     }
+    
 
     async function fetchAllData() {
         let allRecords = [];
