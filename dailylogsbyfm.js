@@ -1,3 +1,6 @@
+let residentialWinRates88 = {};
+
+
 document.addEventListener('DOMContentLoaded', function () {
     initializet();
 
@@ -8,12 +11,11 @@ async function initializet() {
 
     const airtableApiKey = 'pat1Eu3iQYHDmLSWr.ecfb8470f9c2b8409a0017e65f5b8cf626208e4df1a06905a41019cb38a8534b';
     const airtableBaseId = 'appiNUEHQOPRWZjcn';
-    const airtableTableName = 'tblImmcgqK0bF57o8'; // First table
+    const airtableTableName = 'tblVrmq2waEpElxt4'; // First table
     const airtableTableName2 = 'tblMm1V1Y5vL2lGS5'; // Second table
 
     const filterFormula = `AND(LEN({PM}) > 0, IS_AFTER({Date Record Created}, DATEADD(TODAY(), -7, 'days')))`;
 
-   
     
     // Fetch records from both tables
     const residentialRecords = await fetchAirtableDatas4(airtableApiKey, airtableBaseId, airtableTableName, filterFormula);
@@ -28,11 +30,11 @@ async function initializet() {
 
    
     // Aggregate and sort data
-    let residentialWinRates = calculateTotalRecordsByPM(residentialRecords, secondaryRecords);
+    residentialWinRates88 = calculateTotalRecordsByPM(residentialRecords, secondaryRecords); // ✅ NO `let`
    
 
     // Populate dropdown with sorted PM names
-    const sortedUsers = Object.keys(residentialWinRates);
+    const sortedUsers = Object.keys(residentialWinRates88);
    
     populateDropdown4(sortedUsers, 'user-filter3');
 
@@ -186,18 +188,27 @@ function populateDropdown4(users, dropdownId) {
     });
 
     dropdown.addEventListener('change', event => {
-        const selectedUser = capitalizeName(event.target.value.trim());
+        const rawValue = event.target.value.trim();
+        const selectedUser = rawValue.toLowerCase() === "all" ? "All" : capitalizeName(rawValue);
+        
+        // ✅ Add this check here
+        if (!residentialWinRates || Object.keys(residentialWinRates).length === 0) {
+            console.warn("No residential win rates data available.");
+            return;
+        }
 
         const filteredData =
-            selectedUser === 'All'
-                ? residentialWinRates
-                : residentialWinRates[selectedUser]
-                ? { [selectedUser]: residentialWinRates[selectedUser] }
-                : {};
+        selectedUser === 'All'
+            ? residentialWinRates88
+            : residentialWinRates88[selectedUser]
+            ? { [selectedUser]: residentialWinRates88[selectedUser] }
+            : {};
+    
 
         displayWinRatesAsBarChart4(filteredData, 'FDL');
     });
 }
+
 
 
 function displayWinRatesAsBarChart4(data, canvasId) {
