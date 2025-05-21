@@ -7,8 +7,8 @@ async function initializet() {
     displayLoadingMessages2("Loading data, please wait...");
 
     const airtableApiKey = 'pat1Eu3iQYHDmLSWr.ecfb8470f9c2b8409a0017e65f5b8cf626208e4df1a06905a41019cb38a8534b';
-    const airtableBaseId = 'appULLKTBuhk539mu';
-    const airtableTableName = 'tblVrmq2waEpElxt4'; // First table
+    const airtableBaseId = 'appiNUEHQOPRWZjcn';
+    const airtableTableName = 'tblImmcgqK0bF57o8'; // First table
     const airtableTableName2 = 'tblMm1V1Y5vL2lGS5'; // Second table
 
     const filterFormula = `AND(LEN({PM}) > 0, IS_AFTER({Date Record Created}, DATEADD(TODAY(), -7, 'days')))`;
