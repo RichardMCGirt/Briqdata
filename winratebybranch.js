@@ -23,8 +23,7 @@ async function initializep() {
     YEAR({Last Time Outcome Modified}) = ${currentYear},
     OR(
         {Outcome} = 'Win',
-        {Outcome} = 'Loss',
-        {Outcome} = ''
+        {Outcome} = 'Loss'
     ),
     {Project Type} = 'Commercial'
 )`;
@@ -34,8 +33,7 @@ async function initializep() {
     YEAR({Last Time Outcome Modified}) = ${currentYear},
     OR(
         {Outcome} = 'Win',
-        {Outcome} = 'Loss',
-        {Outcome} = ''
+        {Outcome} = 'Loss'
     ),
     {Project Type} != 'Commercial'
 )`;
@@ -45,7 +43,8 @@ async function initializep() {
             fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, commercialFilter),
             fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, residentialFilter)
         ]);
-
+    console.log("Commercial records fetched:", commercialRecords.length);
+        console.log("Residential records fetched:", residentialRecords.length);
         const commercialWinRates = calculateWinRate(commercialRecords);
         const residentialWinRates = calculateWinRate(residentialRecords);
 
@@ -90,6 +89,8 @@ async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
 
     return allRecords;
 }
+
+
 
 function displayLoadingMessage(message) {
     const fetchProgress = document.getElementById('fetch-progress');

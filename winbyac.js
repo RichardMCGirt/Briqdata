@@ -116,8 +116,7 @@ const filterFormula = `
     IS_AFTER({Last Time Outcome Modified}, DATEADD(TODAY(), -30, 'days')),
     OR(
       {Outcome} = 'Win',
-      {Outcome} = 'Loss',
-      {Outcome} = 'None'
+      {Outcome} = 'Loss'
     )
   )
 `;
