@@ -19,17 +19,27 @@ async function initializep() {
         const airtableTableName = 'tblQo2148s04gVPq1';
         const currentYear = new Date().getFullYear();
 
-        const commercialFilter = `AND(
-            YEAR({Last Time Outcome Modified}) = ${currentYear},
-            OR({Outcome} = 'Win', {Outcome} = 'Loss'),
-            {Project Type} = 'Commercial'
-        )`;
+      const commercialFilter = `AND(
+    YEAR({Last Time Outcome Modified}) = ${currentYear},
+    OR(
+        {Outcome} = 'Win',
+        {Outcome} = 'Loss',
+        {Outcome} = ''
+    ),
+    {Project Type} = 'Commercial'
+)`;
 
-        const residentialFilter = `AND(
-            YEAR({Last Time Outcome Modified}) = ${currentYear},
-            OR({Outcome} = 'Win', {Outcome} = 'Loss'),
-            {Project Type} != 'Commercial'
-        )`;
+
+      const residentialFilter = `AND(
+    YEAR({Last Time Outcome Modified}) = ${currentYear},
+    OR(
+        {Outcome} = 'Win',
+        {Outcome} = 'Loss',
+        {Outcome} = ''
+    ),
+    {Project Type} != 'Commercial'
+)`;
+
 
         const [commercialRecords, residentialRecords] = await Promise.all([
             fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, commercialFilter),
@@ -95,44 +105,51 @@ function hideLoadingMessage() {
 function calculateWinRate(records) {
     const data = {};
 
-    // Tally wins and losses from the records
     records.forEach(record => {
         const division = record.fields['Branch'];
         const outcome = record.fields['Outcome'];
 
+        if (!division) return;
+
         if (!data[division]) {
-            data[division] = { winCount: 0, lossCount: 0, totalCount: 0 };
+            data[division] = { winCount: 0, lossCount: 0, noneCount: 0 };
         }
 
         if (outcome === 'Win') {
             data[division].winCount += 1;
         } else if (outcome === 'Loss') {
             data[division].lossCount += 1;
+        } else {
+            data[division].noneCount += 1;
         }
-
-        data[division].totalCount += 1;
     });
 
-    // Ensure all expected branches are present
+    // Ensure all expected branches exist
     expectedBranches.forEach(branch => {
         if (!data[branch]) {
-            data[branch] = { winCount: 0, lossCount: 0, totalCount: 0 };
+            data[branch] = { winCount: 0, lossCount: 0, noneCount: 0 };
         }
     });
 
-    // Calculate win rate
+    // Now calculate total and win rate explicitly
     const winRates = {};
     for (const division in data) {
-        const { winCount, totalCount } = data[division];
+        const { winCount, lossCount, noneCount } = data[division];
+        const total = winCount + lossCount + noneCount;
+
         winRates[division] = {
-            ...data[division],
-            fraction: `${winCount}/${totalCount}`,
-            winRatePercentage: totalCount > 0 ? (winCount / totalCount) * 100 : 0
+            winCount,
+            lossCount,
+            noneCount,
+            totalCount: total,
+            fraction: `${winCount}/${total}`,
+            winRatePercentage: total > 0 ? (winCount / total) * 100 : 0
         };
     }
 
     return winRates;
 }
+
 
 
 
@@ -162,9 +179,10 @@ function displayWinRatesInGrid(data, gridId, title) {
     let visibleCount = 0;
 
     sortedData.forEach(([branch, winRateData]) => {
-        if (winRateData.winRatePercentage === 0) {
-            return; // Skip rendering this branch if percentage is 0
-        }
+      if (winRateData.totalCount === 0) {
+    return; // ✅ Only skip if there's truly no data
+}
+
 
         visibleCount++;
 
