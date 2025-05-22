@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     x: {
                         title: {
                             display: true,
-                            text: 'Month/Year'
+                            text: ''
                         }
                     },
                     y: {

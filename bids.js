@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     x: {
                         title: {
                             display: true,
-                            text: 'Branch'
+                            text: ''
                         }
                     }
                 }
