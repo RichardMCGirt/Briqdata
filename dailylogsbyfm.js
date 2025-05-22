@@ -40,7 +40,7 @@ async function initializet() {
 
     // Display chart with aggregated data
     
-    displayWinRatesAsBarChart4(residentialWinRates, 'FDL');
+displayWinRatesAsBarChart4(residentialWinRates88, 'FDL');
 
    
     hideLoadingMessages2();
