@@ -353,8 +353,16 @@ dropZoneMain.addEventListener("drop", (e) => {
 });
 fileInputMain.addEventListener("change", (e) => {
     const file = e.target.files[0];
-    if (file) handleMainCSVFile(file);
+    if (file) handleSalesCSVFile(file); // NEW FUNCTION
 });
+
+dropZoneMain.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropZoneMain.classList.remove("dragover");
+    const file = e.dataTransfer.files[0];
+    if (file) handleSalesCSVFile(file); // NEW FUNCTION
+});
+
 
 function handleMainCSVFile(file) {
     const reader = new FileReader();
@@ -400,21 +408,130 @@ fileInput.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (file) handleMasterCSVFile(file);
 });
-
-function handleMasterCSVFile(file) {
-    Papa.parse(file, {
-        complete: function(results) {
-            console.log("📦 Raw parsed data:", results.data); // <- Add this
-            const filtered = filterColumns(results.data);
-            console.log("🧹 Filtered data:", filtered); // <- Add this
-            displayTable(filtered, 'csvTableMaster', 'dateContainerMaster');
-        },
-    
-        error: function(error) {
-            console.error("CSV parsing error:", error);
+async function handleSalesCSVFile(file) {
+    try {
+        const creds = await fetchDropboxToken();
+        if (!creds || !creds.token) {
+            throw new Error("Dropbox token missing or invalid");
         }
-    });
+
+        const dropboxUrl = await uploadFileToDropbox(file, creds.token, creds);
+        console.log("📤 Uploaded Sales CSV to Dropbox:", dropboxUrl);
+
+        if (!dropboxUrl) throw new Error("Dropbox upload failed");
+
+        const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
+        const baseId = 'appD3QeLneqfNdX12';
+        const tableId = 'tblvqHdBUZ6EQpcNM';
+        const targetCsvName = 'sales_report.csv';
+
+        const res = await fetch(`https://api.airtable.com/v0/${baseId}/${tableId}`, {
+            headers: { Authorization: `Bearer ${airtableApiKey}` }
+        });
+
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(`Airtable fetch failed [${res.status}]: ${errText}`);
+        }
+
+        const data = await res.json();
+        const matchingRecord = data.records.find(r =>
+            r.fields['CSV file']?.trim() === targetCsvName
+        );
+
+        const recordId = matchingRecord?.id;
+        if (recordId) {
+            await uploadNewCSVToAirtable(recordId, dropboxUrl, file.name);
+        } else {
+            console.warn("⚠️ No matching sales record found in Airtable");
+        }
+
+        // Parse and display
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const csvData = e.target.result;
+            localStorage.setItem('csvData', csvData);
+            Papa.parse(csvData, {
+                complete: function(results) {
+                    displayTable(results.data, 'csvTable', 'dateContainerMain');
+                    hideFirstRowOfCsvTable();
+                },
+                error: function(error) {
+                    console.error("Error parsing uploaded Sales CSV:", error);
+                }
+            });
+        };
+        reader.readAsText(file);
+
+    } catch (err) {
+        console.error("❌ Error uploading Sales CSV:", err);
+    }
 }
+
+async function handleMasterCSVFile(file) {
+    try {
+        const creds = await fetchDropboxToken();
+        if (!creds || !creds.token) {
+            throw new Error("Dropbox token missing or invalid");
+        }
+
+        const dropboxUrl = await uploadFileToDropbox(file, creds.token, creds);
+        console.log("📤 Uploaded to Dropbox:", dropboxUrl);
+
+        if (!dropboxUrl) {
+            throw new Error("Dropbox upload failed");
+        }
+
+        // 🔁 Find Airtable record to update
+        const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
+    const baseId = 'appD3QeLneqfNdX12';
+    const tableId = 'tblvqHdBUZ6EQpcNM';
+        const targetCsvName = 'SalesComparisonbyMasterAccount.csv';
+
+        const res = await fetch(`https://api.airtable.com/v0/${baseId}/${tableId}`, {
+    headers: { Authorization: `Bearer ${airtableApiKey}` }
+});
+
+if (!res.ok) {
+    const errText = await res.text();
+    console.error(`❌ Airtable fetch failed [${res.status}]:`, errText);
+    throw new Error(`Airtable fetch failed: ${res.status}`);
+}
+
+const data = await res.json();
+if (!data.records) {
+    console.warn("⚠️ No records returned from Airtable");
+    return;
+}
+
+const matchingRecord = data.records.find(r =>
+    r.fields['CSV file']?.trim() === targetCsvName
+);
+
+        const recordId = matchingRecord?.id;
+
+        if (recordId) {
+            await uploadNewCSVToAirtable(recordId, dropboxUrl, file.name);
+        } else {
+            console.warn("⚠️ No matching record found in Airtable");
+        }
+
+        // 👇 Parse and display table
+        Papa.parse(file, {
+            complete: function(results) {
+                const filtered = filterColumns(results.data);
+                displayTable(filtered, 'csvTableMaster', 'dateContainerMaster');
+            },
+            error: function(error) {
+                console.error("CSV parsing error:", error);
+            }
+        });
+
+    } catch (err) {
+        console.error("❌ Error uploading CSV to Dropbox or Airtable:", err);
+    }
+}
+
 const choicesInstances = [];
 
 function hideFirstColumn(tableId) {
@@ -915,3 +1032,37 @@ window.addEventListener('DOMContentLoaded', async () => {
     await loadDefaultCSV(); // loads sales_report.csv from Airtable
     await fetchAndFilterAirtableCSV(); // loads SalesComparisonbyMasterAccount.csv from Airtable
 });
+async function uploadNewCSVToAirtable(recordId, csvUrl, fileName = "updated.csv") {
+    const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
+    const baseId = 'appD3QeLneqfNdX12';
+    const tableId = 'tblvqHdBUZ6EQpcNM';
+    const url = `https://api.airtable.com/v0/${baseId}/${tableId}/${recordId}`;
+
+    const payload = {
+        fields: {
+            "Attachments": [
+                {
+                    url: csvUrl,
+                    filename: fileName
+                }
+            ]
+        }
+    };
+
+    try {
+        const res = await fetch(url, {
+            method: "PATCH",
+            headers: {
+                Authorization: `Bearer ${airtableApiKey}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const json = await res.json();
+        console.log("✅ CSV updated in Airtable:", json);
+    } catch (error) {
+        console.error("❌ Failed to update Airtable attachment:", error);
+    }
+}
+
