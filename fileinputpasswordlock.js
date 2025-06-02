@@ -1,3 +1,5 @@
+console.log("hello world");
+
 document.addEventListener("DOMContentLoaded", function () {
   const correctPassword = "vanir2025!!";
   const unlockKey = "vanirUnlocked";
@@ -18,24 +20,27 @@ document.addEventListener("DOMContentLoaded", function () {
     if (passwordInput) passwordInput.remove();
   }
 
-  function createPasswordInput(zone) {
-    if (zone.querySelector(".password-unlock-input")) return;
+function createPasswordInput(zone) {
+  if (zone.querySelector(".password-unlock-input")) return;
 
-const input = document.createElement("input");
-input.type = "password";
-input.placeholder = "Enter password to unlock";
-input.className = "password-unlock-input";
-input.style.position = "fixed";
-input.style.top = "50%";
-input.style.left = "50%";
-input.style.transform = "translate(-50%, -50%)";
-input.style.zIndex = "1000";
-input.style.padding = "8px 12px";
-input.style.fontSize = "16px";
-input.style.border = "1px solid #ccc";
-input.style.borderRadius = "6px";
-input.style.boxShadow = "0 0 10px rgba(0, 0, 0, 0.2)";
-input.style.backgroundColor = "#fff";
+  const input = document.createElement("input");
+  input.type = "password";
+  input.placeholder = "Enter password to unlock";
+  input.className = "password-unlock-input";
+
+  input.style.position = "fixed";
+  input.style.top = "50%";
+  input.style.left = "50%";
+  input.style.transform = "translate(-50%, -50%)";
+  input.style.zIndex = "1000";
+  input.style.padding = "8px 12px";
+  input.style.fontSize = "16px";
+  input.style.border = "1px solid #ccc";
+  input.style.borderRadius = "6px";
+  input.style.boxShadow = "0 0 10px rgba(0, 0, 0, 0.2)";
+  input.style.backgroundColor = "#000"; // solid black background
+  input.style.color = "#fff";            // white text for contrast
+  input.style.opacity = "1";             // fully solid (no transparency)
 
 
     input.addEventListener("keydown", function (e) {
