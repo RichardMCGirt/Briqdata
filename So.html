@@ -39,12 +39,13 @@
         </ul>
       </nav>
     
-      <div id="dropZone">
-        <p>Drag and drop your CSV file here or</p>
-        <label for="fileInput" style="color: #0044cc; cursor: pointer; text-decoration: underline;">click</label>
-        to upload.
-      
-    </div>
+ <div id="dropZone">
+  <p>Drag and drop your CSV file here or</p>
+  <label for="csvFileInput" style="color: #0044cc; cursor: pointer; text-decoration: underline;">click</label>
+  to upload.
+  <input type="file" id="csvFileInput" style="display: none;" accept=".csv" />
+</div>
+
     <table id="csvTable">
         <thead>
             <tr>

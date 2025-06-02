@@ -160,44 +160,51 @@ function handleFile() {
     });
 }
 
-async function fetchAndFilterGitHubCSV() {
-    try {
-        const githubCSV = 'https://raw.githubusercontent.com/RichardMCGirt/Briqdata/refs/heads/main/SalesComparisonbyMasterAccount-1746031907-414419086%20(1).csv';
-        const res = await fetch(githubCSV);
-        const text = await res.text();
-        const previous = localStorage.getItem('masterCsv');
+async function fetchAndFilterAirtableCSV() {
+       const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
+    const baseId = 'appD3QeLneqfNdX12';
+    const tableId = 'tblvqHdBUZ6EQpcNM';
+    const targetCsvName = 'SalesComparisonbyMasterAccount.csv';
 
-        if (text === previous) {
+    try {
+        const res = await fetch(`https://api.airtable.com/v0/${baseId}/${tableId}`, {
+            headers: {
+                Authorization: `Bearer ${airtableApiKey}`
+            }
+        });
+
+        const data = await res.json();
+        const record = data.records.find(r =>
+            r.fields['CSV file']?.trim() === targetCsvName
+        );
+
+        if (!record || !record.fields['Attachments']?.[0]?.url) {
+            throw new Error("CSV not found in Airtable");
+        }
+
+        const fileUrl = record.fields['Attachments'][0].url;
+        const csvResponse = await fetch(fileUrl);
+        const csvText = await csvResponse.text();
+
+        const previous = localStorage.getItem('masterCsv');
+        if (csvText === previous) {
             console.log("🔁 Same master CSV — skipping re-render.");
             const parsed = Papa.parse(previous.trim(), { skipEmptyLines: true });
-            console.log("📦 Raw parsed data from localStorage:", parsed.data);
-
             const filtered = filterColumns(parsed.data);
-            console.log("🧹 Filtered data:", filtered);
-
-           
-            console.log("✅ Calling displayTable with filtered data");
-
             displayTable(filtered, 'csvTableMaster', 'dateContainerMaster');
             return;
         }
 
-        localStorage.setItem('masterCsv', text);
-
-        const results = Papa.parse(text.trim(), { skipEmptyLines: true });
-        console.log("📦 Raw parsed data from GitHub:", results.data);
-
+        localStorage.setItem('masterCsv', csvText);
+        const results = Papa.parse(csvText.trim(), { skipEmptyLines: true });
         const filtered = filterColumns(results.data);
-        console.log("🧹 Filtered data:", filtered);
-
-       
-        console.log("✅ Calling displayTable with filtered data");
-
         displayTable(filtered, 'csvTableMaster', 'dateContainerMaster');
+
     } catch (err) {
-        console.error("❌ GitHub CSV fetch failed:", err);
+        console.error("❌ Airtable CSV fetch failed (SalesComparisonbyMasterAccount):", err);
     }
 }
+
 
 document.querySelectorAll('th').forEach(th => th.innerHTML = '');
 
@@ -259,54 +266,59 @@ function displayTableToId(data, tableId) {
 
 // === Section 2: Handle Dashboard CSV Display ===
 async function loadDefaultCSV() {
-    const repoOwner = "RichardMCGirt";
-    const repoName = "Briqdata";
-    const branch = "main";
-    const fileName = "sales_report.csv";
-    const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${fileName}?ref=${branch}`;
+        const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
+    const baseId = 'appD3QeLneqfNdX12';
+    const tableId = 'tblvqHdBUZ6EQpcNM';
+    const targetCsvName = 'sales_report.csv';
 
     try {
-        console.log("🔍 Fetching sales_report.csv from GitHub...");
-        const response = await fetch(apiUrl);
-        if (!response.ok) throw new Error(`GitHub API error: ${response.statusText}`);
+        const res = await fetch(`https://api.airtable.com/v0/${baseId}/${tableId}`, {
+            headers: {
+                Authorization: `Bearer ${airtableApiKey}`
+            }
+        });
 
-        const fileData = await response.json();
-        const fileUrl = fileData.download_url;
+        const data = await res.json();
+        const record = data.records.find(r =>
+            r.fields['CSV file']?.trim() === targetCsvName
+        );
 
+        if (!record || !record.fields['Attachments']?.[0]?.url) {
+            throw new Error("CSV not found in Airtable");
+        }
+
+        const fileUrl = record.fields['Attachments'][0].url;
         const csvResponse = await fetch(fileUrl);
         const csvData = await csvResponse.text();
 
         const previousData = localStorage.getItem('csvData');
-
         if (previousData === csvData) {
             console.log("🔁 Same sales_report.csv — skipping re-render.");
-            // ✅ Still need to show table
             Papa.parse(previousData, {
                 complete: function(results) {
                     displayTable(results.data, 'csvTable', 'dateContainerMain');
                     hideFirstRowOfCsvTable();
-
                 }
             });
             return;
         }
 
         localStorage.setItem('csvData', csvData);
-
         Papa.parse(csvData, {
             complete: function(results) {
                 displayTable(results.data, 'csvTable', 'dateContainerMain');
                 hideFirstRowOfCsvTable();
-
             },
             error: function(error) {
                 console.error("Error parsing CSV:", error);
             }
         });
+
     } catch (error) {
-        console.error("❌ Error loading sales_report.csv:", error);
+        console.error("❌ Airtable CSV load error (sales_report):", error);
     }
 }
+
 
 
 
@@ -893,10 +905,6 @@ function showTop10NetYTD() {
 
 // Run both on load
 window.addEventListener('DOMContentLoaded', async () => {
-// For main sales report
-await loadDefaultCSV(); // Inside: displayTable(data, 'csvTable', 'dateContainerMain')
-
-// For master account comparison
-await fetchAndFilterGitHubCSV(); // Inside: displayTable(filtered, 'csvTableMaster', 'dateContainerMaster')
-
+    await loadDefaultCSV(); // loads sales_report.csv from Airtable
+    await fetchAndFilterAirtableCSV(); // loads SalesComparisonbyMasterAccount.csv from Airtable
 });

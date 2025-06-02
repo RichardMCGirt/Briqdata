@@ -13,22 +13,45 @@ document.addEventListener("DOMContentLoaded", function () {
 
     tableHead.style.display = "none";
 
-    // ✅ GitHub Raw CSV URL
-    const githubCSVUrl = "https://raw.githubusercontent.com/RichardMCGirt/Briqdata/refs/heads/main/OpenPOReportbyVendorSalesmanDateCreated-1742910735-44512876.csv";
+  // ✅ Airtable Setup
+  const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
+    const baseId = 'appD3QeLneqfNdX12';
+    const tableId = 'tblvqHdBUZ6EQpcNM';
 
-    // 🔽 Fetch CSV from GitHub on load
-    fetch(githubCSVUrl)
-        .then(response => {
-            if (!response.ok) throw new Error("Network response was not ok");
-            return response.text();
-        })
-        .then(csvData => {
-            errorMessage.style.display = 'none';
-            parseCSV(csvData);
-        })
-        .catch(error => {
-            console.warn("GitHub CSV not loaded:", error.message);
-        });
+// 🔽 Fetch CSV from Airtable based on CSV file field match
+fetch(`https://api.airtable.com/v0/${baseId}/${tableId}`, {
+    headers: {
+        Authorization: `Bearer ${airtableApiKey}`
+    }
+})
+.then(res => res.json())
+.then(data => {
+    const record = data.records.find(r =>
+        r.fields['CSV file']?.trim() === 'OpenPOReportbyVendorSalesmanDateCreated.csv'
+    );
+
+    if (!record) {
+        throw new Error("Matching record not found in Airtable.");
+    }
+
+    const attachment = record.fields['Attachments']?.[0];
+    if (!attachment || !attachment.url) {
+        throw new Error("No attachment found for matching record.");
+    }
+
+    return fetch(attachment.url);
+})
+.then(res => res.text())
+.then(csvData => {
+    errorMessage.style.display = 'none';
+    parseCSV(csvData);
+})
+.catch(error => {
+    console.warn("Airtable CSV not loaded:", error.message);
+    errorMessage.textContent = "Could not load CSV from Airtable.";
+    errorMessage.style.display = 'block';
+});
+
 
     // 🧲 Drag-and-drop logic
     ['dragenter', 'dragover'].forEach(eventName => {
