@@ -18,9 +18,9 @@ document.getElementById("fileInputSummary").addEventListener("change", function 
 });
 
 document.getElementById("loadFromGitHub").addEventListener("click", async () => {
-  const airtableApiKey = 'YOUR_API_KEY_HERE';
-  const baseId = 'YOUR_BASE_ID_HERE';
-  const tableId = 'YOUR_TABLE_ID_HERE';
+  const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
+    const baseId = 'appD3QeLneqfNdX12';
+    const tableId = 'tblvqHdBUZ6EQpcNM';
   const csvLabel = 'SalesSummarybyPOSUDF1byLocation.csv';
 
   console.log("🌐 Looking up file in Airtable:", csvLabel);
