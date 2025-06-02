@@ -1,3 +1,9 @@
+// === Imports ===
+import {
+  fetchDropboxToken,
+  uploadFileToDropbox
+} from './dropbox.js';
+
 // === Shared Utilities ===
 function filterColumns(data) {
     if (!data.length) return [];
@@ -23,6 +29,7 @@ function filterColumns(data) {
 
     return filtered;
 }
+
 
 // === Section 1: Handle Master Account CSV Upload ===
 function displayTableM(data) {
