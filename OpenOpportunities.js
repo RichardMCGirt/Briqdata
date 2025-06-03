@@ -10,80 +10,81 @@ async function initializez2() {
     displayLoadingMessages7("Loading data, please wait...");
 
     const airtableApiKey = 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238';
-    const airtableBaseId = 'appK9gZS77OmsIK50';
-    const airtableTableName = 'tblQo2148s04gVPq1';
+    const airtableBaseId = 'appX1Saz7wMYh4hhm';
+    const airtableTableName = 'tblfCPX293KlcKsdp';
 
-    const filterFormula = `AND(NOT(OR({Outcome} = "Win", {Outcome} = "Loss", {Outcome} = "None")))`;
-    const residentialRecords = await fetchAirtableDatas7(
+    const records = await fetchAirtableDatas7(
         airtableApiKey,
         airtableBaseId,
-        airtableTableName,
-        filterFormula
+        airtableTableName
     );
 
-    residentialWinRates3 = calculateWinRates7(residentialRecords);
+    console.log(`📦 Total records fetched: ${records.length}`);
 
-   
+const commercialRecords = records.filter(
+  r => r.fields['project'] === 'Commercial' &&
+       r.fields['Outcome'] !== 'None'
+);
 
-    // Sort by number of "None" occurrences in descending order
-    residentialWinRates3 = Object.fromEntries(
-        Object.entries(residentialWinRates3).sort(
-            (a, b) => a[1].totalCount - b[1].totalCount 
-        )
-    );
+console.log(`📊 Commercial records (excluding 'None'): ${commercialRecords.length}`);
 
-    // Populate dropdown with sorted user names
-    const sortedUsers = Object.keys(residentialWinRates3);
-    populateDropdown3(sortedUsers, 'user-filter5');
+const otherRecords = records.filter(
+  r => r.fields['project'] !== 'Commercial' &&
+       r.fields['Outcome'] !== 'None'
+);
 
-    // Display chart with sorted data
+console.log(`📊 Non-Commercial records (excluding 'None'): ${otherRecords.length}`);
+
+
+
+    commercialWinRates3 = calculateWinRates7(commercialRecords);
+    residentialWinRates3 = calculateWinRates7(otherRecords);
+
+    // Sort both datasets by totalCount ascending
+    commercialWinRates3 = Object.fromEntries(Object.entries(commercialWinRates3).sort((a, b) => a[1].totalCount - b[1].totalCount));
+    residentialWinRates3 = Object.fromEntries(Object.entries(residentialWinRates3).sort((a, b) => a[1].totalCount - b[1].totalCount));
+
+    // Populate dropdowns
+    populateDropdown3(Object.keys(residentialWinRates3), 'user-filter5', residentialWinRates3, 'winRateChart6');
+    populateDropdown3(Object.keys(commercialWinRates3), 'user-filter6', commercialWinRates3, 'winRateChart7');
+
+    // Render both charts
     displayWinRatesAsBarChart7(residentialWinRates3, 'winRateChart6');
+    displayWinRatesAsBarChart7(commercialWinRates3, 'winRateChart7');
 
     hideLoadingMessages3();
 }
 
 
-function populateDropdown3(users, dropdownId) {
-    const dropdown = document.getElementById(dropdownId);
-    if (!dropdown) {
-        console.error(`Dropdown with ID '${dropdownId}' not found.`);
-        return;
-    }
 
-    // Clear existing options
+
+function populateDropdown3(users, dropdownId, dataset, chartId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return console.error(`Dropdown with ID '${dropdownId}' not found.`);
+
     dropdown.innerHTML = '<option value="all">All ACs</option>';
 
-    // Filter out users with totalCount === 0
-    const validUsers = users.filter(user => residentialWinRates3[user]?.totalCount > 0);
-
-    // Add valid user options sorted alphabetically with just totalCount
+    const validUsers = users.filter(user => dataset[user]?.totalCount > 0);
     validUsers.forEach(user => {
-        const total = residentialWinRates3[user]?.totalCount || '0'; // Only show totalCount
         const option = document.createElement('option');
         option.value = user;
-        option.textContent = `${user} (${total})`; // Display only the total count
+        option.textContent = `${user} (${dataset[user].totalCount})`;
         dropdown.appendChild(option);
     });
 
     dropdown.addEventListener('change', event => {
         const selectedUser = event.target.value;
-    
-        let filteredData;
-        if (selectedUser === 'all') {
-            // Reset dataset to include all fetched records
-            filteredData = Object.fromEntries(
-                Object.entries(residentialWinRates3).filter(([_, value]) => value.totalCount > 0)
-            );
-        } else {
-            // Filter for only the selected user
-            filteredData = residentialWinRates3[selectedUser]?.totalCount > 0
-                ? { [selectedUser]: residentialWinRates3[selectedUser] }
+        const filteredData =
+            selectedUser === 'all'
+                ? Object.fromEntries(Object.entries(dataset).filter(([_, val]) => val.totalCount > 0))
+                : dataset[selectedUser]?.totalCount > 0
+                ? { [selectedUser]: dataset[selectedUser] }
                 : {};
-        }
-    
-        displayWinRatesAsBarChart7(filteredData, 'winRateChart6');
+
+        displayWinRatesAsBarChart7(filteredData, chartId);
     });
 }
+
 
 
 
@@ -92,8 +93,7 @@ async function fetchAirtableDatas7(apiKey, baseId, tableName) {
         let allRecords = [];
         let offset;
 
-        // Formula to filter records created in the last 30 days
-        const filterFormula = `AND(NOT(OR({Outcome} = "Win", {Outcome} = "Loss", {Outcome} = "None")))`;
+const filterFormula = `OR({Outcome} = "Win", {Outcome} = "Loss", {Outcome} = "")`;
         const encodedFormula = encodeURIComponent(filterFormula);
 
         do {
@@ -145,35 +145,50 @@ function calculateWinRates7(records) {
     const data = {};
 
     records.forEach(record => {
-        // Get the submitter name
-        const submittedBy = record.fields['SubmitedBY'] || 'Empty';
+        const submittedBy = record.fields['Branch'] || 'Empty';
+        const outcome = record.fields['Outcome'] || '';
 
         if (!data[submittedBy]) {
-            data[submittedBy] = { noneCount: 0, totalCount: 0 };
+            data[submittedBy] = {
+                winCount: 0,
+                lossCount: 0,
+                noneCount: 0,
+                totalCount: 0
+            };
         }
 
-        const outcome = record.fields['Outcome'];
-
-        // Count occurrences where Outcome is "None"
-        if (outcome === "None") {
+        if (outcome === 'Win') {
+            data[submittedBy].winCount += 1;
+        } else if (outcome === 'Loss') {
+            data[submittedBy].lossCount += 1;
+        } else if (outcome === '' || outcome === 'None') {
             data[submittedBy].noneCount += 1;
         }
 
         data[submittedBy].totalCount += 1;
     });
 
-
-    const noneRates = {};
+    const outcomeStats = {};
     for (const submittedBy in data) {
-        const { noneCount, totalCount } = data[submittedBy];
-        noneRates[submittedBy] = {
+        const { winCount, lossCount, noneCount } = data[submittedBy];
+        const totalDecided = winCount + lossCount;
+        const ratio = totalDecided > 0 ? (noneCount / totalDecided) : 0;
+
+        outcomeStats[submittedBy] = {
             noneCount,
-            totalCount,
-            fraction: `${noneCount} / ${totalCount}`,
+            winCount,
+            lossCount,
+            totalCount: winCount + lossCount + noneCount,
+            noneOverDecided: ratio,
+            summary: `None: ${noneCount}, Win: ${winCount}, Loss: ${lossCount}, Total: ${winCount + lossCount + noneCount}, None/Decided: ${(ratio * 100).toFixed(1)}%`
         };
     }
-    return noneRates;
+
+    return outcomeStats;
 }
+
+
+
 
 
 // Modify the chart to display "None Count" instead of win rate
@@ -192,7 +207,9 @@ function displayWinRatesAsBarChart7(data, canvasId) {
     }
 
     // Filter out invalid data where totalCount is zero
-    const validData = Object.entries(data).filter(([_, value]) => value && value.totalCount > 0);
+const validData = Object.entries(data)
+    .filter(([_, value]) => value && value.totalCount > 0)
+    .sort((a, b) => a[1].noneOverDecided - b[1].noneOverDecided); // ascending sort by percentage
 
     // Handle empty data gracefully
     if (validData.length === 0) {
@@ -207,7 +224,7 @@ function displayWinRatesAsBarChart7(data, canvasId) {
 
     // Extract labels and "None" counts from valid data
     const labels = validData.map(([key]) => key);
-    const noneCounts = validData.map(([_, value]) => value.totalCount);
+const nonePercentages = validData.map(([_, value]) => (value.noneOverDecided * 100).toFixed(1));
     const generateDarkBlueColor = () => {
         return 'rgba(0, 0, 139, 0.8)'; // Dark Blue with 80% opacity
     };
@@ -218,8 +235,9 @@ function displayWinRatesAsBarChart7(data, canvasId) {
             labels,
             datasets: [
                 {
-                    label: 'Possible Wins',
-                    data: noneCounts,
+                    label: 'empty/total (%)',
+data: nonePercentages,
+
                     backgroundColor: labels.map(() => generateDarkBlueColor()), // Apply to all bars
                     borderColor: 'rgba(0, 0, 50, 1)', // Darker blue for the border
                     borderWidth: 1,
@@ -230,8 +248,15 @@ function displayWinRatesAsBarChart7(data, canvasId) {
             responsive: true,
             scales: {
                 y: {
-                    beginAtZero: true,
-                },
+    beginAtZero: true,
+    ticks: {
+        callback: function(value) {
+            return value + '%';
+        }
+    },
+    max: 100
+}
+
             },
         },
     });
