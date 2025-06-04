@@ -20,28 +20,27 @@ document.addEventListener("DOMContentLoaded", function () {
     if (passwordInput) passwordInput.remove();
   }
 
-function createPasswordInput(zone) {
-  if (zone.querySelector(".password-unlock-input")) return;
+  function createPasswordInput(zone) {
+    if (zone.querySelector(".password-unlock-input")) return;
 
-  const input = document.createElement("input");
-  input.type = "password";
-  input.placeholder = "Enter password to unlock";
-  input.className = "password-unlock-input";
+    const input = document.createElement("input");
+    input.type = "password";
+    input.placeholder = "Enter password to unlock";
+    input.className = "password-unlock-input";
 
-  input.style.position = "fixed";
-  input.style.top = "50%";
-  input.style.left = "50%";
-  input.style.transform = "translate(-50%, -50%)";
-  input.style.zIndex = "1000";
-  input.style.padding = "8px 12px";
-  input.style.fontSize = "16px";
-  input.style.border = "1px solid #ccc";
-  input.style.borderRadius = "6px";
-  input.style.boxShadow = "0 0 10px rgba(0, 0, 0, 0.2)";
-  input.style.backgroundColor = "#000"; // solid black background
-  input.style.color = "#fff";            // white text for contrast
-  input.style.opacity = "1";             // fully solid (no transparency)
-
+    input.style.position = "fixed";
+    input.style.top = "50%";
+    input.style.left = "50%";
+    input.style.transform = "translate(-50%, -50%)";
+    input.style.zIndex = "1000";
+    input.style.padding = "8px 12px";
+    input.style.fontSize = "16px";
+    input.style.border = "1px solid #ccc";
+    input.style.borderRadius = "6px";
+    input.style.boxShadow = "0 0 10px rgba(0, 0, 0, 0.2)";
+    input.style.backgroundColor = "#000";
+    input.style.color = "#fff";
+    input.style.opacity = "1";
 
     input.addEventListener("keydown", function (e) {
       if (e.key === "Enter") {
@@ -51,6 +50,7 @@ function createPasswordInput(zone) {
             const z = document.getElementById(id);
             if (z) unlockZone(z);
           });
+          input.remove();
         } else {
           alert("Incorrect password.");
           input.value = "";
@@ -72,9 +72,12 @@ function createPasswordInput(zone) {
 
     lockZone(zone);
 
-    zone.addEventListener("mouseenter", () => {
-      createPasswordInput(zone);
-    });
+  zone.addEventListener("mouseenter", () => {
+  if (localStorage.getItem(unlockKey) !== "true") {
+    createPasswordInput(zone);
+  }
+});
+
 
     zone.addEventListener("mouseleave", () => {
       const input = zone.querySelector(".password-unlock-input");
@@ -85,5 +88,16 @@ function createPasswordInput(zone) {
   dropZoneIds.forEach(id => {
     const zone = document.getElementById(id);
     setupZone(zone);
+  });
+
+  // 🔐 Admin override: press "q" to unlock
+  document.addEventListener("keydown", function (e) {
+    if (e.key.toLowerCase() === "q") {
+      localStorage.setItem(unlockKey, "true");
+      dropZoneIds.forEach(id => {
+        const z = document.getElementById(id);
+        if (z) unlockZone(z);
+      });
+    }
   });
 });

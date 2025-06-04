@@ -22,6 +22,8 @@ function togglePrompt(event) {
     loadPreviousPasswords(); // Load saved passwords when showing prompt
 }
 
+
+
 function validatePassword() {
     const password = document.getElementById("password-input").value;
     const correctPassword = "Vanir";
