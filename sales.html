@@ -102,20 +102,23 @@
       
       <br>
 
- <!-- Visible on page load -->
-<button id="loadFromGitHub">Fetch YTD Sales Summary</button>
-
-<!-- Hidden on page load -->
-<div id="hiddenContent" style="display: none;">
+ <!-- Visible on page load 
+<button id="loadFromGitHub">Fetch YTD Sales Summary</button> -->
+<div id="hiddenContent">
   <h2>Sales Summary YTD</h2>
   <input type="file" id="fileInputSummary" accept=".csv" />
+<div id="rawDataTable"></div>
 
-  <h3>Totals by Branch </h3>
+
+<!-- Hidden on page load -->
+
+
+ <!-- <h3>Totals by Branch </h3>
   <div id="cityTotals"></div>
 
   <h3>Totals Residential and Commercial</h3>
   <div id="typeTotals"></div>
-</div>
+</div> -->
 
       <script src="fileinputpasswordlock.js"></script>
 <script src="salessummary.js"></script>
@@ -127,7 +130,7 @@
             AIRTABLE_TABLE_NAME: 'tbl6EeKPsNuEvt5yJ',
         };
         </script>
-<script type="module" src="nolabor.js"></script>
+ <script type="module" src="nolabor.js"></script> 
 
 
 

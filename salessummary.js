@@ -1,4 +1,8 @@
 console.log("📦 JS Loaded");
+document.addEventListener("DOMContentLoaded", function () {
+  console.log("🚀 Page loaded, fetching CSV automatically...");
+  loadCSVFromAirtable();
+});
 
 document.getElementById("fileInputSummary").addEventListener("change", function (e) {
   console.log("📁 File selected");
@@ -17,10 +21,10 @@ document.getElementById("fileInputSummary").addEventListener("change", function 
   reader.readAsText(file);
 });
 
-document.getElementById("loadFromGitHub").addEventListener("click", async () => {
+async function loadCSVFromAirtable() {
   const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
-    const baseId = 'appD3QeLneqfNdX12';
-    const tableId = 'tblvqHdBUZ6EQpcNM';
+  const baseId = 'appD3QeLneqfNdX12';
+  const tableId = 'tblvqHdBUZ6EQpcNM';
   const csvLabel = 'SalesSummarybyPOSUDF1byLocation.csv';
 
   console.log("🌐 Looking up file in Airtable:", csvLabel);
@@ -53,14 +57,15 @@ document.getElementById("loadFromGitHub").addEventListener("click", async () => 
   } catch (error) {
     console.error("❌ Failed to load file from Airtable:", error);
   }
-});
+}
 
-  
-function processSummaryData(content) {
+ function processSummaryData(content) {
   console.log("📊 Raw content preview:\n", content.slice(0, 300)); // First 300 chars
 
   const rows = content.split("\n").slice(2); // Skip first two header rows
   const data = [];
+
+  let rawTableHTML = `<table class="styled-table"><tr><th>City</th><th>Type</th><th>Net Sales</th><th>Gross Profit</th></tr>`;
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -79,7 +84,28 @@ function processSummaryData(content) {
 
     console.log(`✅ Parsed - City: ${city}, Type: ${type}, Net: ${netSales}, GP: ${grossProfit}`);
     data.push({ city, type, netSales, grossProfit });
+
+        if (netSales === 0 && grossProfit === 0) {
+      console.warn(`🚫 Skipping row ${i + 3} — both Net Sales and Gross Profit are $0`);
+      continue;
+    }
+
+   const hasTotal = city.toUpperCase().includes("TOTAL") || type.toUpperCase().includes("TOTAL");
+const borderStyle = hasTotal ? " style='border-top: 2px solid black;'" : "";
+
+rawTableHTML += `
+  <tr${borderStyle}>
+    <td>${city}</td>
+    <td>${type}</td>
+    <td>$${netSales.toLocaleString()}</td>
+    <td>$${grossProfit.toLocaleString()}</td>
+  </tr>`;
+
+
   }
+
+  rawTableHTML += `</table>`;
+  document.getElementById("rawDataTable").innerHTML = rawTableHTML;
 
   const cityTotals = {};
   const typeTotals = { RESIDENTIAL: { netSales: 0, grossProfit: 0 }, COMMERCIAL: { netSales: 0, grossProfit: 0 } };
@@ -105,13 +131,13 @@ function processSummaryData(content) {
   document.getElementById("typeTotals").innerHTML = typeTable;
 }
 
+
 function generateCityTable(data, labelKey) {
     let rows = `<tr><th>${labelKey}</th><th>Net Sales</th><th>Gross Profit</th></tr>`;
     const keys = Object.keys(data);
   
     keys.forEach((key, i) => {
       const rowIndex = i + 1;
-      if (rowIndex === 1 || rowIndex === 10) return; 
   
       const isLast = i === keys.length - 1;
       const rowClass = i % 2 === 0 ? "even-row" : "odd-row";
