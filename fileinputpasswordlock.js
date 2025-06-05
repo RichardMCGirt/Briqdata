@@ -72,12 +72,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     lockZone(zone);
 
-  zone.addEventListener("mouseenter", () => {
-  if (localStorage.getItem(unlockKey) !== "true") {
-    createPasswordInput(zone);
-  }
-});
-
+    zone.addEventListener("mouseenter", () => {
+      if (localStorage.getItem(unlockKey) !== "true") {
+        createPasswordInput(zone);
+      }
+    });
 
     zone.addEventListener("mouseleave", () => {
       const input = zone.querySelector(".password-unlock-input");

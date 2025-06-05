@@ -1,3 +1,9 @@
+import {
+  fetchDropboxToken,
+  uploadFileToDropbox
+} from './dropbox.js';
+
+
 console.log("📦 JS Loaded");
 document.addEventListener("DOMContentLoaded", function () {
   console.log("🚀 Page loaded, fetching CSV automatically...");
@@ -59,54 +65,60 @@ async function loadCSVFromAirtable() {
   }
 }
 
- function processSummaryData(content) {
-  console.log("📊 Raw content preview:\n", content.slice(0, 300)); // First 300 chars
+function processSummaryData(content) {
+  console.log("📊 Raw content preview:\n", content.slice(0, 300));
 
-  const rows = content.split("\n").slice(2); // Skip first two header rows
+  const rows = content.split("\n").slice(2); // Skip headers
   const data = [];
 
-  let rawTableHTML = `<table class="styled-table"><tr><th>City</th><th>Type</th><th>Net Sales</th><th>Gross Profit</th></tr>`;
-
+  // Parse and collect cleaned data
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     const cols = row.split(",").map(c => c.trim());
-    console.log(`🔍 Row ${i + 3}:`, cols);
-
-    if (cols.length < 4 || !cols[0] || !cols[1]) {
-      console.warn(`⚠️ Skipping row ${i + 3} — insufficient data`);
-      continue;
-    }
+    if (cols.length < 4 || !cols[0] || !cols[1]) continue;
 
     const city = cols[0].replace(/"/g, '');
     const type = cols[1].replace(/"/g, '');
     const netSales = parseFloat(cols[2].replace(/[$,",]/g, '')) || 0;
     const grossProfit = parseFloat(cols[3].replace(/[$,",]/g, '')) || 0;
+    if (netSales === 0 && grossProfit === 0) continue;
 
-    console.log(`✅ Parsed - City: ${city}, Type: ${type}, Net: ${netSales}, GP: ${grossProfit}`);
     data.push({ city, type, netSales, grossProfit });
+  }
 
-        if (netSales === 0 && grossProfit === 0) {
-      console.warn(`🚫 Skipping row ${i + 3} — both Net Sales and Gross Profit are $0`);
-      continue;
+  // Count city occurrences
+  const cityCounts = {};
+  data.forEach(({ city }) => {
+    cityCounts[city] = (cityCounts[city] || 0) + 1;
+  });
+
+let rawTableHTML = `<table class="styled-table"><tr><th>City</th><th>Project Type</th><th>Net Sales</th><th>Gross Profit</th></tr>`;
+  let previousCity = null;
+
+  for (let i = 0; i < data.length; i++) {
+    const { city, type, netSales, grossProfit } = data[i];
+    const hasTotal = city.toUpperCase().includes("TOTAL") || type.toUpperCase().includes("TOTAL");
+    const borderStyle = hasTotal ? " style='border-top: 2px solid black;'" : "";
+
+    rawTableHTML += `<tr${borderStyle}>`;
+
+    if (city !== previousCity) {
+      const rowspan = cityCounts[city];
+      rawTableHTML += `<td rowspan="${rowspan}">${city}</td>`;
+      previousCity = city;
     }
 
-   const hasTotal = city.toUpperCase().includes("TOTAL") || type.toUpperCase().includes("TOTAL");
-const borderStyle = hasTotal ? " style='border-top: 2px solid black;'" : "";
-
-rawTableHTML += `
-  <tr${borderStyle}>
-    <td>${city}</td>
-    <td>${type}</td>
-    <td>$${netSales.toLocaleString()}</td>
-    <td>$${grossProfit.toLocaleString()}</td>
-  </tr>`;
-
-
+    rawTableHTML += `
+      <td>${type}</td>
+      <td>$${netSales.toLocaleString()}</td>
+      <td>$${grossProfit.toLocaleString()}</td>
+    </tr>`;
   }
 
   rawTableHTML += `</table>`;
   document.getElementById("rawDataTable").innerHTML = rawTableHTML;
 
+  // Totals Calculation
   const cityTotals = {};
   const typeTotals = { RESIDENTIAL: { netSales: 0, grossProfit: 0 }, COMMERCIAL: { netSales: 0, grossProfit: 0 } };
 
@@ -120,54 +132,80 @@ rawTableHTML += `
       typeTotals[type].grossProfit += grossProfit;
     }
   });
-
-  console.log("📈 City Totals:", cityTotals);
-  console.log("🏢 Type Totals:", typeTotals);
-
-  const cityTable = generateCityTable(cityTotals, "Branch");
-  const typeTable = generateTable(typeTotals, "Project Type");
-
-  document.getElementById("cityTotals").innerHTML = cityTable;
-  document.getElementById("typeTotals").innerHTML = typeTable;
 }
 
 
-function generateCityTable(data, labelKey) {
-    let rows = `<tr><th>${labelKey}</th><th>Net Sales</th><th>Gross Profit</th></tr>`;
-    const keys = Object.keys(data);
-  
-    keys.forEach((key, i) => {
-      const rowIndex = i + 1;
-  
-      const isLast = i === keys.length - 1;
-      const rowClass = i % 2 === 0 ? "even-row" : "odd-row";
-      const borderStyle = isLast ? " style='border-top: 2px solid #000;'" : "";
-  
-      rows += `<tr class="${rowClass}"${borderStyle}>
-        <td>${key}</td>
-        <td>$${data[key].netSales.toLocaleString()}</td>
-        <td>$${data[key].grossProfit.toLocaleString()}</td>
-      </tr>`;
+
+
+
+async function replaceCSVInAirtableViaDropbox(file) {
+  const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
+  const baseId = 'appD3QeLneqfNdX12';
+  const tableId = 'tblvqHdBUZ6EQpcNM';
+  const csvLabel = 'SalesSummarybyPOSUDF1byLocation.csv';
+
+  try {
+    const creds = await fetchDropboxToken();
+    if (!creds || !creds.token) throw new Error("❌ Dropbox token not available");
+
+    const dropboxUrl = await uploadFileToDropbox(file, creds.token, creds);
+    if (!dropboxUrl) throw new Error("❌ Dropbox upload failed");
+
+    console.log("📤 File uploaded to Dropbox:", dropboxUrl);
+
+    // Step 2: Find Airtable record
+    const recordsRes = await fetch(`https://api.airtable.com/v0/${baseId}/${tableId}`, {
+      headers: { Authorization: `Bearer ${airtableApiKey}` }
     });
-  
-    return `<table class="styled-table">${rows}</table>`;
-  }
-  
-  function generateTable(data, labelKey) {
-    let rows = `<tr><th>${labelKey}</th><th>Net Sales</th><th>Gross Profit</th></tr>`;
-    const keys = Object.keys(data);
-  
-    keys.forEach((key, i) => {
-      const rowClass = i % 2 === 0 ? "even-row" : "odd-row";
-      rows += `<tr class="${rowClass}">
-        <td>${key}</td>
-        <td>$${data[key].netSales.toLocaleString()}</td>
-        <td>$${data[key].grossProfit.toLocaleString()}</td>
-      </tr>`;
+
+    const data = await recordsRes.json();
+    const record = data.records.find(
+      r => r.fields['CSV file']?.trim() === csvLabel
+    );
+
+    if (!record) throw new Error("❌ Airtable record not found");
+
+    const recordId = record.id;
+
+    // Step 3: Replace attachment in Airtable
+    const patchRes = await fetch(`https://api.airtable.com/v0/${baseId}/${tableId}/${recordId}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${airtableApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fields: {
+          Attachments: [
+            {
+              url: dropboxUrl,
+              filename: csvLabel
+            }
+          ]
+        }
+      })
     });
-  
-    return `<table class="styled-table">${rows}</table>`;
+
+    const patchData = await patchRes.json();
+    if (patchData.id) {
+      console.log("✅ Airtable updated with new Dropbox file.");
+      alert("✅ File updated in Airtable!");
+    } else {
+      throw new Error("❌ Airtable PATCH failed.");
+    }
+
+  } catch (err) {
+    console.error("❌ Failed to replace file via Dropbox:", err);
+    alert("❌ File update failed. See console.");
   }
+}
+
+
   
-  
-  
+document.getElementById("fileInputSummary").addEventListener("change", function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  replaceCSVInAirtableViaDropbox(file);
+});
+

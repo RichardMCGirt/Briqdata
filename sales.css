@@ -35,7 +35,9 @@
     width: 90%;
     margin: auto;
     text-align: center;
+    padding-bottom: 20px;
 }
+
 
 .table-container {
     max-height: 800px;
