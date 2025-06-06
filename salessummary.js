@@ -92,7 +92,7 @@ function processSummaryData(content) {
     cityCounts[city] = (cityCounts[city] || 0) + 1;
   });
 
-let rawTableHTML = `<table class="styled-table"><tr><th>City</th><th>Project Type</th><th>Net Sales</th><th>Gross Profit</th></tr>`;
+let rawTableHTML = `<table class="styled-table"><tr><th>Branch</th><th>Project Type</th><th>Net Sales</th><th>Gross Profit</th></tr>`;
   let previousCity = null;
 
   for (let i = 0; i < data.length; i++) {
