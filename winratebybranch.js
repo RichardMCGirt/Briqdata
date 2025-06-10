@@ -151,9 +151,6 @@ function calculateWinRate(records) {
     return winRates;
 }
 
-
-
-
 function displayWinRatesInGrid(data, gridId, title) {
     const gridContainer = document.getElementById(gridId);
 
