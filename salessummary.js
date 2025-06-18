@@ -97,8 +97,13 @@ let rawTableHTML = `<table class="styled-table"><tr><th>Branch</th><th>Project T
 
   for (let i = 0; i < data.length; i++) {
     const { city, type, netSales, grossProfit } = data[i];
-    const hasTotal = city.toUpperCase().includes("TOTAL") || type.toUpperCase().includes("TOTAL");
-    const borderStyle = hasTotal ? " style='border-top: 2px solid black;'" : "";
+  let borderStyle = "";
+
+// Add a bold border if it's a new city group
+if (city !== previousCity) {
+  borderStyle = " class='city-border'";
+}
+
 
     rawTableHTML += `<tr${borderStyle}>`;
 
