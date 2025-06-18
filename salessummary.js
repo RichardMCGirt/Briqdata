@@ -188,6 +188,16 @@ function compareCSVData(newContent, oldContent) {
 
 
 function renderComparisonTable(data) {
+  // Group rows by city
+  const groupedByCity = {};
+  for (const row of data) {
+    if (!groupedByCity[row.city]) groupedByCity[row.city] = [];
+    groupedByCity[row.city].push(row);
+  }
+
+  let totalNet = 0;
+  let totalGross = 0;
+
   let html = `<table class="styled-table">
     <tr>
       <th>City</th>
@@ -196,27 +206,51 @@ function renderComparisonTable(data) {
       <th>Gross Profit</th>
     </tr>`;
 
-  for (const { city, type, netSales, grossProfit, netDiff, grossDiff } of data) {
-    const netClass = netDiff > 0 ? 'pos' : netDiff < 0 ? 'neg' : '';
-    const grossClass = grossDiff > 0 ? 'pos' : grossDiff < 0 ? 'neg' : '';
+  for (const city in groupedByCity) {
+    const rows = groupedByCity[city];
+    const rowspan = rows.length;
 
-    html += `<tr>
-      <td>${city}</td>
-      <td>${type}</td>
-      <td>
-        $${netSales.toLocaleString()}<br>
-        ${netDiff !== 0 ? `<small class="${netClass}">${netDiff > 0 ? '+' : ''}$${netDiff.toLocaleString()}</small>` : ''}
-      </td>
-      <td>
-        $${grossProfit.toLocaleString()}<br>
-        ${grossDiff !== 0 ? `<small class="${grossClass}">${grossDiff > 0 ? '+' : ''}$${grossDiff.toLocaleString()}</small>` : ''}
-      </td>
-    </tr>`;
+    rows.forEach((row, index) => {
+      const { type, netSales, grossProfit, netDiff, grossDiff } = row;
+      const netClass = netDiff > 0 ? 'pos' : netDiff < 0 ? 'neg' : '';
+      const grossClass = grossDiff > 0 ? 'pos' : grossDiff < 0 ? 'neg' : '';
+
+      totalNet += netSales;
+      totalGross += grossProfit;
+
+      html += `<tr${index === 0 ? ` class="city-border"` : ""}>`;
+
+      if (index === 0) {
+        html += `<td rowspan="${rowspan}">${city}</td>`;
+      }
+
+      html += `
+        <td>${type}</td>
+        <td>
+          $${netSales.toLocaleString()}<br>
+          ${netDiff !== 0 ? `<small class="${netClass}">${netDiff > 0 ? '+' : ''}$${netDiff.toLocaleString()}</small>` : ''}
+        </td>
+        <td>
+          $${grossProfit.toLocaleString()}<br>
+          ${grossDiff !== 0 ? `<small class="${grossClass}">${grossDiff > 0 ? '+' : ''}$${grossDiff.toLocaleString()}</small>` : ''}
+        </td>
+      </tr>`;
+    });
   }
+
+  // 🔻 Total row with top border
+  html += `
+    <tr style="border-top: 3px solid #000; font-weight: bold;">
+      <td colspan="2" style="text-align: right;">Total:</td>
+      <td>$${totalNet.toLocaleString()}</td>
+      <td>$${totalGross.toLocaleString()}</td>
+    </tr>`;
 
   html += `</table>`;
   document.getElementById("rawDataTable").innerHTML = html;
 }
+
+
 
 
 
@@ -247,36 +281,40 @@ function processSummaryData(content) {
     cityCounts[city] = (cityCounts[city] || 0) + 1;
   });
 
-let rawTableHTML = `<table class="styled-table"><tr><th>Branch</th><th>Project Type</th><th>Net Sales</th><th>Gross Profit</th></tr>`;
-  let previousCity = null;
+// Group rows by city to make sure they are together
+const groupedByCity = {};
+data.forEach(row => {
+  if (!groupedByCity[row.city]) groupedByCity[row.city] = [];
+  groupedByCity[row.city].push(row);
+});
 
-  for (let i = 0; i < data.length; i++) {
-    const { city, type, netSales, grossProfit } = data[i];
-  let borderStyle = "";
+let rawTableHTML = `<table class="styled-table">
+  <tr><th>Branch</th><th>Project Type</th><th>Net Sales</th><th>Gross Profit</th></tr>`;
 
-// Add a bold border if it's a new city group
-if (city !== previousCity) {
-  borderStyle = " class='city-border'";
-}
+for (const city in groupedByCity) {
+  const rows = groupedByCity[city];
+  const rowspan = rows.length;
 
+  rows.forEach((row, index) => {
+    rawTableHTML += `<tr${index === 0 ? ` class="city-border"` : ""}>`;
 
-    rawTableHTML += `<tr${borderStyle}>`;
-
-    if (city !== previousCity) {
-      const rowspan = cityCounts[city];
+    // Only include the city cell on the first row of the group
+    if (index === 0) {
       rawTableHTML += `<td rowspan="${rowspan}">${city}</td>`;
-      previousCity = city;
     }
 
     rawTableHTML += `
-      <td>${type}</td>
-      <td>$${netSales.toLocaleString()}</td>
-      <td>$${grossProfit.toLocaleString()}</td>
+      <td>${row.type}</td>
+      <td>$${row.netSales.toLocaleString()}</td>
+      <td>$${row.grossProfit.toLocaleString()}</td>
     </tr>`;
-  }
+  });
+}
 
-  rawTableHTML += `</table>`;
-  document.getElementById("rawDataTable").innerHTML = rawTableHTML;
+rawTableHTML += `</table>`;
+document.getElementById("rawDataTable").innerHTML = rawTableHTML;
+
+
 
   // Totals Calculation
   const cityTotals = {};
