@@ -27,6 +27,20 @@ document.getElementById("fileInputSummary").addEventListener("change", function 
   reader.readAsText(file);
 });
 
+// Extract date from filename: support MM-DD-YYYY or Unix timestamp
+function extractDateFromCSV(content) {
+  const lines = content.split('\n');
+  for (let line of lines.slice(0, 5)) {
+    const match = line.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/); // e.g. 06/18/2025
+    if (match) {
+      const [_, mm, dd, yyyy] = match;
+return new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd));
+    }
+  }
+  return null;
+}
+
+
 async function loadCSVFromAirtable() {
   const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
   const baseId = 'appD3QeLneqfNdX12';
@@ -37,33 +51,174 @@ async function loadCSVFromAirtable() {
 
   try {
     const res = await fetch(`https://api.airtable.com/v0/${baseId}/${tableId}`, {
-      headers: {
-        Authorization: `Bearer ${airtableApiKey}`
-      }
+      headers: { Authorization: `Bearer ${airtableApiKey}` }
     });
 
     const data = await res.json();
-    const record = data.records.find(
-      r => r.fields['CSV file']?.trim() === csvLabel
-    );
+    const record = data.records.find(r => r.fields['CSV file']?.trim() === csvLabel);
+    const attachments = record?.fields?.Attachments;
 
-    if (!record || !record.fields['Attachments']?.[0]?.url) {
-      throw new Error("❌ File not found in Airtable.");
+    if (!attachments || attachments.length < 2) {
+      throw new Error("❌ Need at least two files for comparison.");
     }
 
-    const fileUrl = record.fields['Attachments'][0].url;
-    console.log("📦 Fetching from Airtable URL:", fileUrl);
+    // 📆 Parse and sort attachments
+   const sorted = await Promise.all(
+  attachments.map(async (file) => {
+    try {
+      const fileContent = await fetch(file.url).then(r => r.text());
+      const parsedDate = extractDateFromCSV(fileContent);
+      const fallbackDate = new Date(file.createdTime || file.lastModifiedTime || Date.now());
+      const finalDate = parsedDate || fallbackDate;
 
-    const fileRes = await fetch(fileUrl);
-    const content = await fileRes.text();
+      console.log(`📄 File: ${file.filename} → Date Used: ${finalDate.toISOString()}`);
+      return { ...file, date: finalDate, content: fileContent };
+    } catch (err) {
+      console.warn("⚠️ Failed to parse content for", file.filename, err);
+      return null;
+    }
+  })
+);
 
-    console.log("📄 Airtable file loaded");
+const validSorted = sorted.filter(file => file && file.date instanceof Date && !isNaN(file.date));
+validSorted.sort((a, b) => b.date - a.date);
+
+
+     
+
+    if (sorted.length < 2) {
+      throw new Error("❌ Could not find two dated files.");
+    }
+
+    const [newerFile, olderFile] = sorted;
+
+    const formatDate = date =>
+      date.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+const newerDateStr = formatDate(newerFile.date);
+const olderDateStr = formatDate(olderFile.date);
+
+ 
+
+    // 🖼 Display in UI
+    const dateDisplayEl = document.getElementById("csvDateLabel");
+    dateDisplayEl.innerHTML = `
+      <strong>Latest File</strong> (${newerDateStr})<br>
+      <strong>Previous File</strong> (${olderDateStr})
+    `;
+
+    console.log("📥 Newest:", newerFile.filename, newerFile.url);
+    console.log("📦 Older:", olderFile.filename, olderFile.url);
+
+    // 🧾 Fetch CSV contents
+    const [newContent, oldContent] = await Promise.all([
+      fetch(newerFile.url).then(r => r.text()),
+      fetch(olderFile.url).then(r => r.text())
+    ]);
+
+
+
+    const comparisonData = compareCSVData(newContent, oldContent);
+    renderComparisonTable(comparisonData);
     document.getElementById("hiddenContent").style.display = "block";
-    processSummaryData(content);
+
   } catch (error) {
-    console.error("❌ Failed to load file from Airtable:", error);
+    console.error("❌ Failed to load files from Airtable:", error);
   }
 }
+
+
+function compareCSVData(newContent, oldContent) {
+ const parse = (content, label) => {
+  console.log(`🔍 Parsing ${label} content...`);
+  const rows = content.split("\n");
+
+  const parsed = rows.map(row => {
+    const [city, type, net, gross] = row.split(",").map(c => c.replace(/[$,"\r]/g, '').trim());
+
+    const netParsed = parseFloat(net);
+    const grossParsed = parseFloat(gross);
+
+    if (!city || !type || isNaN(netParsed) || isNaN(grossParsed)) {
+      return null; // skip junk
+    }
+
+    return {
+      city,
+      type,
+      netSales: netParsed,
+      grossProfit: grossParsed
+    };
+  }).filter(Boolean);
+
+  console.log(`✅ ${label} parsed rows:`, parsed.length);
+  return parsed;
+};
+
+
+  const newData = parse(newContent, '📥 New File');
+  const oldData = parse(oldContent, '📦 Old File');
+
+  console.log("🧩 Building key map for old data...");
+  const key = r => `${r.city}|${r.type}`;
+  const mapOld = Object.fromEntries(oldData.map(r => [key(r), r]));
+  console.log("🔑 Old data keys:", Object.keys(mapOld).length);
+
+  const tableRows = newData.map(r => {
+    const rowKey = key(r);
+    const prev = mapOld[rowKey] || { netSales: 0, grossProfit: 0 };
+    const netDiff = r.netSales - prev.netSales;
+    const grossDiff = r.grossProfit - prev.grossProfit;
+
+    console.log(`📊 Comparing [${rowKey}]: Net: ${r.netSales} (old: ${prev.netSales}) → Δ ${netDiff}, Gross: ${r.grossProfit} (old: ${prev.grossProfit}) → Δ ${grossDiff}`);
+
+    return {
+      ...r,
+      netDiff,
+      grossDiff
+    };
+  });
+
+  console.log("✅ Comparison complete. Rows:", tableRows.length);
+  return tableRows;
+}
+
+
+function renderComparisonTable(data) {
+  let html = `<table class="styled-table">
+    <tr>
+      <th>City</th>
+      <th>Type</th>
+      <th>Net Sales</th>
+      <th>Gross Profit</th>
+    </tr>`;
+
+  for (const { city, type, netSales, grossProfit, netDiff, grossDiff } of data) {
+    const netClass = netDiff > 0 ? 'pos' : netDiff < 0 ? 'neg' : '';
+    const grossClass = grossDiff > 0 ? 'pos' : grossDiff < 0 ? 'neg' : '';
+
+    html += `<tr>
+      <td>${city}</td>
+      <td>${type}</td>
+      <td>
+        $${netSales.toLocaleString()}<br>
+        ${netDiff !== 0 ? `<small class="${netClass}">${netDiff > 0 ? '+' : ''}$${netDiff.toLocaleString()}</small>` : ''}
+      </td>
+      <td>
+        $${grossProfit.toLocaleString()}<br>
+        ${grossDiff !== 0 ? `<small class="${grossClass}">${grossDiff > 0 ? '+' : ''}$${grossDiff.toLocaleString()}</small>` : ''}
+      </td>
+    </tr>`;
+  }
+
+  html += `</table>`;
+  document.getElementById("rawDataTable").innerHTML = html;
+}
+
+
 
 function processSummaryData(content) {
   console.log("📊 Raw content preview:\n", content.slice(0, 300));
@@ -171,8 +326,22 @@ async function replaceCSVInAirtableViaDropbox(file) {
     if (!record) throw new Error("❌ Airtable record not found");
 
     const recordId = record.id;
+    const currentAttachments = record.fields.Attachments || [];
 
-    // Step 3: Replace attachment in Airtable
+    // Step 3: Keep only the newest existing file + new upload
+    const sortedExisting = [...currentAttachments].sort((a, b) =>
+      new Date(b.createdTime) - new Date(a.createdTime)
+    );
+
+    const updatedAttachments = [
+      { url: dropboxUrl, filename: csvLabel }
+    ];
+
+    if (sortedExisting.length > 0) {
+      updatedAttachments.push(sortedExisting[0]); // Keep most recent existing one
+    }
+
+    // Step 4: Patch Airtable with updated attachment list
     const patchRes = await fetch(`https://api.airtable.com/v0/${baseId}/${tableId}/${recordId}`, {
       method: "PATCH",
       headers: {
@@ -181,20 +350,15 @@ async function replaceCSVInAirtableViaDropbox(file) {
       },
       body: JSON.stringify({
         fields: {
-          Attachments: [
-            {
-              url: dropboxUrl,
-              filename: csvLabel
-            }
-          ]
+          Attachments: updatedAttachments
         }
       })
     });
 
     const patchData = await patchRes.json();
     if (patchData.id) {
-      console.log("✅ Airtable updated with new Dropbox file.");
-      alert("✅ File updated in Airtable!");
+      console.log("✅ Airtable updated with new and retained file.");
+      alert("✅ New file uploaded and older one replaced!");
     } else {
       throw new Error("❌ Airtable PATCH failed.");
     }
@@ -204,6 +368,7 @@ async function replaceCSVInAirtableViaDropbox(file) {
     alert("❌ File update failed. See console.");
   }
 }
+
 
 
   
