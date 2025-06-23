@@ -250,10 +250,6 @@ function renderComparisonTable(data) {
   document.getElementById("rawDataTable").innerHTML = html;
 }
 
-
-
-
-
 function processSummaryData(content) {
   console.log("📊 Raw content preview:\n", content.slice(0, 300));
 
@@ -314,8 +310,6 @@ for (const city in groupedByCity) {
 rawTableHTML += `</table>`;
 document.getElementById("rawDataTable").innerHTML = rawTableHTML;
 
-
-
   // Totals Calculation
   const cityTotals = {};
   const typeTotals = { RESIDENTIAL: { netSales: 0, grossProfit: 0 }, COMMERCIAL: { netSales: 0, grossProfit: 0 } };
@@ -331,10 +325,6 @@ document.getElementById("rawDataTable").innerHTML = rawTableHTML;
     }
   });
 }
-
-
-
-
 
 async function replaceCSVInAirtableViaDropbox(file) {
   const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
@@ -396,7 +386,7 @@ async function replaceCSVInAirtableViaDropbox(file) {
     const patchData = await patchRes.json();
     if (patchData.id) {
       console.log("✅ Airtable updated with new and retained file.");
-      alert("✅ New file uploaded and older one replaced!");
+        await loadAndRenderCSVFromDropbox(dropboxUrl); // Refresh UI
     } else {
       throw new Error("❌ Airtable PATCH failed.");
     }
@@ -407,9 +397,6 @@ async function replaceCSVInAirtableViaDropbox(file) {
   }
 }
 
-
-
-  
 document.getElementById("fileInputSummary").addEventListener("change", function (e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -417,3 +404,35 @@ document.getElementById("fileInputSummary").addEventListener("change", function 
   replaceCSVInAirtableViaDropbox(file);
 });
 
+async function loadAndRenderCSVFromDropbox(dropboxUrl) {
+  try {
+    const response = await fetch(dropboxUrl);
+    if (!response.ok) throw new Error("❌ Failed to fetch newly uploaded CSV");
+
+    const content = await response.text();
+    console.log("📄 New CSV content loaded after upload");
+    console.log("📊 Raw content preview:\n", content.slice(0, 300));
+
+    // Update the date label
+    const parsedDate = extractDateFromCSV(content);
+    const dateDisplayEl = document.getElementById("csvDateLabel");
+
+    if (parsedDate) {
+      const formatted = parsedDate.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      dateDisplayEl.innerHTML = `<strong>Latest File</strong> (${formatted})<br><em>New upload reflected below</em>`;
+    } else {
+      dateDisplayEl.innerHTML = `<strong>Latest File</strong> (Date unknown)<br><em>New upload reflected below</em>`;
+    }
+
+    processSummaryData(content); // This renders the new file into rawDataTable
+    document.getElementById("hiddenContent").style.display = "block";
+
+  } catch (err) {
+    console.error("❌ Error displaying uploaded CSV:", err);
+    alert("❌ Could not show new CSV. Check console.");
+  }
+}
