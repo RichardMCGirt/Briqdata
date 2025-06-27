@@ -66,9 +66,6 @@ async function loadCSVFromAirtable() {
 const validSorted = sorted.filter(file => file && file.date instanceof Date && !isNaN(file.date));
 validSorted.sort((a, b) => a.date - b.date);
 
-
-     
-
     if (sorted.length < 2) {
       throw new Error("❌ Could not find two dated files.");
     }
@@ -83,8 +80,6 @@ const [olderFile, newerFile] = validSorted;
       });
 const newerDateStr = formatDate(newerFile.date);
 const olderDateStr = formatDate(olderFile.date);
-
- 
 
     // 🖼 Display in UI
     const dateDisplayEl = document.getElementById("csvDateLabel");
