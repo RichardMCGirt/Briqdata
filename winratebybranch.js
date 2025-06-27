@@ -1,3 +1,6 @@
+(() => {
+
+
 const expectedBranches = [
     "Charlotte", "Columbia", "Greensboro", "Greenville SC", 
     "Myrtle Beach", "Raleigh", "Wilmington", "Charleston", "Richmond", "Atlanta", "Savannanh" 
@@ -207,3 +210,4 @@ function displayWinRatesInGrid(data, gridId, title) {
     }
 }
 
+})();
