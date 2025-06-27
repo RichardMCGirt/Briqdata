@@ -10,23 +10,6 @@ document.addEventListener("DOMContentLoaded", function () {
   loadCSVFromAirtable();
 });
 
-document.getElementById("fileInputSummary").addEventListener("change", function (e) {
-  console.log("📁 File selected");
-  const file = e.target.files[0];
-  if (!file) {
-    console.warn("❌ No file found.");
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = function (event) {
-    console.log("📄 File loaded");
-    processSummaryData(event.target.result);
-  };
-
-  reader.readAsText(file);
-});
-
 // Extract date from filename: support MM-DD-YYYY or Unix timestamp
 function extractDateFromCSV(content) {
   const lines = content.split('\n');
@@ -81,7 +64,7 @@ async function loadCSVFromAirtable() {
 );
 
 const validSorted = sorted.filter(file => file && file.date instanceof Date && !isNaN(file.date));
-validSorted.sort((a, b) => b.date - a.date);
+validSorted.sort((a, b) => a.date - b.date);
 
 
      
@@ -90,7 +73,7 @@ validSorted.sort((a, b) => b.date - a.date);
       throw new Error("❌ Could not find two dated files.");
     }
 
-    const [newerFile, olderFile] = sorted;
+const [olderFile, newerFile] = validSorted;
 
     const formatDate = date =>
       date.toLocaleDateString(undefined, {
@@ -386,7 +369,7 @@ async function replaceCSVInAirtableViaDropbox(file) {
     const patchData = await patchRes.json();
     if (patchData.id) {
       console.log("✅ Airtable updated with new and retained file.");
-        await loadAndRenderCSVFromDropbox(dropboxUrl); // Refresh UI
+await loadCSVFromAirtable(); // Refresh full comparison UI with new file included
     } else {
       throw new Error("❌ Airtable PATCH failed.");
     }
@@ -404,35 +387,3 @@ document.getElementById("fileInputSummary").addEventListener("change", function 
   replaceCSVInAirtableViaDropbox(file);
 });
 
-async function loadAndRenderCSVFromDropbox(dropboxUrl) {
-  try {
-    const response = await fetch(dropboxUrl);
-    if (!response.ok) throw new Error("❌ Failed to fetch newly uploaded CSV");
-
-    const content = await response.text();
-    console.log("📄 New CSV content loaded after upload");
-    console.log("📊 Raw content preview:\n", content.slice(0, 300));
-
-    // Update the date label
-    const parsedDate = extractDateFromCSV(content);
-    const dateDisplayEl = document.getElementById("csvDateLabel");
-
-    if (parsedDate) {
-      const formatted = parsedDate.toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-      dateDisplayEl.innerHTML = `<strong>Latest File</strong> (${formatted})<br><em>New upload reflected below</em>`;
-    } else {
-      dateDisplayEl.innerHTML = `<strong>Latest File</strong> (Date unknown)<br><em>New upload reflected below</em>`;
-    }
-
-    processSummaryData(content); // This renders the new file into rawDataTable
-    document.getElementById("hiddenContent").style.display = "block";
-
-  } catch (err) {
-    console.error("❌ Error displaying uploaded CSV:", err);
-    alert("❌ Could not show new CSV. Check console.");
-  }
-}
