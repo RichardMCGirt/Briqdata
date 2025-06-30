@@ -1,12 +1,10 @@
 (() => {
 
-
 const expectedBranches = [
     "Charlotte", "Columbia", "Greensboro", "Greenville SC", 
     "Myrtle Beach", "Raleigh", "Wilmington", "Charleston", "Richmond", "Atlanta", "Savannanh" 
   ];
   
-
 document.addEventListener('DOMContentLoaded', function () {
     
     // Directly call the initialization function to start fetching data immediately
@@ -31,7 +29,6 @@ async function initializep() {
     {Project Type} = 'Commercial'
 )`;
 
-
       const residentialFilter = `AND(
     YEAR({Last Time Outcome Modified}) = ${currentYear},
     OR(
@@ -40,7 +37,6 @@ async function initializep() {
     ),
     {Project Type} != 'Commercial'
 )`;
-
 
         const [commercialRecords, residentialRecords] = await Promise.all([
             fetchAirtableData(airtableApiKey, airtableBaseId, airtableTableName, commercialFilter),
@@ -60,7 +56,6 @@ async function initializep() {
         hideLoadingMessage();
     }
 }
-
 
 async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
     let allRecords = [];
@@ -92,8 +87,6 @@ async function fetchAirtableData(apiKey, baseId, tableName, filterFormula) {
 
     return allRecords;
 }
-
-
 
 function displayLoadingMessage(message) {
     const fetchProgress = document.getElementById('fetch-progress');

@@ -3,10 +3,12 @@ import {
   uploadFileToDropbox
 } from './dropbox.js';
 
+  let airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
+let baseId = 'appD3QeLneqfNdX12';
+  let tableId = 'tblvqHdBUZ6EQpcNM';
+  let csvLabel = 'SalesSummarybyPOSUDF1byLocation.csv';
 
-console.log("📦 JS Loaded");
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("🚀 Page loaded, fetching CSV automatically...");
   loadCSVFromAirtable();
 });
 
@@ -23,15 +25,7 @@ return new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd));
   return null;
 }
 
-
 async function loadCSVFromAirtable() {
-  const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
-  const baseId = 'appD3QeLneqfNdX12';
-  const tableId = 'tblvqHdBUZ6EQpcNM';
-  const csvLabel = 'SalesSummarybyPOSUDF1byLocation.csv';
-
-  console.log("🌐 Looking up file in Airtable:", csvLabel);
-
   try {
     const res = await fetch(`https://api.airtable.com/v0/${baseId}/${tableId}`, {
       headers: { Authorization: `Bearer ${airtableApiKey}` }
@@ -54,7 +48,6 @@ async function loadCSVFromAirtable() {
       const fallbackDate = new Date(file.createdTime || file.lastModifiedTime || Date.now());
       const finalDate = parsedDate || fallbackDate;
 
-      console.log(`📄 File: ${file.filename} → Date Used: ${finalDate.toISOString()}`);
       return { ...file, date: finalDate, content: fileContent };
     } catch (err) {
       console.warn("⚠️ Failed to parse content for", file.filename, err);
@@ -66,38 +59,34 @@ async function loadCSVFromAirtable() {
 const validSorted = sorted.filter(file => file && file.date instanceof Date && !isNaN(file.date));
 validSorted.sort((a, b) => a.date - b.date);
 
-    if (sorted.length < 2) {
-      throw new Error("❌ Could not find two dated files.");
-    }
+if (validSorted.length < 2) {
+  throw new Error("❌ Could not find two valid dated files.");
+}
 
 const [olderFile, newerFile] = validSorted;
 
-    const formatDate = date =>
-      date.toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
+const formatDate = date =>
+  date.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
 const newerDateStr = formatDate(newerFile.date);
 const olderDateStr = formatDate(olderFile.date);
 
-    // 🖼 Display in UI
-    const dateDisplayEl = document.getElementById("csvDateLabel");
-    dateDisplayEl.innerHTML = `
-      <strong>Latest File</strong> (${newerDateStr})<br>
-      <strong>Previous File</strong> (${olderDateStr})
-    `;
-
-    console.log("📥 Newest:", newerFile.filename, newerFile.url);
-    console.log("📦 Older:", olderFile.filename, olderFile.url);
+const dateDisplayEl = document.getElementById("csvDateLabel");
+dateDisplayEl.innerHTML = `
+  <strong>Comparing Files:</strong><br>
+  ✅ <strong></strong> ${newerFile.filename} (${newerDateStr})<br>
+  🔄 <strong></strong> ${olderFile.filename} (${olderDateStr})
+`;
 
     // 🧾 Fetch CSV contents
     const [newContent, oldContent] = await Promise.all([
       fetch(newerFile.url).then(r => r.text()),
       fetch(olderFile.url).then(r => r.text())
     ]);
-
-
 
     const comparisonData = compareCSVData(newContent, oldContent);
     renderComparisonTable(comparisonData);
@@ -108,10 +97,8 @@ const olderDateStr = formatDate(olderFile.date);
   }
 }
 
-
 function compareCSVData(newContent, oldContent) {
  const parse = (content, label) => {
-  console.log(`🔍 Parsing ${label} content...`);
   const rows = content.split("\n");
 
   const parsed = rows.map(row => {
@@ -132,26 +119,20 @@ function compareCSVData(newContent, oldContent) {
     };
   }).filter(Boolean);
 
-  console.log(`✅ ${label} parsed rows:`, parsed.length);
   return parsed;
 };
-
 
   const newData = parse(newContent, '📥 New File');
   const oldData = parse(oldContent, '📦 Old File');
 
-  console.log("🧩 Building key map for old data...");
   const key = r => `${r.city}|${r.type}`;
   const mapOld = Object.fromEntries(oldData.map(r => [key(r), r]));
-  console.log("🔑 Old data keys:", Object.keys(mapOld).length);
 
   const tableRows = newData.map(r => {
     const rowKey = key(r);
     const prev = mapOld[rowKey] || { netSales: 0, grossProfit: 0 };
     const netDiff = r.netSales - prev.netSales;
     const grossDiff = r.grossProfit - prev.grossProfit;
-
-    console.log(`📊 Comparing [${rowKey}]: Net: ${r.netSales} (old: ${prev.netSales}) → Δ ${netDiff}, Gross: ${r.grossProfit} (old: ${prev.grossProfit}) → Δ ${grossDiff}`);
 
     return {
       ...r,
@@ -160,10 +141,8 @@ function compareCSVData(newContent, oldContent) {
     };
   });
 
-  console.log("✅ Comparison complete. Rows:", tableRows.length);
   return tableRows;
 }
-
 
 function renderComparisonTable(data) {
   // Group rows by city
@@ -228,87 +207,8 @@ function renderComparisonTable(data) {
   document.getElementById("rawDataTable").innerHTML = html;
 }
 
-function processSummaryData(content) {
-  console.log("📊 Raw content preview:\n", content.slice(0, 300));
-
-  const rows = content.split("\n").slice(2); // Skip headers
-  const data = [];
-
-  // Parse and collect cleaned data
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    const cols = row.split(",").map(c => c.trim());
-    if (cols.length < 4 || !cols[0] || !cols[1]) continue;
-
-    const city = cols[0].replace(/"/g, '');
-    const type = cols[1].replace(/"/g, '');
-    const netSales = parseFloat(cols[2].replace(/[$,",]/g, '')) || 0;
-    const grossProfit = parseFloat(cols[3].replace(/[$,",]/g, '')) || 0;
-    if (netSales === 0 && grossProfit === 0) continue;
-
-    data.push({ city, type, netSales, grossProfit });
-  }
-
-  // Count city occurrences
-  const cityCounts = {};
-  data.forEach(({ city }) => {
-    cityCounts[city] = (cityCounts[city] || 0) + 1;
-  });
-
-// Group rows by city to make sure they are together
-const groupedByCity = {};
-data.forEach(row => {
-  if (!groupedByCity[row.city]) groupedByCity[row.city] = [];
-  groupedByCity[row.city].push(row);
-});
-
-let rawTableHTML = `<table class="styled-table">
-  <tr><th>Branch</th><th>Project Type</th><th>Net Sales</th><th>Gross Profit</th></tr>`;
-
-for (const city in groupedByCity) {
-  const rows = groupedByCity[city];
-  const rowspan = rows.length;
-
-  rows.forEach((row, index) => {
-    rawTableHTML += `<tr${index === 0 ? ` class="city-border"` : ""}>`;
-
-    // Only include the city cell on the first row of the group
-    if (index === 0) {
-      rawTableHTML += `<td rowspan="${rowspan}">${city}</td>`;
-    }
-
-    rawTableHTML += `
-      <td>${row.type}</td>
-      <td>$${row.netSales.toLocaleString()}</td>
-      <td>$${row.grossProfit.toLocaleString()}</td>
-    </tr>`;
-  });
-}
-
-rawTableHTML += `</table>`;
-document.getElementById("rawDataTable").innerHTML = rawTableHTML;
-
-  // Totals Calculation
-  const cityTotals = {};
-  const typeTotals = { RESIDENTIAL: { netSales: 0, grossProfit: 0 }, COMMERCIAL: { netSales: 0, grossProfit: 0 } };
-
-  data.forEach(({ city, type, netSales, grossProfit }) => {
-    if (!cityTotals[city]) cityTotals[city] = { netSales: 0, grossProfit: 0 };
-    cityTotals[city].netSales += netSales;
-    cityTotals[city].grossProfit += grossProfit;
-
-    if (typeTotals[type]) {
-      typeTotals[type].netSales += netSales;
-      typeTotals[type].grossProfit += grossProfit;
-    }
-  });
-}
-
 async function replaceCSVInAirtableViaDropbox(file) {
-  const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
-  const baseId = 'appD3QeLneqfNdX12';
-  const tableId = 'tblvqHdBUZ6EQpcNM';
-  const csvLabel = 'SalesSummarybyPOSUDF1byLocation.csv';
+
 
   try {
     const creds = await fetchDropboxToken();
@@ -317,7 +217,6 @@ async function replaceCSVInAirtableViaDropbox(file) {
     const dropboxUrl = await uploadFileToDropbox(file, creds.token, creds);
     if (!dropboxUrl) throw new Error("❌ Dropbox upload failed");
 
-    console.log("📤 File uploaded to Dropbox:", dropboxUrl);
 
     // Step 2: Find Airtable record
     const recordsRes = await fetch(`https://api.airtable.com/v0/${baseId}/${tableId}`, {
@@ -363,8 +262,7 @@ async function replaceCSVInAirtableViaDropbox(file) {
 
     const patchData = await patchRes.json();
     if (patchData.id) {
-      console.log("✅ Airtable updated with new and retained file.");
-await loadCSVFromAirtable(); // Refresh full comparison UI with new file included
+        await loadCSVFromAirtable(); // Refresh full comparison UI with new file included
     } else {
       throw new Error("❌ Airtable PATCH failed.");
     }
