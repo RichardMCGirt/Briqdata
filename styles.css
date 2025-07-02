@@ -8,8 +8,42 @@
     transition: transform 0.3s ease;
     overflow: hidden; /* Prevent content overflow */
     flex-wrap: wrap;
-
 }
+
+#new-chart-container {
+  grid-column: span 3; /* Span across 3 columns in the grid */
+  width: 100%;
+  margin: 20px 0;
+  background-color: #ffffff;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  overflow-x: auto;
+}
+
+#new-chart-container h2 {
+  margin-bottom: 20px;
+}
+
+#new-chart-container canvas {
+  display: block;
+  width: 100% !important;
+  max-height: 400px; /* NEW: limit height to 400px or any size you want */
+  height: 400px;     /* NEW: force height smaller */
+}
+
+#new-chart-container button {
+  margin-top: 20px;
+}
+
+
+.chart-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
 
 table, th, td {
     border: 1px solid black;
