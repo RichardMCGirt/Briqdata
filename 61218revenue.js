@@ -35,194 +35,278 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 
 
-  async function fetchAllData() {
-    let allRecords = [];
-    let offset = null;
+async function fetchAllData() {
+  let allRecords = [];
+  let offset = null;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Remove time for comparison
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-    do {
-        const data = await fetchData(offset);
+  do {
+    const data = await fetchData(offset);
 
-       const filteredRecords = data.records.filter(record => {
-    const bidValue = parseFloat(record.fields['Bid Value']) || 0;
-    const anticipatedEndDate = record.fields['Anticipated End Date']
+    const filteredRecords = data.records.filter(record => {
+      const bidValue = parseFloat(record.fields['Bid Value']) || 0;
+      const anticipatedStartDate = record.fields['Anticipated Start Date']
+        ? new Date(record.fields['Anticipated Start Date'])
+        : null;
+      const anticipatedEndDate = record.fields['Anticipated End Date']
         ? new Date(record.fields['Anticipated End Date'])
         : null;
-    const outcome = record.fields['Outcome'] || '';
+      const outcome = record.fields['Outcome'] || '';
 
-    return (
-        bidValue > 0 &&
-        anticipatedEndDate &&
-        anticipatedEndDate >= today &&
-        outcome.toLowerCase() === 'win'
-    );
-});
+      if (bidValue <= 0) return false;
+      if (outcome.toLowerCase() !== 'win') return false;
 
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      monthEnd.setHours(23, 59, 59, 999);
 
-        allRecords = allRecords.concat(filteredRecords);
-        offset = data.offset;
+      let overlapsCurrentMonth = false;
+      if (anticipatedStartDate && anticipatedEndDate) {
+        overlapsCurrentMonth = anticipatedStartDate <= monthEnd && anticipatedEndDate >= monthStart;
+      }
 
-        document.getElementById('record-countNew').textContent = `Records fetched: ${allRecords.length}`;
-    } while (offset);
+      return (
+        (anticipatedEndDate && anticipatedEndDate >= today) ||
+        (anticipatedStartDate && anticipatedStartDate >= today) ||
+        overlapsCurrentMonth
+      );
+    });
 
-    return allRecords;
+    // ✅ Debug: log Savannah records passing filter
+    filteredRecords.forEach(record => {
+      if (
+        record.fields['Division'] &&
+        record.fields['Division'].toLowerCase() === 'savannah'
+      ) {
+        console.log("Savannah Record Passing Filter:", {
+          Name: record.fields['Name'] || '',
+          BidValue: record.fields['Bid Value'] || '',
+          Outcome: record.fields['Outcome'] || '',
+          AnticipatedStartDate: record.fields['Anticipated Start Date'] || '',
+          AnticipatedEndDate: record.fields['Anticipated End Date'] || ''
+        });
+      }
+    });
+
+    allRecords = allRecords.concat(filteredRecords);
+    offset = data.offset;
+
+    document.getElementById('record-countNew').textContent = `Records fetched: ${allRecords.length}`;
+  } while (offset);
+
+  return allRecords;
 }
 
 
-   async function processRecords(allRecords) {
-    if (!allRecords || allRecords.length === 0) {
-        console.warn("No records to process.");
-        return;
+
+
+async function processRecords(allRecords) {
+  if (!allRecords || allRecords.length === 0) {
+    console.warn("No records to process.");
+    return;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const revenueByDivision = {};
+  const allMonths = new Set();
+
+  console.log(`Processing ${allRecords.length} records...`);
+
+  allRecords.forEach((record, idx) => {
+    const divisionName = record.fields['Division'] || "Unknown Division";
+    const bidValue = parseFloat(record.fields['Bid Value']) || 0;
+
+    if (bidValue === 0) {
+      console.log(`Skipping record ${idx + 1}: Bid Value is zero or invalid.`);
+      return;
     }
 
-    const today = new Date();
-    const revenueByDivision = {};
-    const allMonths = new Set();
+    const anticipatedStartDate = record.fields['Anticipated Start Date']
+      ? new Date(record.fields['Anticipated Start Date'])
+      : null;
 
-    console.log(`Processing ${allRecords.length} records...`);
+    const anticipatedEndDate = record.fields['Anticipated End Date']
+      ? new Date(record.fields['Anticipated End Date'])
+      : null;
 
-    allRecords.forEach((record, idx) => {
-        const divisionName = record.fields['Division'] || "Unknown Division";
-        const bidValue = parseFloat(record.fields['Bid Value']) || 0;
+    if (!anticipatedStartDate || !anticipatedEndDate || anticipatedEndDate < anticipatedStartDate) {
+      if (divisionName.toLowerCase() === 'savannah') {
+        console.log(`Skipping record ${idx + 1} for Savannah: Invalid dates`, {
+          anticipatedStartDate,
+          anticipatedEndDate
+        });
+      } else {
+        console.log(`Skipping record ${idx + 1}: Invalid start/end dates.`, {
+          anticipatedStartDate,
+          anticipatedEndDate
+        });
+      }
+      return;
+    }
 
-        if (bidValue === 0) {
-            console.log(`Skipping record ${idx + 1}: Bid Value is zero or invalid.`);
-            return;
-        }
+    // ✅ Count full months: inclusive
+    let monthsDiff = (anticipatedEndDate.getFullYear() - anticipatedStartDate.getFullYear()) * 12 +
+                     (anticipatedEndDate.getMonth() - anticipatedStartDate.getMonth()) + 1;
 
-        const anticipatedStartDate = record.fields['Anticipated Start Date'] ? new Date(record.fields['Anticipated Start Date']) : null;
-        const anticipatedEndDate = record.fields['Anticipated End Date'] ? new Date(record.fields['Anticipated End Date']) : null;
+    monthsDiff = Math.max(monthsDiff, 1);
 
-        if (!anticipatedStartDate || !anticipatedEndDate || anticipatedEndDate < anticipatedStartDate) {
-            console.log(`Skipping record ${idx + 1}: Invalid start/end dates.`, {
-                anticipatedStartDate,
-                anticipatedEndDate
-            });
-            return;
-        }
+    const portionPerMonth = bidValue / monthsDiff;
 
-        const monthsDiff = (anticipatedEndDate.getFullYear() - anticipatedStartDate.getFullYear()) * 12 +
-                           (anticipatedEndDate.getMonth() - anticipatedStartDate.getMonth()) + 1;
+    if (divisionName.toLowerCase() === 'savannah') {
+      console.log(`Savannah record ${idx + 1}:`);
+      console.log(`BidValue: ${bidValue}`);
+      console.log(`Start: ${anticipatedStartDate}`);
+      console.log(`End: ${anticipatedEndDate}`);
+      console.log(`MonthsDiff: ${monthsDiff}`);
+      console.log(`PortionPerMonth: ${portionPerMonth}`);
+    }
 
-        const avgPerMonth = bidValue / monthsDiff;
+    let current = new Date(anticipatedStartDate.getFullYear(), anticipatedStartDate.getMonth(), 1);
 
-        for (let i = 0; i < monthsDiff; i++) {
-            const monthDate = new Date(anticipatedStartDate.getFullYear(), anticipatedStartDate.getMonth() + i, 1);
-            const monthName = monthDate.toLocaleString('default', { month: 'short', year: 'numeric' });
-            allMonths.add(monthName);
+    for (let i = 0; i < monthsDiff; i++) {
+      const monthName = current.toLocaleString('default', { month: 'short', year: 'numeric' });
+      allMonths.add(monthName);
 
-            if (!revenueByDivision[divisionName]) {
-                revenueByDivision[divisionName] = {};
-            }
+      if (!revenueByDivision[divisionName]) {
+        revenueByDivision[divisionName] = {};
+      }
+      if (!revenueByDivision[divisionName][monthName]) {
+        revenueByDivision[divisionName][monthName] = 0;
+      }
+      revenueByDivision[divisionName][monthName] += portionPerMonth;
 
-            if (!revenueByDivision[divisionName][monthName]) {
-                revenueByDivision[divisionName][monthName] = 0;
-            }
+      // Move to next month
+      current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
+    }
+  });
 
-            revenueByDivision[divisionName][monthName] += avgPerMonth;
-        }
-    });
+  // ✅ Sort and filter months after processing all records
+  let sortedMonths = Array.from(allMonths).sort((a, b) => {
+    const [monthA, yearA] = a.split(' ');
+    const [monthB, yearB] = b.split(' ');
+    const dateA = new Date(`${monthA} 1, ${yearA}`);
+    const dateB = new Date(`${monthB} 1, ${yearB}`);
+    return dateA - dateB;
+  });
 
-    let sortedMonths = Array.from(allMonths).sort((a, b) => {
-        const [monthA, yearA] = a.split(' ');
-        const [monthB, yearB] = b.split(' ');
-        const dateA = new Date(`${monthA} 1, ${yearA}`);
-        const dateB = new Date(`${monthB} 1, ${yearB}`);
-        return dateA - dateB;
-    });
+  sortedMonths = sortedMonths.filter(monthName => {
+    const [month, year] = monthName.split(' ');
+    const monthDate = new Date(`${month} 1, ${year}`);
+    monthDate.setHours(0, 0, 0, 0);
+    return monthDate >= new Date(today.getFullYear(), today.getMonth(), 1);
+  });
 
-    // 👉 Filter out past months, only keep current and future months
-    sortedMonths = sortedMonths.filter(monthName => {
-        const [month, year] = monthName.split(' ');
-        const monthDate = new Date(`${month} 1, ${year}`);
-        monthDate.setHours(0, 0, 0, 0);
-        return monthDate >= new Date(today.getFullYear(), today.getMonth(), 1);
-    });
+  sortedMonths = sortedMonths.slice(0, 6);
 
-    console.log("Filtered months (current and future):", sortedMonths);
+  console.log("Filtered months (next six months):", sortedMonths);
 
-    createRevenueChart(revenueByDivision, sortedMonths);
+  if (revenueByDivision['Savannah']) {
+    console.log("Final Savannah revenueByDivision:", revenueByDivision['Savannah']);
+    const total = Object.values(revenueByDivision['Savannah']).reduce((sum, val) => sum + val, 0);
+    console.log(`Savannah total: ${total.toFixed(2)}`);
+  }
+
+  createRevenueChart(revenueByDivision, sortedMonths);
 }
 
 
 
-    function createRevenueChart(revenueByDivision, months) {
-        const divisions = Object.keys(revenueByDivision);
-        const datasets = [];
 
-        const colors = [
-            'rgba(75, 192, 192, 0.7)',
-            'rgba(255, 99, 132, 0.7)',
-            'rgba(54, 162, 235, 0.7)',
-            'rgba(255, 206, 86, 0.7)',
-            'rgba(153, 102, 255, 0.7)',
-            'rgba(255, 159, 64, 0.7)'
-        ];
 
-        divisions.forEach((division, index) => {
-            const data = months.map(month => revenueByDivision[division][month] || 0);
 
-            datasets.push({
-                label: division,
-                data: data,
-                backgroundColor: colors[index % colors.length],
-                borderWidth: 1
-            });
+ function createRevenueChart(revenueByDivision, months) {
+    // 👉 Get division names and sort them alphabetically
+    const divisions = Object.keys(revenueByDivision).sort((a, b) => {
+        return a.localeCompare(b);
+    });
+
+    const datasets = [];
+
+const colors = [
+  'rgba(0, 82, 155, 0.8)',   // Deep blue
+  'rgba(230, 85, 13, 0.8)',  // Rich orange
+  'rgba(49, 163, 84, 0.8)',  // Medium green
+  'rgba(165, 15, 21, 0.8)',  // Deep red
+  'rgba(106, 61, 154, 0.8)', // Royal purple
+  'rgba(255, 127, 0, 0.8)',  // Bright orange
+  'rgba(102, 194, 165, 0.8)',// Mint teal
+  'rgba(120, 120, 120, 0.8)',// Neutral gray
+  'rgba(153, 142, 60, 0.8)', // Olive gold
+  'rgba(38, 139, 210, 0.8)'  // Soft sky blue
+];
+
+
+
+    divisions.forEach((division, index) => {
+        const data = months.map(month => revenueByDivision[division][month] || 0);
+
+        datasets.push({
+            label: division,
+            data: data,
+            backgroundColor: colors[index % colors.length],
+            borderWidth: 1
         });
+    });
 
-        const ctx = document.getElementById('expectedRevenueChart').getContext('2d');
+    const ctx = document.getElementById('expectedRevenueChart').getContext('2d');
 
-        if (expectedRevenueChartInstance !== null) {
-            expectedRevenueChartInstance.destroy();
-        }
+    if (expectedRevenueChartInstance !== null) {
+        expectedRevenueChartInstance.destroy();
+    }
 
-        expectedRevenueChartInstance = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: months,
-                datasets: datasets
+    expectedRevenueChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false
             },
-            options: {
-                responsive: true,
-                interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
-                stacked: true,
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Month'
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Expected Revenue'
-                        },
-                        ticks: {
-                            callback: function (value) {
-                                return `$${value.toLocaleString()}`;
-                            }
-                        }
+            stacked: true,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Month'
                     }
                 },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function (tooltipItem) {
-                                return `${tooltipItem.dataset.label}: $${tooltipItem.raw.toLocaleString()}`;
-                            }
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Expected Revenue'
+                    },
+                    ticks: {
+                        callback: function (value) {
+                            return `$${value.toLocaleString()}`;
                         }
                     }
                 }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function (tooltipItem) {
+                            return `${tooltipItem.dataset.label}: $${tooltipItem.raw.toLocaleString()}`;
+                        }
+                    }
+                },
+                legend: {
+                    // Chart.js legend uses dataset order, so sorting datasets does the trick!
+                }
             }
-        });
-    }
+        }
+    });
+}
+
 
     const allRecords = await fetchAllData();
     await processRecords(allRecords);
