@@ -307,8 +307,5 @@ const colors = [
     const allRecords = await fetchAllData();
     await processRecords(allRecords);
 
-    exportButton.disabled = false;
-    exportButton.textContent = "Export";
-    exportButton.style.backgroundColor = "";
-    exportButton.style.cursor = "";
+   
 });
