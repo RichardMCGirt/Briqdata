@@ -4,11 +4,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableTableName = 'tblfCPX293KlcKsdp';
     let expectedRevenueChartInstance = null;
 
-    const exportButton = document.getElementById('export-button-new');
-    exportButton.disabled = true;
-    exportButton.textContent = "Fetching data...";
-    exportButton.style.backgroundColor = "#ccc";
-    exportButton.style.cursor = "not-allowed";
+   
 
     async function fetchData(offset = null) {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?pageSize=100`;
@@ -311,8 +307,5 @@ const colors = [
     const allRecords = await fetchAllData();
     await processRecords(allRecords);
 
-    exportButton.disabled = false;
-    exportButton.textContent = "Export";
-    exportButton.style.backgroundColor = "";
-    exportButton.style.cursor = "";
+   
 });
