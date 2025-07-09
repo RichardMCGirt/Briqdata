@@ -81,7 +81,9 @@
         <h2>Projected Revenue</h2>
         <canvas id="expectedRevenueChart"></canvas>
         <p id="record-countNew"></p>
-        <br>
+      </div>
+            <div class="chart-section full-width" id="new-chart-container">
+
         <h2>Commercial Estimator Revenue Estimated - 30 Days</h2>
         <div id="record-countE60">Records fetched: 0</div>
         <canvas id="60daysEChart"></canvas>
@@ -100,6 +102,7 @@
       <h3 class="grid-header">Residential Win Rates Current Year</h3>
       <div id="nonCommercialGrid" class="winrate-grid"></div>
       <hr>
+      <div class="chart-section">
 
       <!-- Open Opportunities - Residential -->
       <div class="section-box">
@@ -107,50 +110,57 @@
         <div id="fetch-progress6" style="display: none;">Loading...</div>
         <label for="user-filter5">Filter by AC:</label>
         <select id="user-filter5"></select>
-        <canvas id="winRateChart6" width="800" height="150"></canvas>
+        <canvas id="winRateChart6" width="1500" height="150"></canvas>
         <hr>
         <h3 class="grid-header">Open Opportunities - Commercial</h3>
         <label for="user-filter6">Filter by AC:</label>
         <select id="user-filter6"></select>
-        <canvas id="winRateChart7" width="800" height="150"></canvas>
+        <canvas id="winRateChart7" width="1500" height="150"></canvas>
       </div>
+</div>
 
-      <!-- In-Person Meetings -->
-      <div class="section-box">
-        <h3 class="grid-header">In-Person Meetings (Last 90 Days)</h3>
-        <div id="fetch-progress3">Loading data, please wait...</div>
-        <label for="user-filter9">Filter by Submitter:</label>
-        <select id="user-filter9"></select>
-        <div id="activity-chart-container">
-          <canvas id="activity-chart" width="800" height="150"></canvas>
-        </div>
-      </div>
+    <div class="section-group" style="background-color: #f8f9fa; padding: 24px; border-radius: 12px; margin-bottom: 24px;">
 
-      <!-- Returns in Last 7 Days -->
-      <div class="section-box">
-        <h3 class="grid-header">Returns in last 7 days</h3>
-        <div id="fmreturns">
-          <label for="user-filter2">Filter by FM:</label>
-          <select id="user-filter2"></select>
-        </div>
-        <div id="fetch-progress2" style="display: none;">Loading...</div>
-        <canvas id="FMR" width="800" height="150"></canvas>
-      </div>
-
-      <!-- Field Manager Commercial Daily Logs -->
-      <div class="section-box">
-        <h3 class="grid-header">Field Manager Commercial Daily Logs Last 7 days</h3>
-        <div id="fmdailylogs">
-          <label for="user-filter3">Filter by FM:</label>
-          <select id="user-filter3"></select>
-        </div>
-        <div id="fetch-progress3" style="display: none;">Loading...</div>
-        <canvas id="FDL" width="800" height="150"></canvas>
-        <h3 class="grid-header"># of Elevations and/or Options Last 30 Days</h3>
-        <canvas id="revisionsChart" width="800" height="150"></canvas>
-      </div>
+  <!-- In-Person Meetings -->
+  <div class="section-box">
+    <h3 class="grid-header">In-Person Meetings (Last 90 Days)</h3>
+    <div id="fetch-progress3">Loading data, please wait...</div>
+    <label for="user-filter9">Filter by Submitter:</label>
+    <select id="user-filter9"></select>
+    <div id="activity-chart-container">
+      <canvas id="activity-chart" width="1100" height="150"></canvas>
     </div>
-  </div> <!-- END .container -->
+  </div>
+
+  <!-- Returns in Last 7 Days -->
+  <div class="section-box">
+    <h3 class="grid-header">Returns in last 7 days</h3>
+    <div id="fmreturns">
+      <label for="user-filter2">Filter by FM:</label>
+      <select id="user-filter2"></select>
+    </div>
+    <div id="fetch-progress2" style="display: none;">Loading...</div>
+    <canvas id="FMR" width="800" height="150"></canvas>
+  </div>
+
+  <!-- Field Manager Commercial Daily Logs -->
+  <div class="section-box">
+    <h3 class="grid-header">Field Manager Commercial Daily Logs Last 7 days</h3>
+    <div id="fmdailylogs">
+      <label for="user-filter3">Filter by FM:</label>
+      <select id="user-filter3"></select>
+    </div>
+    <div id="fetch-progress3" style="display: none;">Loading...</div>
+    <canvas id="FDL" width="800" height="150"></canvas>
+  </div>
+    <div class="section-box">
+
+    <h3 class="grid-header"># of Elevations and/or Options Last 30 Days</h3>
+    <canvas id="revisionsChart" width="800" height="150"></canvas>
+  </div>
+
+</div>
+
 
   <!-- SCRIPTS -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
