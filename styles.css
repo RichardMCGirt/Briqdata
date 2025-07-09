@@ -12,13 +12,14 @@
 
 #new-chart-container {
   grid-column: span 3; /* Span across 3 columns in the grid */
-  width: 100%;
+  width: 98%;
   margin: 20px 0;
   background-color: #ffffff;
-  padding: 25px;
+    padding: 25px;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
   overflow-x: auto;
+  
 }
 
 #new-chart-container h2 {
