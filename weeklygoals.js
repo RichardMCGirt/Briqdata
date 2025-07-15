@@ -65,7 +65,6 @@ function buildSectionHeaderRow(headers) {
   return rowHtml;
 }
 
-
 const MOCK_TODAY = new Date(2025, 6, 21); // Note: months are 0-based (8 = September)
 
 // Fetch Airtable values for a measurable row and an array of date fields
@@ -298,8 +297,6 @@ async function fetchCommercialOpsLast7Days(dateHeaders) {
   return { "Commercial $ Ops Last 7 Days": commercialSums };
 }
 
-
-
 async function fetchResidentialOpsLast7Days(dateHeaders) {
   // 1. Find global date window (min/max header ± 7 days)
   let allDates = dateHeaders.map(h => {
@@ -411,9 +408,6 @@ const filterFormula = `AND(
   return { "Residential $ Ops Last 7 Days": residentialSums };
 }
 
-
-
-
 // Old source
 async function fetchAllAirtableRecords1() {
   let allRecords = [];
@@ -474,7 +468,7 @@ async function fetchAllAirtableRecords2() {
   return result;
 }
 
-async function renderTable(data, overrides = null) {
+async function renderTable(data) {
   if (!headers.length) return;
 
   // Find visible columns
@@ -488,9 +482,6 @@ async function renderTable(data, overrides = null) {
   const goalColIdx = headers.findIndex(h => h.trim().toLowerCase() === "goal");
   const dateHeaders = visibleIndexes.map(i => headers[i])
     .filter(h => /^\d{2}\/\d{2}(\/\d{4})?$/.test(h));
-
-  // Rename this variable!
-  const computedOverrides = await getEstimatedSumsByTypeAndDate(dateHeaders);
 
   // Section labels for row-only display
   const sectionLabels = ["PreCon", "Estimating", "Administration", "Field"];
@@ -523,50 +514,37 @@ async function renderTable(data, overrides = null) {
     }
 
     // Normal data row
-    html += `<tr class="${rIdx % 2 === 0 ? 'even' : 'odd'}">`;
-    visibleIndexes.forEach(i => {
-      let colHeader = headers[i];
-      let val = row[i];
+   html += `<tr class="${rIdx % 2 === 0 ? 'even' : 'odd'}">`;
+visibleIndexes.forEach(i => {
+  let colHeader = headers[i];
+  let val = row[i];
 
-     // Show override values for these rows (from Airtable)
-if (
-  DELTA_ROWS.includes(measurable) &&
-  dateHeaders.includes(colHeader)
-) {
-  let airVal = computedOverrides[measurable]?.[colHeader] ?? "";
-  if (airVal !== "" && !isNaN(airVal)) {
-    val = "$" + Number(airVal).toLocaleString();
-  } else {
-    val = airVal;
+  let cellHtml = `${val ?? ""}`;
+
+  let showDelta = (
+    dateHeaders.includes(colHeader) &&
+    measurable !== "Weeks Remaining FY" &&
+    !isNaN(parseFloat(val?.toString().replace(/[^0-9.\-]/g, "")))
+  );
+
+  if (showDelta) {
+    let v = parseFloat(val.toString().replace(/[^0-9.\-]/g, ""));
+    let g = parseFloat(goalValue.toString().replace(/[^0-9.\-]/g, ""));
+    if (isNaN(g)) g = 0;
+    let delta = v - g;
+
+    let deltaClass = delta > 0 ? "delta-positive" : delta < 0 ? "delta-negative" : "";
+    let sign = delta > 0 ? "+" : "";
+    let symbol = delta > 0 ? "Δ" : "∇";
+    if (!isNaN(delta) && delta !== 0) {
+      cellHtml += `<div class="delta ${deltaClass}">${symbol} ${sign}$${Math.abs(delta).toLocaleString()}</div>`;
+    }
   }
-}
 
-// --- DELTA logic: Show difference from Goal under value ---
-let cellHtml = `${val ?? ""}`;
-if (
-  dateHeaders.includes(colHeader) &&
-  DELTA_ROWS.includes(measurable) &&
-  !/Weeks Remaining FY/i.test(measurable) &&
-  !isNaN(parseFloat(val.toString().replace(/[^0-9.\-]/g, "")))
-) {
-  let v = parseFloat(val.toString().replace(/[^0-9.\-]/g, ""));
-  let g = parseFloat(goalValue.toString().replace(/[^0-9.\-]/g, ""));
-  if (isNaN(g)) g = 0; // treat blank/NaN goal as zero
-  let delta = v - g;
+  html += `<td>${cellHtml}</td>`;
+});
+html += '</tr>';
 
-  let deltaClass = delta > 0 ? "delta-positive" : delta < 0 ? "delta-negative" : "";
-  let sign = delta > 0 ? "+" : "";
-  let symbol = delta > 0 ? "Δ" : "∇";
-  if (!isNaN(delta) && delta !== 0) {
-    cellHtml += `<div class="delta ${deltaClass}">${symbol} ${sign}$${Math.abs(delta).toLocaleString()}</div>`;
-  }
-}
-
-
-
-      html += `<td>${cellHtml}</td>`;
-    });
-    html += '</tr>';
   });
 
   html += '</tbody></table>';
@@ -577,6 +555,7 @@ if (
     console.warn('table-container not found!');
   }
 }
+
 function showLoadingSpinner() {
   const el = document.getElementById('loading-indicator');
   if (el) el.style.display = 'flex';
@@ -669,11 +648,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Loads and renders the table from parsed data
 async function loadAndRenderCSV(csv) {
+  // Parse CSV to array of arrays
   let arr = parseCSV(csv);
-  if (arr.length < 2) {
+  const tableContainer = document.getElementById('table-container');
+  if (!arr || arr.length < 2) {
     tableContainer.innerHTML = "<p>No data found in file.</p>";
     return;
   }
+
+  // Set headers/globalData for app-wide access
   headers = extraCols.concat(arr[0].slice());
   globalData = arr.slice(1).map(row => {
     let newRow = row.slice();
@@ -681,22 +664,20 @@ async function loadAndRenderCSV(csv) {
     return newRow;
   });
 
-  // Step 1: Render with just CSV data
-  await renderTable(globalData, /*overrides*/ null);
+  // Step 1: Render immediately with just CSV data
+  await renderTable(globalData);
 
-  // Step 2: Fetch overrides, then patch table
-const measurableRows = [
-  "Sales - Residential", "Sales - Commercial",
-  "$ Residential Estimated", "$ Commercial Estimated",
-  "Residential $ Ops Last 7 Days", "Commercial $ Ops Last 7 Days"
-];
-
+  // Step 2: Patch in Airtable override values (async, non-blocking)
+  const measurableRows = [
+    "Sales - Residential", "Sales - Commercial",
+    "$ Residential Estimated", "$ Commercial Estimated",
+    "Residential $ Ops Last 7 Days", "Commercial $ Ops Last 7 Days"
+  ];
   const dateHeaders = headers.filter(h => /^\d{2}\/\d{2}(\/\d{4})?$/.test(h));
   getEstimatedSumsByTypeAndDate(dateHeaders).then(overrides => {
     patchTableWithOverrides(overrides, measurableRows, dateHeaders);
   });
 }
-
 
 
 // Show loading indicator
@@ -736,8 +717,6 @@ fetch(`https://api.airtable.com/v0/${baseId}/${tableId}`, {
   console.warn("Could not load CSV from Airtable:", error.message);
   tableContainer.innerHTML = "<p>No CSV found in Airtable. Please upload a CSV file.</p>";
 });
-
-
 
   // --- Handle file input ---
   fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
