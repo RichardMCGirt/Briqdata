@@ -1,0 +1,155 @@
+.container {
+  max-width: 2500px;
+  margin: 30px auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 6px 32px rgba(60,60,60,0.11);
+  padding: 32px 24px;
+  overflow-x: auto;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 24px;
+  color: #234;
+  font-size: 2.1em;    /* Make it a bit bigger, optional */
+  font-weight: bold;    /* Bold for emphasis, optional */
+  display: block;       /* Ensures block display */
+  width: 100%;          /* Full width for centering */
+}
+.upload-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;     /* Center children horizontally */
+  justify-content: center; /* Center children vertically if you ever add height */
+  text-align: center;      /* Center label/input text, just in case */
+  margin-bottom: 30px;
+  gap: 10px;
+}
+
+table {
+  width: 95%;              /* Not full width */
+  margin: 32px auto 0 auto; /* Center the table and add top margin */
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 1.08em;
+  background: #fff;
+  table-layout: fixed;
+  min-width: 800px;
+  box-shadow: 0 2px 12px rgba(60,60,60,0.07);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+thead th, tbody td {
+  padding: 20px 18px;      /* Extra padding for a softer look */
+  box-sizing: border-box;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+.section-header {
+  background: #e8eaf6;
+  font-weight: bold;
+  font-size: 1.35em;
+  text-align: center;
+  border-bottom: 2px solid #3f51b5;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+thead th {
+  background: #e9f2ff;
+  border-bottom: 2px solid #3f51b5;
+  font-weight: bold;
+  font-size: 1.20em;      /* <-- Larger font size */
+  letter-spacing: 0.01em; /* Optional: subtle spacing */
+  padding: 22px 18px;     /* Slightly more padding for prominence */
+  color: #223356;         /* Optional: a bit darker text */
+}
+
+tbody tr.even {
+  background: #f7faff;
+}
+tbody tr.odd {
+  background: #fff;
+}
+tbody td {
+  border-bottom: 1px solid #e0e0e0;
+  vertical-align: middle;
+}
+
+tbody tr:hover {
+  background: #ecf2fb !important;
+}
+
+.section-header {
+  background: #e8eaf6;
+  font-weight: bold;
+  text-align: center;
+  border-bottom: 2px solid #3f51b5;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+@media (max-width: 900px) {
+  table { width: 98%; min-width: 600px; }
+  thead th, tbody td { font-size: 0.98em; padding: 12px 6px; }
+  .container { padding: 6px; }
+}
+@media (max-width: 700px) {
+  table { width: 100%; min-width: 420px; }
+  th, td { font-size: 0.95em; padding: 9px 3px; }
+}
+.delta {
+  font-size: 0.95em;
+  margin-top: 2px;
+}
+.delta-positive {
+  color: #1db800; /* Green */
+  font-weight: bold;
+}
+.delta-negative {
+  color: #c70d24; /* Red */
+  font-weight: bold;
+}
+#table-container table th:first-child,
+#table-container table td:first-child {
+  display: none;
+}
+#dropZone {
+    border: 2px dashed #0044cc;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    background-color: #f9f9f9;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    cursor: pointer;
+    max-width: 500px;
+    margin: 30px auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  #dropZone:hover {
+    background-color: #eef4ff;
+    border-color: #002f99;
+  }
+  
+  #dropZone label {
+    color: #0044cc;
+    cursor: pointer;
+    text-decoration: underline;
+    font-weight: bold;
+  }
+
+  .spinner {
+  border: 8px solid #eee;
+  border-top: 8px solid #1976d2;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { 100% { transform: rotate(360deg); } }
+#table-container { position: relative; }
