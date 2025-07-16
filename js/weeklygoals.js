@@ -2,6 +2,13 @@ import {
   fetchDropboxToken,
   uploadFileToDropbox
 } from './dropbox.js';
+let headers = [], globalData = [], extraCols = [];
+  let residentialSums1 = {}, commercialSums1 = {};
+  let residentialSums2 = {}, commercialSums2 = {};
+  let allRecords = [];
+  let offset = "";
+  let commercialSums = {};
+
 const AIRTABLE_API_KEY = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
 const sectionHeadersMap = [
   { label: "PreCon", columns: ["Revenue Goal"] },
@@ -9,15 +16,7 @@ const sectionHeadersMap = [
   { label: "Administration", columns: ["Weeks Remaining FY"] },
   { label: "Field", columns: ["GP $ Goal Residential"] }
 ];
-const DELTA_ROWS = [
-  "Sales - Residential",
-  "Sales - Commercial",
-  "$ Residential Estimated",
-  "$ Commercial Estimated",
-  "Residential $ Opportunites Last 7 Days",
-  "Commercial $ Opportunites Last 7 Days"
-];
-
+const MOCK_TODAY = new Date(2025, 6, 21); // Note: months are 0-based (8 = September)
 
 function parseCSV(csv, delimiter = ',') {
   const rows = [];
@@ -42,6 +41,7 @@ function parseCSV(csv, delimiter = ',') {
   }
   return rows;
 }
+
 // --- Reuse your robust CSV and table logic (put these outside the DOMContentLoaded handler) ---
 function buildSectionHeaderRow(headers) {
   const colToSection = {};
@@ -66,8 +66,6 @@ function buildSectionHeaderRow(headers) {
   return rowHtml;
 }
 
-const MOCK_TODAY = new Date(2025, 6, 1); // Note: months are 0-based (8 = September)
-
 // Fetch Airtable values for a measurable row and an array of date fields
 function isFutureDateHeader(header) {
   // Use mock date if set, otherwise real today
@@ -91,14 +89,10 @@ function isFutureDateHeader(header) {
 
 // Returns: { [rowLabel]: { [dateHeader]: sum, ... }, ... }
 async function getEstimatedSumsByTypeAndDate(dateHeaders) {
-  const records1 = await fetchAllAirtableRecords1(); // Old table
-  const records2 = await fetchAllAirtableRecords2(); // New table
+  const records1 = await fetchweeklyearning();
+  const records2 = await fetchweeklybidvalueestimated(); 
   const resOpsLast7 = await fetchResidentialOpsLast7Days(dateHeaders);
 const comOpsLast7 = await fetchCommercialOpsLast7Days(dateHeaders);
-
-  // Define these ONCE at the top:
-  let residentialSums1 = {}, commercialSums1 = {};
-  let residentialSums2 = {}, commercialSums2 = {};
 
   // ------- First Airtable (existing logic) -------
   for (const date of dateHeaders) {
@@ -197,8 +191,7 @@ return {
   // For new Airtable (for these row names)
   "$ Residential Estimated": residentialSums2,
   "$ Commercial Estimated": commercialSums2
-};
-
+  };
 }
 
 async function fetchCommercialOpsLast7Days(dateHeaders) {
@@ -229,9 +222,6 @@ async function fetchCommercialOpsLast7Days(dateHeaders) {
 
   const apiUrl = `https://api.airtable.com/v0/appK9gZS77OmsIK50/tblQo2148s04gVPq1?filterByFormula=${encodeURIComponent(filterFormula)}`;
 
-  let allRecords = [];
-  let offset = "";
-
   do {
     let url = apiUrl + (offset ? `&offset=${offset}` : "");
     console.log("[fetchCommercialOpsLast7Days] Fetching url:", url);
@@ -249,9 +239,6 @@ async function fetchCommercialOpsLast7Days(dateHeaders) {
   } while (offset);
 
   console.log("[fetchCommercialOpsLast7Days] Total records fetched:", allRecords.length);
-
-  // --- All other logic unchanged below ---
-  let commercialSums = {};
 
   for (const dateHeader of dateHeaders) {
     // Parse header (MM/DD or MM/DD/YYYY)
@@ -410,7 +397,7 @@ const filterFormula = `AND(
 }
 
 // Old source
-async function fetchAllAirtableRecords1() {
+async function fetchweeklyearning() {
   let allRecords = [];
   let offset = "";
   do {
@@ -427,7 +414,7 @@ async function fetchAllAirtableRecords1() {
 }
 
 // New source
-async function fetchAllAirtableRecords2() {
+async function fetchweeklybidvalueestimated() {
   let allRecords = [];
   let offset = "";
   let pageCount = 0;
@@ -576,7 +563,6 @@ function normalizeMeasurable(name) {
   return name;
 }
 
-
 function patchTableWithOverrides(overrides, measurableRows, dateHeaders) {
   // These rows will show deltas (all except Weeks Remaining FY)
 const DELTA_ROWS = [
@@ -644,8 +630,6 @@ const measurable = normalizeMeasurable(measCell.textContent.trim());
   });
 }
 
-let headers = [], globalData = [], extraCols = [];
-
 // --- Main DOMContentLoaded logic ---
 document.addEventListener("DOMContentLoaded", () => {
   const dropZone = document.getElementById('dropZone');
@@ -694,7 +678,6 @@ const DELTA_ROWS = measurableRows;
     patchTableWithOverrides(overrides, measurableRows, dateHeaders);
   });
 }
-
 
 // Show loading indicator
 tableContainer.innerHTML = "<div class='loading-indicator'>Loading data...</div>";
@@ -766,7 +749,6 @@ fetch(`https://api.airtable.com/v0/${baseId}/${tableId}`, {
   r.fields['CSV file'] && r.fields['CSV file'].toLowerCase().includes('weeklygoals') &&
   r.fields['Attachments']?.[0]?.url
 );
-
 
       if (!record) throw new Error("Matching record not found in Airtable.");
       const recordId = record.id;
