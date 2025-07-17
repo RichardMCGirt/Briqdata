@@ -138,48 +138,83 @@ async function getEstimatedSumsByTypeAndDate(dateHeaders) {
   overrides["Sales - Commercial"] = commercialSums1;
 
   // ------- Second Airtable (new logic) -------
-  let residentialSums2 = {}, commercialSums2 = {};
-  for (const date of dateHeaders) {
-    let sumResidential = 0, sumCommercial = 0;
-    let [mm, dd] = date.split('/');
-    let year = new Date().getFullYear();
-    let headerDate = new Date(year, parseInt(mm, 10) - 1, parseInt(dd, 10));
-    headerDate.setHours(0,0,0,0);
+let residentialSums2 = {}, commercialSums2 = {};
+for (const date of dateHeaders) {
+  let sumResidential = 0, sumCommercial = 0;
+  let [mm, dd] = date.split('/');
+  let year = new Date().getFullYear();
+  let headerDate = new Date(year, parseInt(mm, 10) - 1, parseInt(dd, 10));
+  headerDate.setHours(0,0,0,0);
 
-    for (const rec of records2) {
-      if (
-        rec['Bid $'] === undefined ||
-        rec['Bid $'] === null ||
-        String(rec['Bid $']).trim() === "" ||
-        !rec['Date Marked Completed']
-      ) continue;
+  if (date === "07/21") {
+    console.log(`--- DEBUG FOR HEADER: ${date} (${headerDate.toLocaleDateString()}) ---`);
+  }
 
-      let dateObj = new Date(rec['Date Marked Completed']);
-      dateObj.setHours(0,0,0,0);
-      let diffDays = (headerDate - dateObj) / (1000 * 60 * 60 * 24);
-
-      if (dateObj > headerDate || diffDays < 0 || diffDays > 8) continue;
-
-      let projectTypeField = rec['Project Type'];
-      let projectType = "";
-      if (typeof projectTypeField === 'string') {
-        projectType = projectTypeField.trim().toLowerCase();
-      } else if (Array.isArray(projectTypeField) && projectTypeField.length > 0) {
-        projectType = String(projectTypeField[0]).trim().toLowerCase();
+  for (const rec of records2) {
+    // Defensive: skip invalid values
+    if (
+      rec['Bid $'] === undefined ||
+      rec['Bid $'] === null ||
+      String(rec['Bid $']).trim() === "" ||
+      !rec['Date Marked Completed']
+    ) {
+      if (date === "07/21") {
       }
-      let val = parseFloat(String(rec['Bid $'] || "0").replace(/[^0-9.\-]/g,""));
+      continue;
+    }
 
-      if (projectType === 'commercial') {
-        sumCommercial += val;
-      } else if (projectType) {
-        sumResidential += val;
+  let dateObj = new Date(rec['Date Marked Completed']);
+dateObj.setHours(0,0,0,0);
+let diffDays = (headerDate - dateObj) / (1000 * 60 * 60 * 24);
+
+// Only log [CHECK] if in possible range
+if (date === "07/21" && diffDays >= 0 && diffDays <= 8 && dateObj <= headerDate) {
+  console.log(`[CHECK][Candidate] Bid $: ${rec['Bid $']}, Date: ${rec['Date Marked Completed']}, diffDays: ${diffDays}`);
+}
+
+// Log all skips, with reason, for this header
+if (dateObj > headerDate || diffDays < 0 || diffDays > 8) {
+  if (date === "07/21") {
+    let reason = dateObj > headerDate ? "date in future" :
+                 diffDays < 0 ? "diffDays < 0" :
+                 diffDays > 8 ? "diffDays > 8" : "other";
+  }
+  continue;
+}
+
+
+    let projectTypeField = rec['Project Type'];
+    let projectType = "";
+    if (typeof projectTypeField === 'string') {
+      projectType = projectTypeField.trim().toLowerCase();
+    } else if (Array.isArray(projectTypeField) && projectTypeField.length > 0) {
+      projectType = String(projectTypeField[0]).trim().toLowerCase();
+    }
+    let val = parseFloat(String(rec['Bid $'] || "0").replace(/[^0-9.\-]/g,""));
+
+    if (projectType === 'commercial') {
+      sumCommercial += val;
+      if (date === "07/21") {
+        console.log(`[INCLUDED][Commercial] +$${val} | Running total: $${sumCommercial} | Date: ${rec['Date Marked Completed']} | Type: ${rec['Project Type']}`);
+      }
+    } else if (projectType) {
+      sumResidential += val;
+      if (date === "07/21") {
+        console.log(`[INCLUDED][Residential] +$${val} | Running total: $${sumResidential} | Date: ${rec['Date Marked Completed']} | Type: ${rec['Project Type']}`);
       }
     }
-    residentialSums2[date] = sumResidential || "";
-    commercialSums2[date] = sumCommercial || "";
   }
-  overrides["$ Residential Estimated"] = residentialSums2;
-  overrides["$ Commercial Estimated"] = commercialSums2;
+  if (date === "07/21") {
+    console.log(`[RESULT][07/21] Residential Total = $${sumResidential} | Commercial Total = $${sumCommercial}`);
+    console.log('----------------------------------------------------------');
+  }
+  residentialSums2[date] = sumResidential || "";
+  commercialSums2[date] = sumCommercial || "";
+}
+overrides["$ Residential Estimated"] = residentialSums2;
+overrides["$ Commercial Estimated"] = commercialSums2;
+
+
 
   // --- Add last 7 days logic (from previously returned objects) ---
   overrides[normalizeMeasurable("Residential $ Ops Last 7 Days")] = resOpsLast7["Residential $ Ops Last 7 Days"];
@@ -406,7 +441,6 @@ async function fetchOpportunityPipelineTotals() {
   do {
     let url = API_URL + (offset ? `&offset=${offset}` : "");
     page++;
-    console.log(`[PipelineFetch] Fetching page ${page}:`, url);
     const resp = await fetch(url, {
       headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` }
     });
@@ -419,7 +453,6 @@ async function fetchOpportunityPipelineTotals() {
     offset = json.offset;
   } while (offset);
 
-  console.log(`[PipelineFetch] Total records fetched: ${allRecords.length}`);
 
   let totalResidential = 0, totalCommercial = 0;
   let countRes = 0, countCom = 0;
@@ -438,7 +471,6 @@ async function fetchOpportunityPipelineTotals() {
       if (!isNaN(bidValue) && bidValue > 0) {
         totalCommercial += bidValue;
         countCom++;
-        console.log(`[PipelineFetch][Commercial] +$${bidValue} | Project:`, f);
       }
     }
     // Residential: Only Residential Townhomes or Single Family
@@ -449,7 +481,6 @@ async function fetchOpportunityPipelineTotals() {
       if (!isNaN(bidValue) && bidValue > 0) {
         totalResidential += bidValue;
         countRes++;
-        console.log(`[PipelineFetch][Residential] +$${bidValue} | Project:`, f);
       }
     }
   }
@@ -488,9 +519,17 @@ async function fetchweeklybidvalueestimated() {
   let allRecords = [];
   let offset = "";
   let pageCount = 0;
+ const filterFormula = encodeURIComponent(
+  `OR(
+    {Project Type}="Commercial",
+    {Project Type}="Single Family",
+    {Project Type}="Residential Townhomes"
+  )`
+);
 
+  
   do {
-    let url = `https://api.airtable.com/v0/appK9gZS77OmsIK50/tblQo2148s04gVPq1?view=viwAI7zWIjUu1d2LT`;
+    let url = `https://api.airtable.com/v0/appK9gZS77OmsIK50/tblQo2148s04gVPq1?filterByFormula=${filterFormula}`;
     if (offset) url += `&offset=${offset}`;
     pageCount++;
 
@@ -514,17 +553,23 @@ async function fetchweeklybidvalueestimated() {
     offset = json.offset;
   } while (offset);
 
-  // Remove all filtering, just return every record's fields:
+  // Return every record's fields:
   const result = allRecords.map(r => r.fields);
 
-  if (result.length > 0) {
-    // Preview first 2 records for debugging
-    if (result.length > 1) {
-    }
+  console.log(`[Airtable2] Total records fetched: ${result.length}`);
+
+  // Log each record's key fields
+  result.forEach((rec, idx) => {
+  });
+
+  // Preview first 2 records for debugging
+  if (result.length > 1) {
   }
 
   return result;
 }
+
+
 
 async function renderTable(data) {
   if (!headers.length) return;
@@ -612,15 +657,6 @@ html += '</tr>';
   } else {
     console.warn('table-container not found!');
   }
-}
-
-function showLoadingSpinner() {
-  const el = document.getElementById('loading-indicator');
-  if (el) el.style.display = 'flex';
-}
-function hideLoadingSpinner() {
-  const el = document.getElementById('loading-indicator');
-  if (el) el.style.display = 'none';
 }
 
 function normalizeMeasurable(name) {
