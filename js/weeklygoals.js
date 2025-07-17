@@ -15,6 +15,28 @@ const sectionHeadersMap = [
   { label: "Field", columns: ["GP $ Goal Residential"] }
 ];
 const MOCK_TODAY = new Date(2025, 6, 21); 
+function showLoadingBar(percent) {
+  const overlay = document.getElementById('loadingBarOverlay');
+  const barContainer = document.getElementById('loadingBarContainer');
+  const bar = document.getElementById('loadingBar');
+  if (!barContainer || !bar || !overlay) {
+    console.warn('[LoadingBar] Missing DOM elements');
+    return;
+  }
+  overlay.style.display = 'flex';
+  barContainer.style.display = 'flex';
+  bar.style.width = `${percent}%`;
+  console.log(`[LoadingBar] Progress: ${percent}%`);
+}
+
+function hideLoadingBar() {
+  const overlay = document.getElementById('loadingBarOverlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+    console.log('[LoadingBar] Hiding loading bar');
+  }
+}
+
 
 function parseCSV(csv, delimiter = ',') {
   const rows = [];
@@ -85,12 +107,19 @@ function isFutureDateHeader(header) {
 }
 
 // Returns: { [rowLabel]: { [dateHeader]: sum, ... }, ... }
-async function getEstimatedSumsByTypeAndDate(dateHeaders) {
+async function getEstimatedSumsByTypeAndDate(dateHeaders, onProgress) {
+ if (onProgress) onProgress(25); // after fetch 1
   const records1 = await fetchweeklyearning();
-  const records2 = await fetchweeklybidvalueestimated(); 
+  if (onProgress) onProgress(35); // after fetch 2
+  const records2 = await fetchweeklybidvalueestimated();
+  if (onProgress) onProgress(50); // after fetch 3
   const resOpsLast7 = await fetchResidentialOpsLast7Days(dateHeaders);
+  if (onProgress) onProgress(60);
   const comOpsLast7 = await fetchCommercialOpsLast7Days(dateHeaders);
+  if (onProgress) onProgress(80);
   const pipelineTotals = await fetchOpportunityPipelineTotals();
+  if (onProgress) onProgress(95);
+
 
   // Build the overrides object here
   const overrides = {};
@@ -811,20 +840,20 @@ async function loadAndRenderCSV(csv) {
   const dateHeaders = headers.filter(h => /^\d{2}\/\d{2}(\/\d{4})?$/.test(h));
   
   // --- PATCH WITH PIPELINE TOTALS ---
-  getEstimatedSumsByTypeAndDate(dateHeaders).then(async overrides => {
-    // Fetch and merge pipeline totals before patching
-    const pipelineTotals = await fetchOpportunityPipelineTotals();
-
-    // Overwrite every date column for the pipeline rows with the TOTAL
-    dateHeaders.forEach(date => {
-      if (!overrides["Opportunity Pipeline $'s - Residential"]) overrides["Opportunity Pipeline $'s - Residential"] = {};
-      if (!overrides["Opportunity Pipeline $'s - Commercial"]) overrides["Opportunity Pipeline $'s - Commercial"] = {};
-      overrides["Opportunity Pipeline $'s - Residential"][date] = pipelineTotals["Opportunity Pipeline $'s - Residential"] || "";
-      overrides["Opportunity Pipeline $'s - Commercial"][date] = pipelineTotals["Opportunity Pipeline $'s - Commercial"] || "";
-    });
-
-    patchTableWithOverrides(overrides, measurableRows, dateHeaders);
+ getEstimatedSumsByTypeAndDate(dateHeaders, showLoadingBar).then(async overrides => {
+  showLoadingBar(99);
+  // Fetch and merge pipeline totals before patching
+  const pipelineTotals = await fetchOpportunityPipelineTotals();
+  dateHeaders.forEach(date => {
+    if (!overrides["Opportunity Pipeline $'s - Residential"]) overrides["Opportunity Pipeline $'s - Residential"] = {};
+    if (!overrides["Opportunity Pipeline $'s - Commercial"]) overrides["Opportunity Pipeline $'s - Commercial"] = {};
+    overrides["Opportunity Pipeline $'s - Residential"][date] = pipelineTotals["Opportunity Pipeline $'s - Residential"] || "";
+    overrides["Opportunity Pipeline $'s - Commercial"][date] = pipelineTotals["Opportunity Pipeline $'s - Commercial"] || "";
   });
+  patchTableWithOverrides(overrides, measurableRows, dateHeaders);
+  hideLoadingBar();
+});
+
 }
 
 // Show loading indicator

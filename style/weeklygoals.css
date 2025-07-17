@@ -142,6 +142,37 @@ tbody tr:hover {
     text-decoration: underline;
     font-weight: bold;
   }
+.loading-bar-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.15); /* subtle dark background */
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* Prevent blocking clicks unless you want it modal */
+}
+
+.loading-bar-container {
+  width: 400px;
+  max-width: 80vw;
+  height: 12px;
+  background: #f0f0f0;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.13);
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+}
+
+.loading-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #2575fc, #6a11cb);
+  width: 0;
+  transition: width 0.4s cubic-bezier(.4,0,.2,1);
+}
 
   .spinner {
   border: 8px solid #eee;
