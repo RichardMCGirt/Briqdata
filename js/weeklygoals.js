@@ -2,9 +2,7 @@ import {
   fetchDropboxToken,
   uploadFileToDropbox
 } from './dropbox.js';
-let headers = [], globalData = [], extraCols = [];
-  let residentialSums1 = {}, commercialSums1 = {};
-  let residentialSums2 = {}, commercialSums2 = {};
+  let headers = [], globalData = [], extraCols = [];
   let allRecords = [];
   let offset = "";
   let commercialSums = {};
@@ -16,7 +14,7 @@ const sectionHeadersMap = [
   { label: "Administration", columns: ["Weeks Remaining FY"] },
   { label: "Field", columns: ["GP $ Goal Residential"] }
 ];
-const MOCK_TODAY = new Date(2025, 6, 21); // Note: months are 0-based (8 = September)
+const MOCK_TODAY = new Date(2025, 6, 21); 
 
 function parseCSV(csv, delimiter = ',') {
   const rows = [];
@@ -42,7 +40,6 @@ function parseCSV(csv, delimiter = ',') {
   return rows;
 }
 
-// --- Reuse your robust CSV and table logic (put these outside the DOMContentLoaded handler) ---
 function buildSectionHeaderRow(headers) {
   const colToSection = {};
   sectionHeadersMap.forEach(sec => {
@@ -98,7 +95,6 @@ async function getEstimatedSumsByTypeAndDate(dateHeaders) {
   // Build the overrides object here
   const overrides = {};
 
-  // ------- First Airtable (existing logic) -------
   let residentialSums1 = {}, commercialSums1 = {};
   for (const date of dateHeaders) {
     let sumResidential = 0, sumCommercial = 0;
@@ -147,7 +143,6 @@ for (const date of dateHeaders) {
   headerDate.setHours(0,0,0,0);
 
   if (date === "07/21") {
-    console.log(`--- DEBUG FOR HEADER: ${date} (${headerDate.toLocaleDateString()}) ---`);
   }
 
   for (const rec of records2) {
@@ -169,7 +164,6 @@ let diffDays = (headerDate - dateObj) / (1000 * 60 * 60 * 24);
 
 // Only log [CHECK] if in possible range
 if (date === "07/21" && diffDays >= 0 && diffDays <= 8 && dateObj <= headerDate) {
-  console.log(`[CHECK][Candidate] Bid $: ${rec['Bid $']}, Date: ${rec['Date Marked Completed']}, diffDays: ${diffDays}`);
 }
 
 // Log all skips, with reason, for this header
@@ -181,8 +175,6 @@ if (dateObj > headerDate || diffDays < 0 || diffDays > 8) {
   }
   continue;
 }
-
-
     let projectTypeField = rec['Project Type'];
     let projectType = "";
     if (typeof projectTypeField === 'string') {
@@ -214,8 +206,6 @@ if (dateObj > headerDate || diffDays < 0 || diffDays > 8) {
 overrides["$ Residential Estimated"] = residentialSums2;
 overrides["$ Commercial Estimated"] = commercialSums2;
 
-
-
   // --- Add last 7 days logic (from previously returned objects) ---
   overrides[normalizeMeasurable("Residential $ Ops Last 7 Days")] = resOpsLast7["Residential $ Ops Last 7 Days"];
   overrides[normalizeMeasurable("Commercial $ Ops Last 7 Days")] = comOpsLast7["Commercial $ Ops Last 7 Days"];
@@ -230,7 +220,6 @@ overrides["$ Commercial Estimated"] = commercialSums2;
 
   return overrides;
 }
-
 
 async function fetchCommercialOpsLast7Days(dateHeaders) {
   // 1. Compute date window for fetch (min/max of all header dates ± 7 days)
@@ -262,7 +251,6 @@ async function fetchCommercialOpsLast7Days(dateHeaders) {
 
   do {
     let url = apiUrl + (offset ? `&offset=${offset}` : "");
-    console.log("[fetchCommercialOpsLast7Days] Fetching url:", url);
     const resp = await fetch(url, {
       headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` }
     });
@@ -355,7 +343,6 @@ const filterFormula = `AND(
 
   do {
     let url = apiUrl + (offset ? `&offset=${offset}` : "");
-    console.log("[fetchResidentialOpsLast7Days] Fetching url:", url);
     const resp = await fetch(url, {
       headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` }
     });
@@ -494,9 +481,6 @@ async function fetchOpportunityPipelineTotals() {
   };
 }
 
-
-
-
 // $ Residential Estimated and $ Commercial Estimated
 async function fetchweeklyearning() {
   let allRecords = [];
@@ -527,7 +511,6 @@ async function fetchweeklybidvalueestimated() {
   )`
 );
 
-  
   do {
     let url = `https://api.airtable.com/v0/appK9gZS77OmsIK50/tblQo2148s04gVPq1?filterByFormula=${filterFormula}`;
     if (offset) url += `&offset=${offset}`;
@@ -844,7 +827,6 @@ async function loadAndRenderCSV(csv) {
   });
 }
 
-
 // Show loading indicator
 tableContainer.innerHTML = "<div class='loading-indicator'>Loading data...</div>";
 
@@ -853,9 +835,6 @@ fetch(`https://api.airtable.com/v0/${baseId}/${tableId}`, {
 })
 .then(res => res.json())
 .then(data => {
-  // (Optional) Debug log available CSV files
-  console.log(data.records.map(r => r.fields['CSV file']));
-
   // Find the matching record (your logic preserved)
   const record = data.records.find(r => {
     let csvField = r.fields['CSV file'];
