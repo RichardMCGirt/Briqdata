@@ -92,9 +92,14 @@ async function getEstimatedSumsByTypeAndDate(dateHeaders) {
   const records1 = await fetchweeklyearning();
   const records2 = await fetchweeklybidvalueestimated(); 
   const resOpsLast7 = await fetchResidentialOpsLast7Days(dateHeaders);
-const comOpsLast7 = await fetchCommercialOpsLast7Days(dateHeaders);
+  const comOpsLast7 = await fetchCommercialOpsLast7Days(dateHeaders);
+  const pipelineTotals = await fetchOpportunityPipelineTotals();
+
+  // Build the overrides object here
+  const overrides = {};
 
   // ------- First Airtable (existing logic) -------
+  let residentialSums1 = {}, commercialSums1 = {};
   for (const date of dateHeaders) {
     let sumResidential = 0, sumCommercial = 0;
     let [mm, dd] = date.split('/');
@@ -110,7 +115,6 @@ const comOpsLast7 = await fetchCommercialOpsLast7Days(dateHeaders);
       let diffDays = (headerDate - dateObj) / (1000 * 60 * 60 * 24);
       if (dateObj > headerDate || diffDays < 0 || diffDays > 8) continue;
 
-      // Defensive extraction
       let projectTypeField = rec['Project Type'];
       let projectType = "";
       if (typeof projectTypeField === 'string') {
@@ -130,69 +134,68 @@ const comOpsLast7 = await fetchCommercialOpsLast7Days(dateHeaders);
     residentialSums1[date] = sumResidential || "";
     commercialSums1[date] = sumCommercial || "";
   }
+  overrides["Sales - Residential"] = residentialSums1;
+  overrides["Sales - Commercial"] = commercialSums1;
 
   // ------- Second Airtable (new logic) -------
- for (const date of dateHeaders) {
-  let sumResidential = 0, sumCommercial = 0;
-  let [mm, dd] = date.split('/');
-  let year = new Date().getFullYear();
-  let headerDate = new Date(year, parseInt(mm, 10) - 1, parseInt(dd, 10));
-  headerDate.setHours(0,0,0,0);
+  let residentialSums2 = {}, commercialSums2 = {};
+  for (const date of dateHeaders) {
+    let sumResidential = 0, sumCommercial = 0;
+    let [mm, dd] = date.split('/');
+    let year = new Date().getFullYear();
+    let headerDate = new Date(year, parseInt(mm, 10) - 1, parseInt(dd, 10));
+    headerDate.setHours(0,0,0,0);
 
+    for (const rec of records2) {
+      if (
+        rec['Bid $'] === undefined ||
+        rec['Bid $'] === null ||
+        String(rec['Bid $']).trim() === "" ||
+        !rec['Date Marked Completed']
+      ) continue;
 
-  for (const rec of records2) {
-    // Show all relevant fields for this record
+      let dateObj = new Date(rec['Date Marked Completed']);
+      dateObj.setHours(0,0,0,0);
+      let diffDays = (headerDate - dateObj) / (1000 * 60 * 60 * 24);
 
-    if (
-      rec['Bid $'] === undefined ||
-      rec['Bid $'] === null ||
-      String(rec['Bid $']).trim() === "" ||
-      !rec['Date Marked Completed']
-    ) {
-      continue;
+      if (dateObj > headerDate || diffDays < 0 || diffDays > 8) continue;
+
+      let projectTypeField = rec['Project Type'];
+      let projectType = "";
+      if (typeof projectTypeField === 'string') {
+        projectType = projectTypeField.trim().toLowerCase();
+      } else if (Array.isArray(projectTypeField) && projectTypeField.length > 0) {
+        projectType = String(projectTypeField[0]).trim().toLowerCase();
+      }
+      let val = parseFloat(String(rec['Bid $'] || "0").replace(/[^0-9.\-]/g,""));
+
+      if (projectType === 'commercial') {
+        sumCommercial += val;
+      } else if (projectType) {
+        sumResidential += val;
+      }
     }
-
-    let dateObj = new Date(rec['Date Marked Completed']);
-    dateObj.setHours(0,0,0,0);
-    let diffDays = (headerDate - dateObj) / (1000 * 60 * 60 * 24);
-
-    if (dateObj > headerDate || diffDays < 0 || diffDays > 8) {
-      continue;
-    }
-
-    let projectTypeField = rec['Project Type'];
-    let projectType = "";
-    if (typeof projectTypeField === 'string') {
-      projectType = projectTypeField.trim().toLowerCase();
-    } else if (Array.isArray(projectTypeField) && projectTypeField.length > 0) {
-      projectType = String(projectTypeField[0]).trim().toLowerCase();
-    }
-    let val = parseFloat(String(rec['Bid $'] || "0").replace(/[^0-9.\-]/g,""));
-
-    if (projectType === 'commercial') {
-      sumCommercial += val;
-    } else if (projectType) {
-      sumResidential += val;
-    } else {
-    }
+    residentialSums2[date] = sumResidential || "";
+    commercialSums2[date] = sumCommercial || "";
   }
+  overrides["$ Residential Estimated"] = residentialSums2;
+  overrides["$ Commercial Estimated"] = commercialSums2;
 
-  residentialSums2[date] = sumResidential || "";
-  commercialSums2[date] = sumCommercial || "";
+  // --- Add last 7 days logic (from previously returned objects) ---
+  overrides[normalizeMeasurable("Residential $ Ops Last 7 Days")] = resOpsLast7["Residential $ Ops Last 7 Days"];
+  overrides[normalizeMeasurable("Commercial $ Ops Last 7 Days")] = comOpsLast7["Commercial $ Ops Last 7 Days"];
+
+  // --- Pipeline: for every date, fill with pipeline total for that row (same for all dates) ---
+  dateHeaders.forEach(date => {
+    if (!overrides["Opportunity Pipeline $'s - Residential"]) overrides["Opportunity Pipeline $'s - Residential"] = {};
+    if (!overrides["Opportunity Pipeline $'s - Commercial"]) overrides["Opportunity Pipeline $'s - Commercial"] = {};
+    overrides["Opportunity Pipeline $'s - Residential"][date] = pipelineTotals["Opportunity Pipeline $'s - Residential"] || "";
+    overrides["Opportunity Pipeline $'s - Commercial"][date] = pipelineTotals["Opportunity Pipeline $'s - Commercial"] || "";
+  });
+
+  return overrides;
 }
 
-  // ---- Return whichever mapping you want to rows ----
-return {
-  // For old Airtable (example row names)
-  "Sales - Residential": residentialSums1,
-  "Sales - Commercial": commercialSums1,
-  [normalizeMeasurable("Residential $ Ops Last 7 Days")]: resOpsLast7["Residential $ Ops Last 7 Days"],
-  [normalizeMeasurable("Commercial $ Ops Last 7 Days")]: comOpsLast7["Commercial $ Ops Last 7 Days"],
-  // For new Airtable (for these row names)
-  "$ Residential Estimated": residentialSums2,
-  "$ Commercial Estimated": commercialSums2
-  };
-}
 
 async function fetchCommercialOpsLast7Days(dateHeaders) {
   // 1. Compute date window for fetch (min/max of all header dates ± 7 days)
@@ -375,13 +378,7 @@ const filterFormula = `AND(
       let diffDays = (headerDate - dateObj) / (1000 * 60 * 60 * 24);
       if (dateObj > headerDate || diffDays < 0 || diffDays > 7) continue;
 
-      // LOG qualifying record
-      console.log(`[fetchResidentialOpsLast7Days] Row qualifies for ${dateHeader}:`, {
-        "Prebid": prebidValue,
-        "Date Marked Completed": fields['Date Marked Completed'],
-        "Project Type": projectType,
-        "diffDays": diffDays
-      });
+     
 
       sum += prebidValue;
       rowCount++;
@@ -396,7 +393,80 @@ const filterFormula = `AND(
   return { "Residential $ Ops Last 7 Days": residentialSums };
 }
 
-// Old source
+async function fetchOpportunityPipelineTotals() {
+  const AIRTABLE_API_KEY = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
+  // Fetch all records where Outcome is blank
+  const filterFormula = encodeURIComponent('Outcome = ""');
+  const API_URL = `https://api.airtable.com/v0/appX1Saz7wMYh4hhm/tblfCPX293KlcKsdp?filterByFormula=${filterFormula}`;
+
+  let allRecords = [];
+  let offset = "";
+  let page = 0;
+
+  do {
+    let url = API_URL + (offset ? `&offset=${offset}` : "");
+    page++;
+    console.log(`[PipelineFetch] Fetching page ${page}:`, url);
+    const resp = await fetch(url, {
+      headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` }
+    });
+    if (!resp.ok) {
+      console.error(`[PipelineFetch] Airtable fetch failed`, resp.status, resp.statusText);
+      break;
+    }
+    const json = await resp.json();
+    if (json.records) allRecords = allRecords.concat(json.records);
+    offset = json.offset;
+  } while (offset);
+
+  console.log(`[PipelineFetch] Total records fetched: ${allRecords.length}`);
+
+  let totalResidential = 0, totalCommercial = 0;
+  let countRes = 0, countCom = 0;
+
+  for (const rec of allRecords) {
+    const f = rec.fields;
+    let projectType = (typeof f['Project Type'] === 'string'
+      ? f['Project Type'].trim()
+      : Array.isArray(f['Project Type'])
+      ? String(f['Project Type'][0]).trim()
+      : '');
+    let bidValue = parseFloat(String(f['Bid $'] ?? "0").replace(/[^0-9.\-]/g, ''));
+
+    // Commercial (any type not Residential Townhomes or Single Family)
+    if (projectType.toLowerCase() === 'commercial') {
+      if (!isNaN(bidValue) && bidValue > 0) {
+        totalCommercial += bidValue;
+        countCom++;
+        console.log(`[PipelineFetch][Commercial] +$${bidValue} | Project:`, f);
+      }
+    }
+    // Residential: Only Residential Townhomes or Single Family
+    else if (
+      projectType === 'Residential Townhomes' ||
+      projectType === 'Single Family'
+    ) {
+      if (!isNaN(bidValue) && bidValue > 0) {
+        totalResidential += bidValue;
+        countRes++;
+        console.log(`[PipelineFetch][Residential] +$${bidValue} | Project:`, f);
+      }
+    }
+  }
+
+  console.log(`[PipelineFetch] Residential Total: $${totalResidential} (${countRes} records)`);
+  console.log(`[PipelineFetch] Commercial Total: $${totalCommercial} (${countCom} records)`);
+
+  return {
+    "Opportunity Pipeline $'s - Residential": totalResidential,
+    "Opportunity Pipeline $'s - Commercial": totalCommercial
+  };
+}
+
+
+
+
+// $ Residential Estimated and $ Commercial Estimated
 async function fetchweeklyearning() {
   let allRecords = [];
   let offset = "";
@@ -413,7 +483,7 @@ async function fetchweeklyearning() {
   return allRecords.map(r => r.fields);
 }
 
-// New source
+// $ Residential Estimated and $ Commercial Estimated
 async function fetchweeklybidvalueestimated() {
   let allRecords = [];
   let offset = "";
@@ -565,14 +635,20 @@ function normalizeMeasurable(name) {
 
 function patchTableWithOverrides(overrides, measurableRows, dateHeaders) {
   // These rows will show deltas (all except Weeks Remaining FY)
-const DELTA_ROWS = [
-  "Sales - Residential",
-  "Sales - Commercial",
-  "$ Residential Estimated",
-  "$ Commercial Estimated",
-  "Residential $ Opportunites Last 7 Days",
-  "Commercial $ Opportunites Last 7 Days"
-];
+  const DELTA_ROWS = [
+    "Sales - Residential",
+    "Sales - Commercial",
+    "$ Residential Estimated",
+    "$ Commercial Estimated",
+    "Residential $ Opportunites Last 7 Days",
+    "Commercial $ Opportunites Last 7 Days",
+    "Opportunity Pipeline $'s - Residential",
+    "Opportunity Pipeline $'s - Commercial"
+  ];
+  const PIPELINE_DELTA_ROWS = [
+    "Opportunity Pipeline $'s - Residential",
+    "Opportunity Pipeline $'s - Commercial"
+  ];
   const table = document.querySelector('#table-container table');
   if (!table) return;
 
@@ -580,41 +656,55 @@ const DELTA_ROWS = [
   const goalColIdx = headers.findIndex(h => h.trim().toLowerCase() === "goal");
   const dateColIndexes = dateHeaders.map(h => headers.indexOf(h));
 
-  Array.from(table.tBodies[0].rows).forEach(row => {
+  Array.from(table.tBodies[0].rows).forEach((row, rowIdx) => {
     // Defensive: skip rows with not enough cells
     if (!row.cells || row.cells.length <= Math.max(measurableColIdx, goalColIdx)) return;
     const measCell = row.cells[measurableColIdx];
     if (!measCell) return;
-const measurable = normalizeMeasurable(measCell.textContent.trim());
+    const measurable = normalizeMeasurable(measCell.textContent.trim());
 
     if (measurableRows.includes(measurable)) {
       let goalValue = goalColIdx >= 0 && row.cells[goalColIdx] ? row.cells[goalColIdx].textContent : "";
 
-      dateColIndexes.forEach(colIdx => {
+      dateColIndexes.forEach((colIdx, dateIdx) => {
         if (colIdx === -1 || !row.cells[colIdx]) return;
         const cell = row.cells[colIdx];
         const colHeader = headers[colIdx];
         const airVal = overrides[measurable]?.[colHeader];
 
-        let val = airVal;
-        let cellHtml = "";
+        let currentValue = cell.textContent.trim();
+        let val;
+        let cellHtml;
 
-        if (typeof val === "number" && !isNaN(val)) {
-          val = "$" + Number(val).toLocaleString();
+        // Only overwrite if the cell is empty and airVal exists
+        if (
+          (currentValue === "" || currentValue === null || typeof currentValue === "undefined") &&
+          typeof airVal !== "undefined" && airVal !== ""
+        ) {
+          val = airVal;
+          if (typeof val === "number" && !isNaN(val)) {
+            val = "$" + Number(val).toLocaleString();
+          }
+          if (val === "Omnna" || val === "Airtable" || val === "Mgmt") val = "";
+          cell.innerHTML = `${val ?? ""}`; // PATCH only if empty
+        } else {
+          val = currentValue; // fallback to current cell value
+          cell.innerHTML = `${currentValue}`;
         }
-        if (val === "Omnna" || val === "Airtable" || val === "Mgmt") val = "";
 
-        // --- DELTA logic (show for all DELTA_ROWS except Weeks Remaining FY) ---
+        // -------- DELTA Logic --------
         let valueNum = parseFloat((airVal ?? "").toString().replace(/[^0-9.\-]/g, ""));
         let goalNum = parseFloat((goalValue ?? "").toString().replace(/[^0-9.\-]/g, ""));
-        cellHtml = `${val ?? ""}`;
+        let cleanedVal = (val ?? "").replace(/([Δ∇]\s*[+\-]?\$[\d,]+)/g, '').replace(/[\r\n]+/g, '').trim();
+        cellHtml = `${cleanedVal}`;
 
         if (
           DELTA_ROWS.includes(measurable) &&
           !/Weeks Remaining FY/i.test(measurable) &&
+          !PIPELINE_DELTA_ROWS.includes(measurable) &&
           !isNaN(valueNum) && (valueNum !== 0 || goalNum !== 0)
         ) {
-          if (isNaN(goalNum)) goalNum = 0; // treat blank/NaN goal as zero
+          if (isNaN(goalNum)) goalNum = 0;
           let delta = valueNum - goalNum;
           if (!isNaN(delta) && delta !== 0) {
             let deltaClass = delta > 0 ? "delta-positive" : delta < 0 ? "delta-negative" : "";
@@ -624,11 +714,36 @@ const measurable = normalizeMeasurable(measCell.textContent.trim());
           }
         }
 
+        // ----- NEW: For Pipeline rows, delta is vs previous date column -----
+        if (PIPELINE_DELTA_ROWS.includes(measurable)) {
+          // Only if not the first date column (dateIdx > 0)
+          if (dateIdx > 0) {
+            // Find previous value (same row, previous date column)
+            let prevColIdx = dateColIndexes[dateIdx - 1];
+            let prevCell = row.cells[prevColIdx];
+            let prevVal = (prevCell ? prevCell.textContent.trim() : "");
+            prevVal = prevVal.replace(/([Δ∇]\s*[+\-]?\$[\d,]+)/g, '').replace(/[\r\n]+/g, '').trim();
+            let prevNum = parseFloat((prevVal ?? "").toString().replace(/[^0-9.\-]/g, ""));
+
+            if (!isNaN(valueNum) && !isNaN(prevNum)) {
+              let delta = valueNum - prevNum;
+              if (!isNaN(delta) && delta !== 0) {
+                let deltaClass = delta > 0 ? "delta-positive" : delta < 0 ? "delta-negative" : "";
+                let sign = delta > 0 ? "+" : "";
+                let symbol = delta > 0 ? "Δ" : "∇";
+                cellHtml += `<div class="delta ${deltaClass}">${symbol} ${sign}$${Math.abs(delta).toLocaleString()}</div>`;
+              }
+            }
+          }
+          // (else, for first date column, show no delta)
+        }
+
         cell.innerHTML = cellHtml;
       });
     }
   });
 }
+
 
 // --- Main DOMContentLoaded logic ---
 document.addEventListener("DOMContentLoaded", () => {
@@ -662,22 +777,37 @@ async function loadAndRenderCSV(csv) {
   // Step 1: Render immediately with just CSV data
   await renderTable(globalData);
 
-  // Step 2: Patch in Airtable override values (async, non-blocking)
-const measurableRows = [
-  "Sales - Residential", 
-  "Sales - Commercial",
-  "$ Residential Estimated", 
-  "$ Commercial Estimated",
-  "Residential $ Opportunites Last 7 Days",
-  "Commercial $ Opportunites Last 7 Days"
-];
-const DELTA_ROWS = measurableRows;
+  // Step 2: Patch in Airtable override values (including pipeline totals)
+  const measurableRows = [
+    "Sales - Residential", 
+    "Sales - Commercial",
+    "$ Residential Estimated", 
+    "$ Commercial Estimated",
+    "Residential $ Opportunites Last 7 Days",
+    "Commercial $ Opportunites Last 7 Days",
+    "Opportunity Pipeline $'s - Residential",
+    "Opportunity Pipeline $'s - Commercial"
+  ];
 
   const dateHeaders = headers.filter(h => /^\d{2}\/\d{2}(\/\d{4})?$/.test(h));
-  getEstimatedSumsByTypeAndDate(dateHeaders).then(overrides => {
+  
+  // --- PATCH WITH PIPELINE TOTALS ---
+  getEstimatedSumsByTypeAndDate(dateHeaders).then(async overrides => {
+    // Fetch and merge pipeline totals before patching
+    const pipelineTotals = await fetchOpportunityPipelineTotals();
+
+    // Overwrite every date column for the pipeline rows with the TOTAL
+    dateHeaders.forEach(date => {
+      if (!overrides["Opportunity Pipeline $'s - Residential"]) overrides["Opportunity Pipeline $'s - Residential"] = {};
+      if (!overrides["Opportunity Pipeline $'s - Commercial"]) overrides["Opportunity Pipeline $'s - Commercial"] = {};
+      overrides["Opportunity Pipeline $'s - Residential"][date] = pipelineTotals["Opportunity Pipeline $'s - Residential"] || "";
+      overrides["Opportunity Pipeline $'s - Commercial"][date] = pipelineTotals["Opportunity Pipeline $'s - Commercial"] || "";
+    });
+
     patchTableWithOverrides(overrides, measurableRows, dateHeaders);
   });
 }
+
 
 // Show loading indicator
 tableContainer.innerHTML = "<div class='loading-indicator'>Loading data...</div>";
@@ -785,4 +915,79 @@ fetch(`https://api.airtable.com/v0/${baseId}/${tableId}`, {
       alert("⚠️ Upload failed. See console for details.");
     }
   }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  // MOCK "today" as July 17 for testing:
+  const MOCK_TODAY = new Date(2025, 6, 21); // July is 6 (0-based)
+  // ...other existing code...
+
+  // Show button when typing 'mm'
+  let mmKeyBuffer = "";
+  document.addEventListener("keydown", (e) => {
+    mmKeyBuffer += e.key.toLowerCase();
+    if (mmKeyBuffer.length > 2) mmKeyBuffer = mmKeyBuffer.slice(-2);
+    if (mmKeyBuffer === "mm") {
+      document.getElementById("copy-today-column-btn").style.display = "block";
+      setTimeout(() => { mmKeyBuffer = ""; }, 100);
+    }
+  });
+
+  document.getElementById("copy-today-column-btn").addEventListener("click", () => {
+    const table = document.querySelector('#table-container table');
+    if (!table) {
+      alert("No table found!");
+      return;
+    }
+
+    // Use MOCK_TODAY instead of real date
+    let ny = MOCK_TODAY;
+    let mm = (ny.getMonth() + 1).toString().padStart(2, '0');
+    let dd = ny.getDate().toString().padStart(2, '0');
+    let yyyy = ny.getFullYear().toString();
+    let todayShort = `${mm}/${dd}`;           // "07/17"
+    let todayLong = `${mm}/${dd}/${yyyy}`;    // "07/17/2025"
+
+    // Find header cell index for today
+    let headerRow = table.tHead ? table.tHead.rows[1] : table.rows[0];
+    let todayColIdx = -1;
+    for (let i = 0; i < headerRow.cells.length; ++i) {
+      let val = headerRow.cells[i].textContent.trim();
+      if (val === todayShort || val === todayLong) {
+        todayColIdx = i;
+        break;
+      }
+    }
+    if (todayColIdx === -1) {
+      alert(`No column found for 7/17 (${todayShort} or ${todayLong})`);
+      return;
+    }
+
+    // For each row (except thead), get value for today's column
+    let values = [];
+    let startRow = table.tHead ? table.tHead.rows.length : 1; // skip header rows
+    for (let r = startRow; r < table.rows.length; ++r) {
+      let cell = table.rows[r].cells[todayColIdx];
+      if (!cell) continue;
+      // Remove delta/triangle/currency from the value
+      let cloned = cell.cloneNode(true);
+      Array.from(cloned.querySelectorAll('div,span')).forEach(el => el.remove());
+      let raw = cloned.textContent.trim();
+      let cleaned = raw
+        .replace(/[$]/g, '')
+        .replace(/[Δ∇][^ ]*/g, '')
+        .replace(/,/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      values.push(cleaned);
+    }
+
+    // Copy as single column for Excel
+    let colText = values.join("\n");
+    navigator.clipboard.writeText(colText).then(() => {
+      alert("✅ 7/17 column values copied! Paste into Excel.");
+    }, () => {
+      alert("❌ Failed to copy.");
+    });
+  });
 });

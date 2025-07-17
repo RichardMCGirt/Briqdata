@@ -30,51 +30,6 @@ function filterColumns(data) {
     return filtered;
 }
 
-
-// === Section 1: Handle Master Account CSV Upload ===
-function displayTableM(data) {
-    const output = document.getElementById("output");
-    output.innerHTML = "";
-    const table = document.createElement("table");
-    const originalIndexes = data.originalIndexes || [];
-
-    // Define column sets using original 1-based indexes
-    const masterDollarCols = new Set([3, 5, 7, 8, 10, 12]);
-    const masterPercentCols = new Set([4, 6, 9, 11]);
-
-    data.forEach((row, rowIndex) => {
-        const tr = document.createElement("tr");
-
-        row.forEach((cell, filteredIndex) => {
-            const td = document.createElement("td");
-
-            // Get original column index if available
-            const originalColIndex = originalIndexes[filteredIndex];
-            const colNumber = (originalColIndex !== undefined) ? originalColIndex + 1 : filteredIndex + 1;
-
-            let num = parseFloat(cell?.toString().replace(/[^0-9.-]+/g, ""));
-
-            if (!isNaN(num)) {
-                if (masterDollarCols.has(colNumber)) {
-                    cell = `$${Math.round(num).toLocaleString()}`;
-                } else if (masterPercentCols.has(colNumber)) {
-                    if (Math.abs(num) <= 1 && num !== 0) {
-                        num *= 100;
-                    }
-                    cell = `${num.toFixed(2)}%`;
-                }
-            }
-
-            td.textContent = cell;
-            tr.appendChild(td);
-        });
-
-        table.appendChild(tr);
-    });
-
-    output.appendChild(table);
-}
-
 function appendTotalsRow(tableId) {
     const table = document.getElementById(tableId);
     if (!table) return;
@@ -151,22 +106,6 @@ function appendTotalsRow(tableId) {
     tbody.appendChild(totalRow);
 }
 
-
-
-
-function handleFile() {
-    const fileInput = document.getElementById("csvFile");
-    const file = fileInput.files[0];
-    if (!file) return alert("Please upload a file");
-
-    Papa.parse(file, {
-        complete: function(results) {
-            const filtered = filterColumns(results.data);
-            displayTableM(filtered);
-        }
-    });
-}
-
 async function fetchAndFilterAirtableCSV() {
        const airtableApiKey = 'patTGK9HVgF4n1zqK.cbc0a103ecf709818f4cd9a37e18ff5f68c7c17f893085497663b12f2c600054';
     const baseId = 'appD3QeLneqfNdX12';
@@ -212,7 +151,6 @@ async function fetchAndFilterAirtableCSV() {
     }
 }
 
-
 document.querySelectorAll('th').forEach(th => th.innerHTML = '');
 
 function cleanUpChoices() {
@@ -241,35 +179,9 @@ function cleanUpChoices() {
     );
 
     if (totalRow) {
-        console.log("🧹 Removing existing total row:", totalRow);
         totalRow.remove();
     }
 }
-
-
-function displayTableToId(data, tableId) {
-    const table = document.getElementById(tableId);
-    const tbody = table?.querySelector("tbody");
-    if (!table || !tbody) {
-        console.error(`❌ Table or tbody with ID '${tableId}' not found.`);
-        return;
-    }
-        if (!table) {
-        console.error(`❌ Table with ID '${tableId}' not found in the DOM.`);
-    }
-    
-    table.innerHTML = "";
-
-    data.forEach(row => {
-        const tr = document.createElement("tr");
-        row.forEach(cell => {
-            const td = document.createElement("td");
-            td.textContent = cell;
-            tr.appendChild(td);
-        });
-    });
-}
-
 
 // === Section 2: Handle Dashboard CSV Display ===
 async function loadDefaultCSV() {
@@ -800,13 +712,10 @@ function populateFilterFromColumnOne(tableId, selectId) {
         if (cell && cell.textContent.trim()) {
             const value = cell.textContent.trim();
             uniqueValues.add(value);
-            console.log(`📌 Row ${index + 1}: Added "${value}" to uniqueValues`);
         } else {
             console.log(`⚠️ Row ${index + 1}: No valid first-column cell found or empty`);
         }
     });
-
-    console.log("✅ Unique values collected:", [...uniqueValues]);
 
     // Clear old options
     select.innerHTML = "";
@@ -817,7 +726,6 @@ function populateFilterFromColumnOne(tableId, selectId) {
         option.value = value;
         option.textContent = value;
         select.appendChild(option);
-        console.log(`🧩 Option added: "${value}"`);
     });
 
     // Destroy previous instances of Choices
