@@ -18,26 +18,39 @@
         maybeEnableButtons();
       });
     }
-    function gisLoaded() {
-     tokenClient = google.accounts.oauth2.initTokenClient({
-  client_id: CLIENT_ID,
-  scope: SCOPES,
-  callback: async (tokenResponse) => {
-    if (tokenResponse.error) {
-      alert(JSON.stringify(tokenResponse, null, 2));
-      return;
-    }
-    document.getElementById('authorize_button').style.display = 'none';
-    document.getElementById('signout_button').style.display = 'inline-block';
-    // HIDE THE LOADING BAR
-    document.getElementById('loadingBarOverlay').style.display = 'none';
-    await listSheetData();
-  },
-});
 
+    window.gisLoaded = gisLoaded;
+
+function gisLoaded() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: async (tokenResponse) => {
+            authInProgress = false;
+
+      console.log("[GIS] Token callback triggered.");
+      if (tokenResponse.error) {
+        console.error("[GIS] Token error:", tokenResponse.error);
+        alert(JSON.stringify(tokenResponse, null, 2));
+        return;
+      }
+      console.log("[GIS] Token received, user authorized!");
+
+      document.getElementById('authorize_button').style.display = 'none';
+      document.getElementById('signout_button').style.display = 'inline-block';
+      document.getElementById('refresh_button').style.display = 'inline-block'; // Show after login
+      document.getElementById('loadingBarOverlay').style.display = 'none';
+
+      console.log("[GIS] UI updated for logged-in user. Loading sheet data...");
+      await listSheetData();
+      console.log("[GIS] Sheet data loaded and displayed.");
+    },
+  });
       gisInited = true;
       maybeEnableButtons();
     }
+
+
     function maybeEnableButtons() {
       if (gapiInited && gisInited) {
         document.getElementById('authorize_button').onclick = () => tokenClient.requestAccessToken();
@@ -167,8 +180,56 @@
   html += "</tbody></table>";
   document.getElementById('table-container').innerHTML = html;
 }
+function maybeEnableButtons() {
+  if (gapiInited && gisInited) {
+    console.log("[Buttons] Setting up button click handlers...");
 
+   let authInProgress = false;
+document.getElementById('authorize_button').onclick = () => {
+  if (authInProgress) return;
+  authInProgress = true;
+  tokenClient.requestAccessToken();
+};
+
+    document.getElementById('signout_button').onclick = () => {
+      console.log("[Buttons] Sign out button clicked. Revoking token...");
+      google.accounts.oauth2.revoke(tokenClient.clientId, () => {
+        console.log("[Buttons] Signed out. UI updated.");
+        document.getElementById('authorize_button').style.display = 'inline-block';
+        document.getElementById('signout_button').style.display = 'none';
+        document.getElementById('refresh_button').style.display = 'none'; // Hide on signout
+        document.getElementById('table-container').innerHTML = "";
+      });
+    };
+
+    // Manual refresh
+    document.getElementById('refresh_button').onclick = () => {
+      console.log("[Buttons] Refresh button clicked. Loading new data...");
+      document.getElementById('loadingBarOverlay').style.display = 'block';
+      listSheetData();
+    };
+
+    console.log("[Buttons] Button click handlers set.");
+  } else {
+    console.log("[Buttons] Waiting for GAPI and GIS initialization...");
+  }
+}
+
+
+// Auto-refresh every 5 minutes (300,000 ms)
+setInterval(() => {
+  // Only refresh if authorized (signout_button is visible)
+  if (document.getElementById('signout_button').style.display === 'inline-block') {
+    // Optional: show a loading overlay
+    document.getElementById('loadingBarOverlay').style.display = 'block';
+    listSheetData();
+  }
+}, 300000);
 
 
     window.gapiLoaded = gapiLoaded;
     window.gisLoaded = gisLoaded;
+
+    if (window.google && window.google.accounts && window.google.accounts.oauth2) {
+    gisLoaded();
+}
