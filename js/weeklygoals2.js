@@ -179,6 +179,8 @@ function gisLoaded() {
 
   html += "</tbody></table>";
   document.getElementById('table-container').innerHTML = html;
+  showToast("Sheet refreshed!");
+
 }
 function maybeEnableButtons() {
   if (gapiInited && gisInited) {
@@ -203,11 +205,10 @@ document.getElementById('authorize_button').onclick = () => {
     };
 
     // Manual refresh
-    document.getElementById('refresh_button').onclick = () => {
-      console.log("[Buttons] Refresh button clicked. Loading new data...");
-      document.getElementById('loadingBarOverlay').style.display = 'block';
-      listSheetData();
-    };
+   document.getElementById('refresh_button').onclick = () => {
+  document.getElementById('loadingBarOverlay').style.display = 'block';
+  listSheetData().then(() => showToast("Sheet manually refreshed!"));
+};
 
     console.log("[Buttons] Button click handlers set.");
   } else {
@@ -215,14 +216,24 @@ document.getElementById('authorize_button').onclick = () => {
   }
 }
 
+function showToast(message = "Refreshed!") {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = "show";
+  toast.style.opacity = 1;
+  toast.style.visibility = "visible";
+  setTimeout(() => {
+    toast.className = toast.className.replace("show", "");
+    toast.style.opacity = 0;
+    toast.style.visibility = "hidden";
+  }, 1800); // Toast stays for 1.8s
+}
 
 // Auto-refresh every 5 minutes (300,000 ms)
 setInterval(() => {
-  // Only refresh if authorized (signout_button is visible)
   if (document.getElementById('signout_button').style.display === 'inline-block') {
-    // Optional: show a loading overlay
     document.getElementById('loadingBarOverlay').style.display = 'block';
-    listSheetData();
+    listSheetData().then(() => showToast("Sheet auto-refreshed!"));
   }
 }, 300000);
 
