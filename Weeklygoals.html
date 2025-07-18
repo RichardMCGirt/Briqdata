@@ -29,12 +29,12 @@
     </nav>
 
     <!-- --- Google Sheets Sign In --- -->
-    <button id="authorize_button" style="margin: 18px 0 8px 0; font-size: 1.1em;">Sign in to View Google Sheet</button>
     <button id="signout_button" style="display:none;margin-left:12px;font-size:1.1em;">Sign out</button>
 
     <h1>Weekly Goals</h1>
     <div class="download-info" id="csvDate"></div>
-  
+      <button id="authorize_button" style="margin: 18px 0 8px 0; font-size: 1.1em;">Sign in to View Google Sheet</button>
+
    <div style="display:none;">
   <div id="dropZone">
     <p>Drag and drop your CSV file here or</p>
@@ -54,243 +54,15 @@
 
     <button id="copy-today-column-btn" style="display:none;position:fixed;bottom:32px;right:32px;z-index:9999;">Copy 7/21 Column Values</button>
 
-    <!-- Google API and GIS for Sheets -->
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script>
-    // --- GOOGLE SHEETS + GIS SIGNIN LOGIC ---
-    const CLIENT_ID = "518347118969-drq9o3vr7auf78l16qcteor9ng4nv7qd.apps.googleusercontent.com";
-    const API_KEY = "AIzaSyBGYsHkTEvE9eSYo9mFCUIecMcQtT8f0hg";
-    const SHEET_ID = "1-odgue-k8jX-QbnTvi-7_jUK4O2Q---ZnMzuuBfKYdE";
-    const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
-
-    let tokenClient;
-    let gapiInited = false;
-    let gisInited = false;
-
-    function gapiLoaded() {
-      gapi.load('client', async () => {
-        await gapi.client.init({
-          apiKey: API_KEY,
-          discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"]
-        });
-        gapiInited = true;
-        maybeEnableButtons();
-      });
-    }
-    function gisLoaded() {
-     tokenClient = google.accounts.oauth2.initTokenClient({
-  client_id: CLIENT_ID,
-  scope: SCOPES,
-  callback: async (tokenResponse) => {
-    if (tokenResponse.error) {
-      alert(JSON.stringify(tokenResponse, null, 2));
-      return;
-    }
-    document.getElementById('authorize_button').style.display = 'none';
-    document.getElementById('signout_button').style.display = 'inline-block';
-    // HIDE THE LOADING BAR
-    document.getElementById('loadingBarOverlay').style.display = 'none';
-    await listSheetData();
-  },
-});
-
-      gisInited = true;
-      maybeEnableButtons();
-    }
-    function maybeEnableButtons() {
-      if (gapiInited && gisInited) {
-        document.getElementById('authorize_button').onclick = () => tokenClient.requestAccessToken();
-        document.getElementById('signout_button').onclick = () => {
-          google.accounts.oauth2.revoke(tokenClient.clientId, () => {
-            document.getElementById('authorize_button').style.display = 'inline-block';
-            document.getElementById('signout_button').style.display = 'none';
-            document.getElementById('table-container').innerHTML = "";
-          });
-        };
-      }
-    }
- async function listSheetData() {
-  const res = await gapi.client.sheets.spreadsheets.values.get({
-    spreadsheetId: SHEET_ID,
-    range: 'Sheet1!A1:Z100',
-  });
-  const rows = res.result.values;
-  if (!rows || rows.length === 0) {
-    document.getElementById('table-container').innerHTML = "<p>No data found in sheet.</p>";
-    console.log("[DeltaCalc] No rows returned from Google Sheets.");
-    return;
-  }
-
-  // Helper to parse currency strings like "$12,345,678" or "-$5,000"
- function parseCurrency(val) {
-  if (typeof val !== "string") return NaN;
-  // Remove $ and commas and spaces
-  val = val.replace(/\$/g, '').replace(/,/g, '').replace(/\s/g, '');
-  // Handle negative numbers like -$5,000
-  return parseFloat(val);
-}
-
-// Find indexes
-const headers = rows[0];
-const goalIdx = headers.findIndex(h => h.trim().toLowerCase() === 'goal');
-if (goalIdx === -1) {
-  console.warn("[DeltaCalc] 'Goal' column not found in headers:", headers);
-} else {
-  console.log(`[DeltaCalc] Goal column index: ${goalIdx} (${headers[goalIdx]})`);
-}
-
-// Find all week columns (assuming they match MM/DD format)
-const weekIdxs = headers
-  .map((h, i) => /^\d{2}\/\d{2}$/.test(h.trim()) ? i : -1)
-  .filter(i => i !== -1);
-
-console.log("[DeltaCalc] Detected week columns:", weekIdxs.map(i => `${headers[i]} (index ${i})`));
-
-let html = "<table border='1'><thead><tr>";
-headers.forEach(header => html += `<th>${header}</th>`);
-html += "</tr></thead><tbody>";
-
-const PIPELINE_ROWS = [
-  "Opportunity Pipeline $'s - Residential",
-  "Opportunity Pipeline $'s - Commercial"
-];
-const NO_DELTA_ROWS = [
-  "Weeks Remaining FY"
-];
-
-console.log("[DeltaCalc][COLUMN 2 VALUES]", rows.map(r => r[1]));
-for (let i = 1; i < rows.length; i++) {
-  html += "<tr>";
-  rows[i].forEach((cell, idx) => {
-    // Use column 2 (index 1) as the row label for matching
-    const rowLabel = (rows[i][1] || '').trim();
-
-    // Log for debug
-    if (idx === 1) {
-      console.log(`[DeltaCalc][ROW CHECK] Label: "${rowLabel}"`);
-    }
-
-    // Remove deltas for Weeks Remaining FY row (column 2 match, exact, case sensitive)
-    if (NO_DELTA_ROWS.includes(rowLabel)) {
-      console.log(`[DeltaCalc][NO DELTA] Row: "${rowLabel}" | Column: "${headers[idx]}" | Value: ${cell}`);
-      html += `<td>${cell || ''}</td>`;
-      return; // Skip adding a delta for this cell
-    }
-
-    let deltaHTML = '';
-
-    // Custom delta for PIPELINE rows (column 2 match)
-    if (PIPELINE_ROWS.includes(rowLabel) && weekIdxs.includes(idx) && idx > Math.min(...weekIdxs)) {
-      const prevColIdx = idx - 1;
-      const currentVal = parseCurrency(cell);
-      const prevVal = parseCurrency(rows[i][prevColIdx]);
-      if (!isNaN(currentVal) && !isNaN(prevVal)) {
-        const delta = currentVal - prevVal;
-        let color = delta === 0 ? 'gray' : (delta > 0 ? 'green' : 'red');
-        deltaHTML = `<div style="font-size:0.9em;color:${color};font-weight:bold;">
-          ${delta > 0 ? '+' : ''}${delta.toLocaleString()}
-        </div>`;
-      }
-      html += `<td>${cell || ''}${deltaHTML}</td>`;
-      return;
-    }
-
-    // Default delta: actual - goal (all other rows for week columns)
-    if (weekIdxs.includes(idx)) {
-      const goalRaw = rows[i][goalIdx];
-      const actualRaw = cell;
-      const goal = parseCurrency(goalRaw);
-      const actual = parseCurrency(actualRaw);
-      if (!isNaN(goal) && !isNaN(actual)) {
-        const delta = actual - goal;
-        let color = delta === 0 ? 'gray' : (delta > 0 ? 'green' : 'red');
-        deltaHTML = `<div style="font-size:0.9em;color:${color};font-weight:bold;">
-          ${delta > 0 ? '+' : ''}${delta.toLocaleString()}
-        </div>`;
-      }
-      html += `<td>${cell || ''}${deltaHTML}</td>`;
-    } else {
-      // Non-week columns, just display the cell
-      html += `<td>${cell || ''}</td>`;
-    }
-  });
-  html += "</tr>";
-}
-
-html += "</tbody></table>";
-document.getElementById('table-container').innerHTML = html;
- }
-async function fetchweeklybidvalueestimated() {
-  let allRecords = [];
-  let offset = "";
-  let pageCount = 0;
- const filterFormula = encodeURIComponent(
-  `OR(
-    {Project Type}="Commercial",
-    {Project Type}="Single Family",
-    {Project Type}="Residential Townhomes"
-  )`
-);
-
-  do {
-    let url = `https://api.airtable.com/v0/appK9gZS77OmsIK50/tblQo2148s04gVPq1?filterByFormula=${filterFormula}`;
-    if (offset) url += `&offset=${offset}`;
-    pageCount++;
-
-    const resp = await fetch(url, {
-      headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` }
-    });
-
-    if (!resp.ok) {
-      console.error(`[Airtable2] Failed to fetch: ${resp.status} ${resp.statusText}`);
-      break;
-    }
-
-    const json = await resp.json();
-
-    if (json.records) {
-      allRecords = allRecords.concat(json.records);
-    } else {
-      console.warn(`[Airtable2] No records found on page ${pageCount}`);
-    }
-
-    offset = json.offset;
-  } while (offset);
-
-  // Return every record's fields:
-  const result = allRecords.map(r => r.fields);
-
-  console.log(`[Airtable2] Total records fetched: ${result.length}`);
-
-  // Log each record's key fields
-  result.forEach((rec, idx) => {
-  });
-
-  // Preview first 2 records for debugging
-  if (result.length > 1) {
-  }
-
-  return result;
-}
+    <!-- Luxon must come first for date handling -->
+<!-- 1. Load Luxon first -->
+<script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+<!-- 2. Load your functions (where gapiLoaded/gisLoaded are defined) -->
+<script src="js/weeklygoals2.js"></script>
+<!-- 3. THEN load the APIs that will call those functions -->
+<script src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+<script src="https://accounts.google.com/gsi/client" onload="gisLoaded()" async defer></script>
 
 
 
-    window.gapiLoaded = gapiLoaded;
-    window.gisLoaded = gisLoaded;
-    </script>
-    <!-- these onload hooks are required for safe init order -->
-    <script src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-    <script src="https://accounts.google.com/gsi/client" onload="gisLoaded()" async defer></script>
-    <!-- your existing scripts still load below -->
-    <script src="js/config.js"></script>
-    <script type="module" src="js/weeklygoals.js"></script>
-    <script>
-      window.env = {
-        AIRTABLE_API_KEY: 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238',
-        AIRTABLE_BASE_ID: 'appO21PVRA4Qa087I',
-        AIRTABLE_TABLE_NAME: 'tbl6EeKPsNuEvt5yJ',
-        AIRTABLE_TABLE_NAME2: 'tbl9SgC5wUi2TQuF7',
-      };
-    </script>
 </body>

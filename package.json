@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "dotenv": "^16.4.7",
+    "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "ftp": "^0.3.10",
     "puppeteer": "^24.5.0"

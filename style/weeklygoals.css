@@ -1,12 +1,4 @@
-.container {
-  max-width: 2500px;
-  margin: 30px auto;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 6px 32px rgba(60,60,60,0.11);
-  padding: 32px 24px;
-  overflow-x: auto;
-}
+
 h1 {
   text-align: center;
   margin-bottom: 24px;
@@ -16,15 +8,7 @@ h1 {
   display: block;       /* Ensures block display */
   width: 100%;          /* Full width for centering */
 }
-.upload-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;     /* Center children horizontally */
-  justify-content: center; /* Center children vertically if you ever add height */
-  text-align: center;      /* Center label/input text, just in case */
-  margin-bottom: 30px;
-  gap: 10px;
-}
+
 
 table {
   width: 95%;              /* Not full width */
@@ -47,15 +31,7 @@ thead th, tbody td {
   white-space: normal;
   overflow-wrap: break-word;
 }
-.section-header {
-  background: #e8eaf6;
-  font-weight: bold;
-  font-size: 1.35em;
-  text-align: center;
-  border-bottom: 2px solid #3f51b5;
-  padding-top: 16px;
-  padding-bottom: 16px;
-}
+
 
 thead th {
   background: #e9f2ff;
@@ -67,12 +43,7 @@ thead th {
   color: #223356;         /* Optional: a bit darker text */
 }
 
-tbody tr.even {
-  background: #f7faff;
-}
-tbody tr.odd {
-  background: #fff;
-}
+
 tbody td {
   border-bottom: 1px solid #e0e0e0;
   vertical-align: middle;
@@ -82,14 +53,7 @@ tbody tr:hover {
   background: #ecf2fb !important;
 }
 
-.section-header {
-  background: #e8eaf6;
-  font-weight: bold;
-  text-align: center;
-  border-bottom: 2px solid #3f51b5;
-  padding-top: 16px;
-  padding-bottom: 16px;
-}
+
 
 @media (max-width: 900px) {
   table { width: 98%; min-width: 600px; }
@@ -100,87 +64,60 @@ tbody tr:hover {
   table { width: 100%; min-width: 420px; }
   th, td { font-size: 0.95em; padding: 9px 3px; }
 }
-.delta {
-  font-size: 0.95em;
-  margin-top: 2px;
-}
-.delta-positive {
-  color: #1db800; /* Green */
-  font-weight: bold;
-}
-.delta-negative {
-  color: #c70d24; /* Red */
-  font-weight: bold;
-}
+
 #table-container table th:first-child,
 #table-container table td:first-child {
   display: none;
 }
-#dropZone {
-    border: 2px dashed #0044cc;
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #333;
-    background-color: #f9f9f9;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
-    cursor: pointer;
-    max-width: 500px;
-    margin: 30px auto;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
   
-  #dropZone:hover {
-    background-color: #eef4ff;
-    border-color: #002f99;
-  }
-  
-  #dropZone label {
-    color: #0044cc;
-    cursor: pointer;
-    text-decoration: underline;
-    font-weight: bold;
-  }
-.loading-bar-overlay {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
-  background: rgba(0,0,0,0.15); /* subtle dark background */
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none; /* Prevent blocking clicks unless you want it modal */
+/* Strong universal border styling for the table */
+#table-container table {
+  border-collapse: collapse;
+  width: 100%;
+  background: #fff;
+  margin: 0 auto;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
 }
 
-.loading-bar-container {
-  width: 400px;
-  max-width: 80vw;
-  height: 12px;
-  background: #f0f0f0;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.13);
-  overflow: hidden;
-  border: 1px solid #e0e0e0;
-  display: flex;
-  align-items: center;
+#table-container th,
+#table-container td {
+  border: 2px solid #0056b3 !important;
+  padding: 10px 8px;
+  min-width: 80px;
+  text-align: center;
+  vertical-align: middle;
+  background: #f9f9f9;
+  font-size: 1em;
+  color: #232323;
+  box-sizing: border-box;
 }
 
-.loading-bar {
-  height: 100%;
-  background: linear-gradient(90deg, #2575fc, #6a11cb);
-  width: 0;
-  transition: width 0.4s cubic-bezier(.4,0,.2,1);
+#table-container th {
+  background: #e6f0fa;
+  font-weight: bold;
 }
 
-  .spinner {
-  border: 8px solid #eee;
-  border-top: 8px solid #1976d2;
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
-  animation: spin 0.9s linear infinite;
+#table-container td:empty::after {
+  content: "\00a0"; /* Non-breaking space for empty cell so border appears! */
 }
-@keyframes spin { 100% { transform: rotate(360deg); } }
-#table-container { position: relative; }
+
+/* Center and style the sign-in button */
+#authorize_button {
+  display: block;
+  margin: 40px auto 18px auto;   /* Top, right/left, bottom, right/left */
+  font-size: 1.13em;
+  padding: 12px 32px;
+  border: none;
+  border-radius: 7px;
+  background: linear-gradient(90deg, #0074d9 0%, #0056b3 100%);
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s;
+}
+
+#authorize_button:hover {
+  background: linear-gradient(90deg, #0056b3 0%, #0074d9 100%);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.11);
+}
