@@ -104,7 +104,7 @@ tbody tr:hover {
 /* Center and style the sign-in button */
 #authorize_button {
   display: block;
-  margin: 40px auto 18px auto;   /* Top, right/left, bottom, right/left */
+  margin: 140px auto 18px auto !important;   /* Top, right/left, bottom, right/left */
   font-size: 1.13em;
   padding: 12px 32px;
   border: none;
