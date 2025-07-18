@@ -168,7 +168,13 @@ function renderComparisonTable(data) {
     const rowspan = rows.length;
 
     rows.forEach((row, index) => {
-      const { type, netSales, grossProfit, netDiff, grossDiff } = row;
+      // ROUND values
+      const type = row.type;
+      const netSales = Math.round(row.netSales);
+      const grossProfit = Math.round(row.grossProfit);
+      const netDiff = Math.round(row.netDiff);
+      const grossDiff = Math.round(row.grossDiff);
+
       const netClass = netDiff > 0 ? 'pos' : netDiff < 0 ? 'neg' : '';
       const grossClass = grossDiff > 0 ? 'pos' : grossDiff < 0 ? 'neg' : '';
 
@@ -199,13 +205,14 @@ function renderComparisonTable(data) {
   html += `
     <tr style="border-top: 3px solid #000; font-weight: bold;">
       <td colspan="2" style="text-align: right;">Total:</td>
-      <td>$${totalNet.toLocaleString()}</td>
-      <td>$${totalGross.toLocaleString()}</td>
+      <td>$${Math.round(totalNet).toLocaleString()}</td>
+      <td>$${Math.round(totalGross).toLocaleString()}</td>
     </tr>`;
 
   html += `</table>`;
   document.getElementById("rawDataTable").innerHTML = html;
 }
+
 
 async function replaceCSVInAirtableViaDropbox(file) {
 
