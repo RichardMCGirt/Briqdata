@@ -37,9 +37,10 @@ function gisLoaded() {
       console.log("[GIS] Token received, user authorized!");
 
       document.getElementById('authorize_button').style.display = 'none';
-      document.getElementById('signout_button').style.display = 'inline-block';
       document.getElementById('refresh_button').style.display = 'inline-block'; // Show after login
       document.getElementById('loadingBarOverlay').style.display = 'none';
+        document.getElementById('table-container').style.display = 'block'; // SHOW table
+
 
       console.log("[GIS] UI updated for logged-in user. Loading sheet data...");
       await listSheetData();
@@ -54,16 +55,14 @@ function gisLoaded() {
     function maybeEnableButtons() {
       if (gapiInited && gisInited) {
         document.getElementById('authorize_button').onclick = () => tokenClient.requestAccessToken();
-        document.getElementById('signout_button').onclick = () => {
           google.accounts.oauth2.revoke(tokenClient.clientId, () => {
             document.getElementById('authorize_button').style.display = 'inline-block';
-            document.getElementById('signout_button').style.display = 'none';
             document.getElementById('table-container').innerHTML = "";
           });
         };
       }
-    }
- 
+    
+
    async function listSheetData() {
   const DateTime = luxon.DateTime; // Use Luxon for timezone
   const nowNY = DateTime.now().setZone('America/New_York').startOf('day');
@@ -193,16 +192,7 @@ document.getElementById('authorize_button').onclick = () => {
   tokenClient.requestAccessToken();
 };
 
-    document.getElementById('signout_button').onclick = () => {
-      console.log("[Buttons] Sign out button clicked. Revoking token...");
-      google.accounts.oauth2.revoke(tokenClient.clientId, () => {
-        console.log("[Buttons] Signed out. UI updated.");
-        document.getElementById('authorize_button').style.display = 'inline-block';
-        document.getElementById('signout_button').style.display = 'none';
-        document.getElementById('refresh_button').style.display = 'none'; // Hide on signout
-        document.getElementById('table-container').innerHTML = "";
-      });
-    };
+  
 
     // Manual refresh
    document.getElementById('refresh_button').onclick = () => {
@@ -241,6 +231,4 @@ setInterval(() => {
     window.gapiLoaded = gapiLoaded;
     window.gisLoaded = gisLoaded;
 
-    if (window.google && window.google.accounts && window.google.accounts.oauth2) {
-    gisLoaded();
-}
+   
