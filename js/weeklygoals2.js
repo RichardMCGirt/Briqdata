@@ -51,7 +51,6 @@ function gisLoaded() {
       maybeEnableButtons();
     }
 
-
     function maybeEnableButtons() {
       if (gapiInited && gisInited) {
         document.getElementById('authorize_button').onclick = () => tokenClient.requestAccessToken();
@@ -62,7 +61,6 @@ function gisLoaded() {
         };
       }
     
-
    async function listSheetData() {
   const DateTime = luxon.DateTime; // Use Luxon for timezone
   const nowNY = DateTime.now().setZone('America/New_York').startOf('day');
@@ -116,71 +114,72 @@ function gisLoaded() {
   });
   html += "</tr></thead><tbody>";
 
-  for (let i = 1; i < rows.length; i++) {
-    html += "<tr>";
-    visibleColIdxs.forEach(idx => {
-      const cell = rows[i][idx];
-      const rowLabel = (rows[i][1] || '').trim();
+ for (let i = 1; i < rows.length; i++) {
+  html += "<tr>";
+  const rowLabel = (rows[i][1] || '').trim();
+  const shouldBoldRow = ["PreCon", "Sales", "Estimating", "Administration", "Field"].includes(rowLabel);
 
-      // NO DELTA row
-      if (NO_DELTA_ROWS.includes(rowLabel)) {
-        html += `<td>${cell || ''}</td>`;
-        return;
-      }
+  visibleColIdxs.forEach(idx => {
+    const cell = rows[i][idx];
+    let deltaHTML = '';
 
-      let deltaHTML = '';
+    if (NO_DELTA_ROWS.includes(rowLabel)) {
+      const cellContent = `${cell || ''}`;
+      html += shouldBoldRow ? `<td><strong>${cellContent}</strong></td>` : `<td>${cellContent}</td>`;
+      return;
+    }
 
-      // PIPELINE delta (compare to previous visible week col)
-      if (PIPELINE_ROWS.includes(rowLabel) && weekColIdxs.includes(idx)) {
-        // Find previous visible week col before this one
-        let prevWeekIdx = null;
-        for (let j = weekColIdxs.indexOf(idx) - 1; j >= 0; j--) {
-          if (visibleColIdxs.includes(weekColIdxs[j])) {
-            prevWeekIdx = weekColIdxs[j];
-            break;
-          }
+    if (PIPELINE_ROWS.includes(rowLabel) && weekColIdxs.includes(idx)) {
+      let prevWeekIdx = null;
+      for (let j = weekColIdxs.indexOf(idx) - 1; j >= 0; j--) {
+        if (visibleColIdxs.includes(weekColIdxs[j])) {
+          prevWeekIdx = weekColIdxs[j];
+          break;
         }
-        if (prevWeekIdx !== null && idx > prevWeekIdx) {
-          const currentVal = parseCurrency(cell);
-          const prevVal = parseCurrency(rows[i][prevWeekIdx]);
-          if (!isNaN(currentVal) && !isNaN(prevVal)) {
-            const delta = currentVal - prevVal;
-            let color = delta === 0 ? 'gray' : (delta > 0 ? 'green' : 'red');
-            deltaHTML = `<div style="font-size:0.9em;color:${color};font-weight:bold;">
-              ${delta > 0 ? '+' : ''}${delta.toLocaleString()}
-            </div>`;
-          }
-        }
-        html += `<td>${cell || ''}${deltaHTML}</td>`;
-        return;
       }
-
-      // Default delta (actual - goal) for week columns
-      if (weekColIdxs.includes(idx) && goalIdx !== -1) {
-        const goalRaw = rows[i][goalIdx];
-        const actualRaw = cell;
-        const goal = parseCurrency(goalRaw);
-        const actual = parseCurrency(actualRaw);
-        if (!isNaN(goal) && !isNaN(actual)) {
-          const delta = actual - goal;
+      if (prevWeekIdx !== null && idx > prevWeekIdx) {
+        const currentVal = parseCurrency(cell);
+        const prevVal = parseCurrency(rows[i][prevWeekIdx]);
+        if (!isNaN(currentVal) && !isNaN(prevVal)) {
+          const delta = currentVal - prevVal;
           let color = delta === 0 ? 'gray' : (delta > 0 ? 'green' : 'red');
           deltaHTML = `<div style="font-size:0.9em;color:${color};font-weight:bold;">
             ${delta > 0 ? '+' : ''}${delta.toLocaleString()}
           </div>`;
         }
-        html += `<td>${cell || ''}${deltaHTML}</td>`;
-      } else {
-        html += `<td>${cell || ''}</td>`;
       }
-    });
-    html += "</tr>";
-  }
+      const cellContent = `${cell || ''}${deltaHTML}`;
+      html += shouldBoldRow ? `<td><strong>${cellContent}</strong></td>` : `<td>${cellContent}</td>`;
+      return;
+    }
+
+    if (weekColIdxs.includes(idx) && goalIdx !== -1) {
+      const goalRaw = rows[i][goalIdx];
+      const actualRaw = cell;
+      const goal = parseCurrency(goalRaw);
+      const actual = parseCurrency(actualRaw);
+      if (!isNaN(goal) && !isNaN(actual)) {
+        const delta = actual - goal;
+        let color = delta === 0 ? 'gray' : (delta > 0 ? 'green' : 'red');
+        deltaHTML = `<div style="font-size:0.9em;color:${color};font-weight:bold;">
+          ${delta > 0 ? '+' : ''}${delta.toLocaleString()}
+        </div>`;
+      }
+    }
+
+    const cellContent = `${cell || ''}${deltaHTML}`;
+    html += shouldBoldRow ? `<td><strong>${cellContent}</strong></td>` : `<td>${cellContent}</td>`;
+  });
+  html += "</tr>";
+}
+
 
   html += "</tbody></table>";
   document.getElementById('table-container').innerHTML = html;
   showToast("Sheet refreshed!");
 
 }
+
 function maybeEnableButtons() {
   if (gapiInited && gisInited) {
     console.log("[Buttons] Setting up button click handlers...");
@@ -192,14 +191,11 @@ document.getElementById('authorize_button').onclick = () => {
   tokenClient.requestAccessToken();
 };
 
-  
-
     // Manual refresh
    document.getElementById('refresh_button').onclick = () => {
   document.getElementById('loadingBarOverlay').style.display = 'block';
   listSheetData().then(() => showToast("Sheet manually refreshed!"));
 };
-
     console.log("[Buttons] Button click handlers set.");
   } else {
     console.log("[Buttons] Waiting for GAPI and GIS initialization...");
@@ -226,7 +222,6 @@ setInterval(() => {
     listSheetData().then(() => showToast("Sheet auto-refreshed!"));
   }
 }, 300000);
-
 
     window.gapiLoaded = gapiLoaded;
     window.gisLoaded = gisLoaded;
