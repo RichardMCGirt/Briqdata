@@ -141,12 +141,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         const sortedLabels = chartData.map(item => item.label);
         const sortedDataValues = chartData.map(item => item.value);
 
-        const chartContainer = document.getElementById('chartContainer');
-        chartContainer.innerHTML = '';
+       const canvas = document.getElementById('chartContainer');
 
-        const canvas = document.createElement('canvas');
-        canvas.id = 'myChart';
-        chartContainer.appendChild(canvas);
 
         if (window.myChartInstance) {
             window.myChartInstance.destroy();

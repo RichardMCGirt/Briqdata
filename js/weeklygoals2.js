@@ -173,7 +173,6 @@ function gisLoaded() {
   html += "</tr>";
 }
 
-
   html += "</tbody></table>";
   document.getElementById('table-container').innerHTML = html;
   showToast("Sheet refreshed!");
